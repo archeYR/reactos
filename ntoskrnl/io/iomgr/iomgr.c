@@ -465,6 +465,21 @@ IopMarkBootPartition(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
 }
 
 BOOLEAN
+NTAPI
+IopWaitForBootDevicesStarted(VOID)
+{
+    NTSTATUS Status;
+
+    Status = KeWaitForSingleObject(&PiEnumerationLock,
+                                   Executive,
+                                   KernelMode,
+                                   FALSE,
+                                   NULL);
+
+    return NT_SUCCESS(Status);
+}
+
+BOOLEAN
 INIT_FUNCTION
 NTAPI
 IoInitSystem(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
@@ -552,15 +567,31 @@ IoInitSystem(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
 
     /* Load boot start drivers */
     IopInitializeBootDrivers();
+    if (!IopWaitForBootDevicesStarted())
+    {
+        DPRINT1("IopWaitForBootDevicesStarted failed!\n");
+        return FALSE;
+    }
 
     /* Call back drivers that asked for */
     IopReinitializeBootDrivers();
+
+    if (!IopWaitForBootDevicesStarted())
+    {
+        DPRINT1("IopWaitForBootDevicesStarted failed!\n");
+        return FALSE;
+    }
 
     /* Check if this was a ramdisk boot */
     if (!_strnicmp(LoaderBlock->ArcBootDeviceName, "ramdisk(0)", 10))
     {
         /* Initialize the ramdisk driver */
         IopStartRamdisk(LoaderBlock);
+        if (!IopWaitForBootDevicesStarted())
+        {
+            DPRINT1("IopWaitForBootDevicesStarted failed!\n");
+            return FALSE;
+        }
     }
 
     /* No one should need loader block any longer */
@@ -584,7 +615,14 @@ IoInitSystem(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
     /* Initialize PnP root relations */
     IopEnumerateDevice(IopRootDeviceNode->PhysicalDeviceObject);
 
+<<<<<<< HEAD
 #if !defined(_WINKD_) && defined(KDBG)
+=======
+    /* No one should need loader block any longer */
+    IopLoaderBlock = NULL;
+
+#ifndef _WINKD_
+>>>>>>> 22d176bd7b... [NTOSKRNL] Import HW IDs for install RoS from USB.
     /* Read KDB Data */
     KdbInit();
 
