@@ -4977,6 +4977,8 @@ RunUSetup(VOID)
     PAGE_NUMBER Page;
     BOOLEAN Old;
 
+    DPRINT("RunUSetup: ... \n");
+
     InfSetHeap(ProcessHeap);
 
     /* Tell the Cm this is a setup boot, and it has to behave accordingly */
@@ -5013,6 +5015,17 @@ RunUSetup(VOID)
 
     /* Global Initialization page */
     Page = SetupStartPage(&Ir);
+
+#if 1
+{
+    LARGE_INTEGER Timeout;
+    Timeout.QuadPart = 5000LL; // 5 sec
+    DPRINT("Waiting %lu milliseconds (RunUSetup)\n", Timeout.LowPart);
+    Timeout.QuadPart *= -10000LL;  // convert to 100 ns units (absolute)
+    NtDelayExecution(FALSE, &Timeout);
+    DPRINT("End Waiting (RunUSetup)\n");
+}
+#endif
 
     while (Page != REBOOT_PAGE && Page != RECOVERY_PAGE)
     {
@@ -5199,6 +5212,19 @@ NtProcessStartup(PPEB Peb)
 {
     NTSTATUS Status;
     LARGE_INTEGER Time;
+
+    DPRINT("NtProcessStartup: \n");
+
+#if 1
+{
+    LARGE_INTEGER Timeout;
+    Timeout.QuadPart = 5000LL; // 5 sec
+    DPRINT("Waiting %lu milliseconds (NtProcessStartup)\n", Timeout.LowPart);
+    Timeout.QuadPart *= -10000LL;  // convert to 100 ns units (absolute)
+    NtDelayExecution(FALSE, &Timeout);
+    DPRINT("End Waiting (NtProcessStartup)\n");
+}
+#endif
 
     RtlNormalizeProcessParams(Peb->ProcessParameters);
 
