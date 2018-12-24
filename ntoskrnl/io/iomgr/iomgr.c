@@ -556,6 +556,12 @@ IoInitSystem(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
     /* Call back drivers that asked for */
     IopReinitializeBootDrivers();
 
+    if (!IopWaitForBootDevicesStarted())
+    {
+        DPRINT1("IopWaitForBootDevicesStarted failed!\n");
+        return FALSE;
+    }
+
     /* Check if this was a ramdisk boot */
     if (!_strnicmp(LoaderBlock->ArcBootDeviceName, "ramdisk(0)", 10))
     {
@@ -585,6 +591,10 @@ IoInitSystem(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
     IopEnumerateDevice(IopRootDeviceNode->PhysicalDeviceObject);
 
 #if !defined(_WINKD_) && defined(KDBG)
+
+    /* No one should need loader block any longer */
+    IopLoaderBlock = NULL;
+
     /* Read KDB Data */
     KdbInit();
 
