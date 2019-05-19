@@ -35,6 +35,7 @@ POBJECT_TYPE IoDriverObjectType = NULL;
 
 extern BOOLEAN ExpInTextModeSetup;
 extern BOOLEAN PnpSystemInit;
+extern KEVENT PiEnumerationFinished;
 
 USHORT IopGroupIndex;
 PLIST_ENTRY IopGroupTable;
@@ -1125,6 +1126,13 @@ IopInitializeBootDrivers(VOID)
         }
     }
 
+    /* Drivers can change device tree during initialization - wait for it to be finished */
+    KeWaitForSingleObject(&PiEnumerationFinished,
+                          Executive,
+                          KernelMode,
+                          FALSE,
+                          NULL);
+
     /* In old ROS, the loader list became empty after this point. Simulate. */
     InitializeListHead(&KeLoaderBlock->LoadOrderListHead);
 }
@@ -1478,6 +1486,12 @@ IopReinitializeBootDrivers(VOID)
         Entry = ExInterlockedRemoveHeadList(&DriverBootReinitListHead,
                                             &DriverBootReinitListLock);
     }
+
+    KeWaitForSingleObject(&PiEnumerationFinished,
+                          Executive,
+                          KernelMode,
+                          FALSE,
+                          NULL);
 }
 
 NTSTATUS
