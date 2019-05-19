@@ -689,6 +689,18 @@ IopGetDeviceNode(
     IN PDEVICE_OBJECT DeviceObject
 );
 
+VOID
+NTAPI
+PpDevNodeLockTree(
+    _In_ ULONG LockLevel
+);
+
+VOID
+NTAPI
+PpDevNodeUnlockTree(
+    _In_ ULONG LockLevel
+);
+
 NTSTATUS
 IopActionConfigureChildServices(
     IN PDEVICE_NODE DeviceNode,
@@ -1447,7 +1459,6 @@ extern PVOID IopTriageDumpDataBlocks[64];
 extern PIO_BUS_TYPE_GUID_LIST PnpBusTypeGuidList;
 extern PDRIVER_OBJECT IopRootDriverObject;
 extern KSPIN_LOCK IopDeviceActionLock;
-extern LIST_ENTRY IopDeviceActionRequestList;
 extern RESERVE_IRP_ALLOCATOR IopReserveIrpAllocator;
 extern BOOLEAN IoRemoteBootClient;
 

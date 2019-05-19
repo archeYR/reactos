@@ -20,6 +20,10 @@
 #pragma alloc_text(INIT, IopStartRamdisk)
 #endif
 
+/* GLOBALS ********************************************************************/
+
+extern KEVENT PiEnumerationFinished;
+
 /* FUNCTIONS ******************************************************************/
 
 INIT_FUNCTION
@@ -267,6 +271,16 @@ IopStartRamdisk(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
         RtlAnsiStringToUnicodeString(&NtSystemRoot, &AnsiPath, FALSE);
         IoCreateSymbolicLink(&DriveLetter, &DeviceString);
     }
+
+    //
+    // The function is synchronous
+    //
+    
+    KeWaitForSingleObject(&PiEnumerationFinished,
+                          Executive,
+                          KernelMode,
+                          FALSE,
+                          NULL);
 
     //
     // We made it
