@@ -33,7 +33,6 @@ extern BOOLEAN PnpSystemInit;
 
 PDRIVER_OBJECT IopRootDriverObject;
 PIO_BUS_TYPE_GUID_LIST PnpBusTypeGuidList = NULL;
-LIST_ENTRY IopDeviceActionRequestList;
 WORK_QUEUE_ITEM IopDeviceActionWorkItem;
 BOOLEAN IopDeviceActionInProgress;
 KSPIN_LOCK IopDeviceActionLock;
@@ -972,7 +971,7 @@ IopStartAndEnumerateDevice(IN PDEVICE_NODE DeviceNode)
         (DeviceNode->Flags & DNF_NEED_ENUMERATION_ONLY))
     {
         /* Enumerate us */
-        IoSynchronousInvalidateDeviceRelations(DeviceObject, BusRelations);
+        IoInvalidateDeviceRelations(DeviceObject, BusRelations);
         Status = STATUS_SUCCESS;
     }
     else

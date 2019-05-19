@@ -35,6 +35,14 @@ NTSTATUS NTAPI IopMemInitialize(VOID);
 NTSTATUS NTAPI IopDmaInitialize(VOID);
 NTSTATUS NTAPI IopIrqInitialize(VOID);
 NTSTATUS NTAPI IopBusNumberInitialize(VOID);
+KSPIN_LOCK IopPnPSpinLock;
+LIST_ENTRY IopPnpEnumerationRequestList;
+KEVENT PiEnumerationFinished;
+
+ERESOURCE PiEngineLock;
+ERESOURCE PiDeviceTreeLock;
+
+extern KEVENT PiEnumerationFinished;
 
 /* FUNCTIONS ******************************************************************/
 
@@ -502,9 +510,13 @@ IopInitializePlugPlayServices(VOID)
     PDEVICE_OBJECT Pdo;
 
     /* Initialize locks and such */
+    KeInitializeSpinLock(&IopPnPSpinLock);
     KeInitializeSpinLock(&IopDeviceTreeLock);
     KeInitializeSpinLock(&IopDeviceActionLock);
-    InitializeListHead(&IopDeviceActionRequestList);
+    InitializeListHead(&IopPnpEnumerationRequestList);
+    KeInitializeEvent(&PiEnumerationFinished, NotificationEvent, TRUE);
+    ExInitializeResourceLite(&PiEngineLock);
+    ExInitializeResourceLite(&PiDeviceTreeLock);
 
     /* Get the default interface */
     PnpDefaultInterfaceType = IopDetermineDefaultInterfaceType();
