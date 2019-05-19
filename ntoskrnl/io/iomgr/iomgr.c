@@ -77,6 +77,7 @@ extern KSPIN_LOCK DriverReinitListLock;
 extern KSPIN_LOCK DriverBootReinitListLock;
 extern KSPIN_LOCK IopLogListLock;
 extern KSPIN_LOCK IopTimerLock;
+extern KEVENT PiEnumerationFinished;
 
 extern PDEVICE_OBJECT IopErrorLogObject;
 

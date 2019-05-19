@@ -24,6 +24,15 @@ PUNICODE_STRING PiInitGroupOrderTable;
 USHORT PiInitGroupOrderTableCount;
 INTERFACE_TYPE PnpDefaultInterfaceType;
 
+KSPIN_LOCK IopPnPSpinLock;
+LIST_ENTRY IopPnpEnumerationRequestList;
+KEVENT PiEnumerationFinished;
+
+ERESOURCE PiEngineLock;
+ERESOURCE PiDeviceTreeLock;
+
+extern KEVENT PiEnumerationFinished;
+
 /* FUNCTIONS ******************************************************************/
 
 INTERFACE_TYPE
@@ -454,9 +463,13 @@ IopInitializePlugPlayServices(VOID)
     PDEVICE_OBJECT Pdo;
 
     /* Initialize locks and such */
+    KeInitializeSpinLock(&IopPnPSpinLock);
     KeInitializeSpinLock(&IopDeviceTreeLock);
     KeInitializeSpinLock(&IopDeviceActionLock);
-    InitializeListHead(&IopDeviceActionRequestList);
+    InitializeListHead(&IopPnpEnumerationRequestList);
+    KeInitializeEvent(&PiEnumerationFinished, NotificationEvent, TRUE);
+    ExInitializeResourceLite(&PiEngineLock);
+    ExInitializeResourceLite(&PiDeviceTreeLock);
 
     /* Get the default interface */
     PnpDefaultInterfaceType = IopDetermineDefaultInterfaceType();
