@@ -134,3 +134,6 @@ endif()
 
 set(USE_DUMMY_PSEH FALSE CACHE BOOL
 "Whether to disable PSEH support.")
+
+set(DISABLE_EXPORT_VERSIONING TRUE CACHE BOOL
+"Whether to disable export patching based on appcompat version.")
