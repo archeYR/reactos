@@ -471,7 +471,7 @@ IopWaitForBootDevicesStarted(VOID)
 {
     NTSTATUS Status;
 
-    Status = KeWaitForSingleObject(&PiEnumerationLock,
+    Status = KeWaitForSingleObject(&PiEnumerationFinished,
                                    Executive,
                                    KernelMode,
                                    FALSE,
@@ -616,14 +616,11 @@ IoInitSystem(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
     /* Initialize PnP root relations */
     IopEnumerateDevice(IopRootDeviceNode->PhysicalDeviceObject);
 
-<<<<<<< HEAD
 #if !defined(_WINKD_) && defined(KDBG)
-=======
+
     /* No one should need loader block any longer */
     IopLoaderBlock = NULL;
 
-#ifndef _WINKD_
->>>>>>> 22d176bd7b... [NTOSKRNL] Import HW IDs for install RoS from USB.
     /* Read KDB Data */
     KdbInit();
 
