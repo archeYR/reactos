@@ -466,6 +466,21 @@ IopMarkBootPartition(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
 }
 
 BOOLEAN
+NTAPI
+IopWaitForBootDevicesStarted(VOID)
+{
+    NTSTATUS Status;
+
+    Status = KeWaitForSingleObject(&PiEnumerationFinished,
+                                   Executive,
+                                   KernelMode,
+                                   FALSE,
+                                   NULL);
+
+    return NT_SUCCESS(Status);
+}
+
+BOOLEAN
 INIT_FUNCTION
 NTAPI
 IoInitSystem(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
