@@ -33,6 +33,7 @@ extern BOOLEAN PnpSystemInit;
 
 PDRIVER_OBJECT IopRootDriverObject;
 PIO_BUS_TYPE_GUID_LIST PnpBusTypeGuidList = NULL;
+LIST_ENTRY IopDeviceActionRequestList;
 WORK_QUEUE_ITEM IopDeviceActionWorkItem;
 BOOLEAN IopDeviceActionInProgress;
 KSPIN_LOCK IopDeviceActionLock;
@@ -5263,52 +5264,6 @@ IoRequestDeviceEject(IN PDEVICE_OBJECT PhysicalDeviceObject)
 cleanup:
     IopQueueTargetDeviceEvent(&GUID_DEVICE_EJECT_VETOED,
                               &DeviceNode->InstancePath);
-}
-
-/*
- * @implemented
- */
-VOID
-NTAPI
-IoInvalidateDeviceRelations(
-    IN PDEVICE_OBJECT DeviceObject,
-    IN DEVICE_RELATION_TYPE Type)
-{
-    DEVICE_ACTION_DATA ActionData;
-
-    ActionData.DeviceObject = DeviceObject;
-    ActionData.Action = DeviceActionInvalidateDeviceRelations;
-    ActionData.InvalidateDeviceRelations.Type = Type;
-
-    IopQueueDeviceAction(&ActionData);
-}
-
-/*
- * @implemented
- */
-NTSTATUS
-NTAPI
-IoSynchronousInvalidateDeviceRelations(
-    IN PDEVICE_OBJECT DeviceObject,
-    IN DEVICE_RELATION_TYPE Type)
-{
-    PAGED_CODE();
-
-    switch (Type)
-    {
-        case BusRelations:
-            /* Enumerate the device */
-            return IopEnumerateDevice(DeviceObject);
-        case PowerRelations:
-             /* Not handled yet */
-             return STATUS_NOT_IMPLEMENTED;
-        case TargetDeviceRelation:
-            /* Nothing to do */
-            return STATUS_SUCCESS;
-        default:
-            /* Ejection relations are not supported */
-            return STATUS_NOT_SUPPORTED;
-    }
 }
 
 /*
