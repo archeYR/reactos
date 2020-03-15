@@ -32,7 +32,7 @@ HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\PCI#CC_0C0310","Cl
 HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\PCI#CC_0C0320","Service",0x00000000,"usbehci"
 HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\PCI#CC_0C0320","ClassGUID",0x00000000,"{36FC9E60-C465-11CF-8056-444553540000}"
 
-HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\PCI#CC_0C0330","Service",0x00000000,"amdxhc"
+HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\PCI#CC_0C0330","Service",0x00000000,"amdxhci"
 HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\PCI#CC_0C0330","ClassGUID",0x00000000,"{36FC9E60-C465-11CF-8056-444553540000}"
 
 HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\USB#Class_08&SubClass_06&Prot_50","Service",0x00000000,"usbstor"
@@ -44,17 +44,23 @@ HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\USB#COMPOSITE","Cl
 HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\USB#CLASS_09","Service",0x00000000,"usbhub"
 HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\USB#CLASS_09","ClassGUID",0x00000000,"{36FC9E60-C465-11CF-8056-444553540000}"
 
-HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\AMDUSB30#CLASS_09","Service",0x00000000,"amdhub30"
-HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\AMDUSB30#CLASS_09","ClassGUID",0x00000000,"{36FC9E60-C465-11CF-8056-444553540000}"
-
 HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\USB#ROOT_HUB","Service",0x00000000,"usbhub"
 HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\USB#ROOT_HUB","ClassGUID",0x00000000,"{36FC9E60-C465-11CF-8056-444553540000}"
 
+HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\GNUSB3#ROOT_HUB30","Service",0x00000000,"amdhub3"
+HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\GNUSB3#ROOT_HUB30","ClassGUID",0x00000000,"{36FC9E60-C465-11CF-8056-444553540000}"
+
+HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\GNUSB3#EXT_HUB10","Service",0x00000000,"amdhub3"
+HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\GNUSB3#EXT_HUB10","ClassGUID",0x00000000,"{36FC9E60-C465-11CF-8056-444553540000}"
+
+HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\GNUSB3#EXT_HUB20","Service",0x00000000,"amdhub3"
+HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\GNUSB3#EXT_HUB20","ClassGUID",0x00000000,"{36FC9E60-C465-11CF-8056-444553540000}"
+
+HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\GNUSB3#EXT_HUB30","Service",0x00000000,"amdhub3"
+HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\GNUSB3#EXT_HUB30","ClassGUID",0x00000000,"{36FC9E60-C465-11CF-8056-444553540000}"
+
 HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\USB#ROOT_HUB20","Service",0x00000000,"usbhub"
 HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\USB#ROOT_HUB20","ClassGUID",0x00000000,"{36FC9E60-C465-11CF-8056-444553540000}"
-
-HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\AMDUSB30#ROOT_HUB30","Service",0x00000000,"amdhub30"
-HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\AMDUSB30#ROOT_HUB30","ClassGUID",0x00000000,"{36FC9E60-C465-11CF-8056-444553540000}"
 
 HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\GenDisk","Service",0x00000000,"disk"
 HKLM,"SYSTEM\CurrentControlSet\Control\CriticalDeviceDatabase\GenDisk","ClassGUID",0x00000000,"{4D36E967-E325-11CE-BFC1-08002BE10318}"
@@ -1720,19 +1726,12 @@ HKLM,"SYSTEM\CurrentControlSet\Services\usbhub","ImagePath",0x00020000,"system32
 HKLM,"SYSTEM\CurrentControlSet\Services\usbhub","Start",0x00010001,0x00000000
 HKLM,"SYSTEM\CurrentControlSet\Services\usbhub","Type",0x00010001,0x00000001
 
-; AMD USB 3.0 hub driver
-HKLM,"SYSTEM\CurrentControlSet\Services\amdhub30","ErrorControl",0x00010001,0x00000001
-HKLM,"SYSTEM\CurrentControlSet\Services\amdhub30","Group",0x00000000,"Boot Bus Extender"
-HKLM,"SYSTEM\CurrentControlSet\Services\amdhub30","ImagePath",0x00020000,"system32\drivers\amdhub30.sys"
-HKLM,"SYSTEM\CurrentControlSet\Services\amdhub30","Start",0x00010001,0x00000000
-HKLM,"SYSTEM\CurrentControlSet\Services\amdhub30","Type",0x00010001,0x00000001
-
-; xHCI controller driver
-HKLM,"SYSTEM\CurrentControlSet\Services\amdxhc","ErrorControl",0x00010001,0x00000001
-HKLM,"SYSTEM\CurrentControlSet\Services\amdxhc","Group",0x00000000,"Boot Bus Extender"
-HKLM,"SYSTEM\CurrentControlSet\Services\amdxhc","ImagePath",0x00020000,"system32\drivers\amdxhc.sys"
-HKLM,"SYSTEM\CurrentControlSet\Services\amdxhc","Start",0x00010001,0x00000000
-HKLM,"SYSTEM\CurrentControlSet\Services\amdxhc","Type",0x00010001,0x00000001
+; USB hub 30 driver
+HKLM,"SYSTEM\CurrentControlSet\Services\amdhub3","ErrorControl",0x00010001,0x00000001
+HKLM,"SYSTEM\CurrentControlSet\Services\amdhub3","Group",0x00000000,"Boot Bus Extender"
+HKLM,"SYSTEM\CurrentControlSet\Services\amdhub3","ImagePath",0x00020000,"system32\drivers\amdhub3.sys"
+HKLM,"SYSTEM\CurrentControlSet\Services\amdhub3","Start",0x00010001,0x00000000
+HKLM,"SYSTEM\CurrentControlSet\Services\amdhub3","Type",0x00010001,0x00000001
 
 ; EHCI controller driver
 HKLM,"SYSTEM\CurrentControlSet\Services\usbehci","ErrorControl",0x00010001,0x00000001
@@ -1740,6 +1739,13 @@ HKLM,"SYSTEM\CurrentControlSet\Services\usbehci","Group",0x00000000,"Boot Bus Ex
 HKLM,"SYSTEM\CurrentControlSet\Services\usbehci","ImagePath",0x00020000,"system32\drivers\usbehci.sys"
 HKLM,"SYSTEM\CurrentControlSet\Services\usbehci","Start",0x00010001,0x00000000
 HKLM,"SYSTEM\CurrentControlSet\Services\usbehci","Type",0x00010001,0x00000001
+
+; xHCI controller driver
+HKLM,"SYSTEM\CurrentControlSet\Services\amdxhci","ErrorControl",0x00010001,0x00000001
+HKLM,"SYSTEM\CurrentControlSet\Services\amdxhci","Group",0x00000000,"Boot Bus Extender"
+HKLM,"SYSTEM\CurrentControlSet\Services\amdxhci","ImagePath",0x00020000,"system32\drivers\amdxhci.sys"
+HKLM,"SYSTEM\CurrentControlSet\Services\amdxhci","Start",0x00010001,0x00000000
+HKLM,"SYSTEM\CurrentControlSet\Services\amdxhci","Type",0x00010001,0x00000001
 
 ; OHCI controller driver
 HKLM,"SYSTEM\CurrentControlSet\Services\usbohci","ErrorControl",0x00010001,0x00000001

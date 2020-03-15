@@ -23,7 +23,7 @@ HKLM,"SYSTEM\CurrentControlSet\Services\Ntfs","Start",0x00010001,0x00000004
 HKLM,"SYSTEM\CurrentControlSet\Control\Session Manager","BootExecute",0x00010000,""
 
 ; Shell
-HKLM,"SYSTEM\Setup","CmdLine",0x00020000,"setup -mini"
+HKLM,"SYSTEM\Setup","CmdLine",0x00020000,"setup -newsetup"
 
 ; User Profile List
 HKLM,"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList",,0x00000012
