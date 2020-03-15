@@ -1,7 +1,5 @@
 
 list(APPEND INF_FILES
-    amdhub30.inf
-    amdxhc.inf
     audio.inf
     battery.inf
     bda.inf
