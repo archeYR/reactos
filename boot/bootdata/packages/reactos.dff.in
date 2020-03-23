@@ -94,6 +94,8 @@ Signature = "$Windows NT$"
 .InfEnd
 
 ; Optional/proprietary files
+"modules/optional/amdxhci.sys"                        3  optional
+"modules/optional/amdhub3.sys"                        3  optional
 "modules/optional/DroidSansFallback.ttf"              4  optional
 "modules/optional/mingliu.ttc"                        4  optional
 "modules/optional/simsun.ttc"                         4  optional

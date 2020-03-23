@@ -1,6 +1,7 @@
 
 list(APPEND INF_FILES
     acpi.inf
+    amdxhci.inf
     audio.inf
     battery.inf
     bda.inf

@@ -1,0 +1,223 @@
+[Version]
+Signature="$WINDOWS NT$"
+Provider=%AMD%
+Class=USB
+ClassGuid={36FC9E60-C465-11CF-8056-444553540000}
+DriverVer = 12/11/2017,2.0.0.0068
+CatalogFile.ntx86=AMDXHCI.cat
+CatalogFile.ntamd64=AMDXHCI.cat
+CatalogFile=AMDXHCI.cat
+
+[SourceDisksNames]
+ 1 = %AMD_DISKID%
+ 2 = %AMD_DISKID_ENHANCE%
+
+[SourceDisksFiles]
+ AMDXHCI.sys = 1
+ AMDHub3.sys = 1
+ usbstor.sys = 2
+
+[DestinationDirs]
+ DefaultDestDir = 12
+
+[Manufacturer]
+%AMD.Mfg%=AMD.Section,NTAMD64
+
+[AMD.Section]
+%AMD_XHCI.DeviceDesc%=AMDXHCI,PCI\CC_0C03
+%AMD_XHCI.DeviceDesc%=AMDXHCI,PCI\CC_0C0330
+%AMD_XHCI.DeviceDesc%=AMDXHCI,PCI\VEN_1022&CC_0C0330
+%AMD_XHCI.DeviceDesc%=AMDXHCI,PCI\VEN_8086&CC_0C0330
+%AMD_XHCI.DeviceDesc%=AMDXHCI,PCI\VEN_1022&DEV_149C
+%AMD_XHCI.DeviceDesc%=AMDXHCI,PCI\VEN_1022&DEV_149C&CC_0C03
+%AMD_XHCI.DeviceDesc%=AMDXHCI,PCI\VEN_1022&DEV_149C&CC_0C0330
+%AMD_RTH3.DeviceDesc%=AMDHub3,GNUSB3\ROOT_HUB30
+%AMD_HUB1.DeviceDesc%=AMDHub3,GNUSB3\EXT_HUB10
+%AMD_HUB2.DeviceDesc%=AMDHub3,GNUSB3\EXT_HUB20
+%AMD_HUB3.DeviceDesc%=AMDHub3,GNUSB3\EXT_HUB30
+%AMD_STOR.DeviceDesc%=usbstor,GNUSB\Class_08&SubClass_06&Prot_50 
+%AMD_UASP.DeviceDesc%=usbstor,GNUSB\Class_08&SubClass_06&Prot_62
+
+[AMD.Section.NTAMD64]
+%AMD_XHCI.DeviceDesc%=AMDXHCI,PCI\CC_0C03
+%AMD_XHCI.DeviceDesc%=AMDXHCI,PCI\CC_0C0330
+%AMD_XHCI.DeviceDesc%=AMDXHCI,PCI\VEN_1022&CC_0C0330
+%AMD_XHCI.DeviceDesc%=AMDXHCI,PCI\VEN_8086&CC_0C0330
+%AMD_XHCI.DeviceDesc%=AMDXHCI,PCI\VEN_1022&DEV_149C
+%AMD_XHCI.DeviceDesc%=AMDXHCI,PCI\VEN_1022&DEV_149C&CC_0C03
+%AMD_XHCI.DeviceDesc%=AMDXHCI,PCI\VEN_1022&DEV_149C&CC_0C0330
+%AMD_RTH3.DeviceDesc%=AMDHub3,GNUSB3\ROOT_HUB30
+%AMD_HUB1.DeviceDesc%=AMDHub3,GNUSB3\EXT_HUB10
+%AMD_HUB2.DeviceDesc%=AMDHub3,GNUSB3\EXT_HUB20
+%AMD_HUB3.DeviceDesc%=AMDHub3,GNUSB3\EXT_HUB30
+%AMD_STOR.DeviceDesc%=usbstor,GNUSB\Class_08&SubClass_06&Prot_50
+%AMD_UASP.DeviceDesc%=usbstor,GNUSB\Class_08&SubClass_06&Prot_62
+
+; --------------------------------------------------------------
+; xHCI
+; --------------------------------------------------------------
+[AMDXHCI.NT]
+CopyFiles=xHCI.CopyFiles
+AddReg=xHCI.AddReg
+DelFiles=xHCI.DelFiles
+
+[AMDXHCI.NT.HW]
+Include=machine.inf
+Needs=PciIoSpaceNotRequired
+Addreg=MSIInterrupts.reg
+
+[AMDXHCI.NT.Services]
+AddService = AMDXHCI, 0x00000002, AMDXHCI.AddService
+
+[AMDXHCI.NTAMD64]
+CopyFiles=xHCI.CopyFiles
+AddReg=xHCI.AddReg
+DelFiles=xHCI.DelFiles
+
+[AMDXHCI.NTAMD64.HW]
+Include=machine.inf
+Needs=PciIoSpaceNotRequired
+Addreg=MSIInterrupts.reg
+
+[AMDXHCI.NTAMD64.Services]
+AddService = AMDXHCI, 0x00000002, AMDXHCI.AddService
+
+[AMDXHCI.AddService]
+DisplayName    = %AMD_XHCI.DriverDesc%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 0                  ; SERVICE_DEMAND_START
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %10%\System32\Drivers\AMDXHCI.sys
+LoadOrderGroup = Base
+
+[xHCI.CopyFiles]
+AMDXHCI.sys
+
+[xHCI.AddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,AMDXHCI.sys
+HKR,,PerformanceMode, 0x00010001, 260
+
+[xHCI.DelFiles]
+AMDXHCI.sys,,,1
+
+[MSIInterrupts.reg]
+HKR, "Interrupt Management", 0x00000010
+HKR, "Interrupt Management\MessageSignaledInterruptProperties", 0x00000010
+HKR, "Interrupt Management\MessageSignaledInterruptProperties", MSISupported, 0x00010001, 1
+HKR, "Interrupt Management\MessageSignaledInterruptProperties", MessageNumberLimit, 0x00010001, 1
+
+; --------------------------------------------------------------
+; Hub3
+; --------------------------------------------------------------
+[AMDHub3.NT]
+CopyFiles=Hub3.CopyFiles
+AddReg=Hub3.AddReg, U1U2.AddReg, POWER.AddReg
+;DelFiles=Hub3.DelFiles
+
+[AMDHub3.NTAMD64]
+CopyFiles=Hub3.CopyFiles
+AddReg=Hub3.AddReg, U1U2.AddReg, POWER.AddReg
+;DelFiles=Hub3.DelFiles
+
+[AMDHub3.NT.Services]
+AddService = AMDHub3, 0x00000002, AMDHub3.AddService
+
+[AMDHub3.NTAMD64.Services]
+AddService = AMDHub3, 0x00000002, AMDHub3.AddService
+
+[AMDHub3.AddService]
+DisplayName    = %AMD_HUB3.DriverDesc%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 0                  ; SERVICE_DEMAND_START
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %10%\System32\Drivers\AMDHub3.sys
+LoadOrderGroup = Base
+
+[Hub3.CopyFiles]
+AMDHub3.sys
+
+[Hub3.AddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,AMDHub3.sys
+
+[Hub3.DelFiles]
+AMDHub3.sys,,,1
+
+[U1U2.AddReg]
+HKR,,DeviceEnableU1, 0x00010001, 0
+HKR,,DeviceEnableU2, 0x00010001, 0
+HKR,,DeviceEnableU1TimeOut, 0x00010001, 0
+HKR,,DeviceEnableU2TimeOut, 0x00010001, 0
+HKR,,HubEnableU1, 0x00010001, 0
+HKR,,HubEnableU2, 0x00010001, 0
+HKR,,HubEnableU1TimeOut, 0x00010001, 0
+HKR,,HubEnableU2TimeOut, 0x00010001, 0
+
+[POWER.AddReg]
+HKR,,PowerSavingMode, 0x00010001, 0
+
+; --------------------------------------------------------------
+; usbstor
+; --------------------------------------------------------------
+[usbstor.NT]
+CopyFiles=usbstor.CopyFiles
+AddReg=usbstor.AddReg
+;DelFiles=Hub3.DelFiles
+
+[usbstor.NTAMD64]
+CopyFiles=usbstor.CopyFiles
+AddReg=usbstor.AddReg
+;DelFiles=Hub3.DelFiles
+
+[usbstor.NT.Services]
+AddService = usbstor, 0x00000002, usbstor.AddService
+
+[usbstor.NTAMD64.Services]
+AddService = usbstor, 0x00000002, usbstor.AddService
+
+[usbstor.AddService]
+DisplayName    = %AMD_STOR.DriverDesc%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 3                  ; SERVICE_DEMAND_START
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %10%\System32\Drivers\usbstor.sys
+LoadOrderGroup = Base
+
+[usbstor.CopyFiles]
+usbstor.sys
+
+[usbstor.AddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,usbstor.sys
+
+[usbstor.DelFiles]
+usbstor.sys,,,1
+
+; --------------------------------------------------------------
+; Common
+; --------------------------------------------------------------
+[DestinationDirs]
+XHCI.CopyFiles = 10,SYSTEM32\DRIVERS
+XHCI.DelFiles  = 10,SYSTEM32\DRIVERS
+Hub3.CopyFiles = 10,SYSTEM32\DRIVERS
+Hub3.DelFiles  = 10,SYSTEM32\DRIVERS
+usbstor.CopyFiles = 10,SYSTEM32\DRIVERS
+usbstor.DelFiles  = 10,SYSTEM32\DRIVERS
+
+[Strings]
+AMD="Advanced Micro Devices, Inc."
+AMD.Mfg="Advanced Micro Devices, Inc."
+AMD_DISKID = "AMD USB 3.2 Device Driver Installation Disk"
+AMD_XHCI.DriverDesc="AMD USB3.2 eXtensible Host Controller Driver"
+AMD_HUB3.DriverDesc="AMD USB3.2 Hub Driver"
+AMD_XHCI.DeviceDesc="AMD USB3.2 eXtensible Host Controller"
+AMD_RTH3.DeviceDesc="AMD USB3.2 Root Hub"
+AMD_HUB1.DeviceDesc="AMD USB Hub"
+AMD_HUB2.DeviceDesc="AMD USB HighSpeed Hub"
+AMD_HUB3.DeviceDesc="AMD USB SuperSpeed Hub"
+USBClassName="Universal Serial Bus controllers"
+AMD_STOR.DeviceDesc = "AMD USB Mass Storage Device"
+AMD_UASP.DeviceDesc = "AMD USB Attached SCSI Protocol (UASP) Device"
+AMD_STOR.DriverDesc = "AMD Enhance USB BOT/UASP Mass Storage Driver"
+AMD_DISKID_ENHANCE = "AMD Enhance USB Mass Storage Driver Installation Disk"
