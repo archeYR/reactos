@@ -594,7 +594,7 @@ ClasspInternalSetMediaChangeState(
     IN BOOLEAN KnownStateChange // can ignore oldstate == unknown
     )
 {
-#if DBG
+#if 0
     PCSTR states[] = {"Unknown", "Present", "Not Present"};
 #endif
     MEDIA_CHANGE_DETECTION_STATE oldMediaState;

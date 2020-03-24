@@ -5814,7 +5814,7 @@ ClassCreateDeviceObject(
                           SynchronizationEvent,
                           FALSE);
 
-        #if DBG
+        #if 0
             KeInitializeSpinLock(&commonExtension->RemoveTrackingSpinlock);
             commonExtension->RemoveTrackingList = NULL;
         #else
@@ -7677,7 +7677,7 @@ ClassSendDeviceIoControlSynchronous(
     method = IoControlCode & 3;
 
 
-    #if DBG // Begin Argument Checking (nop in fre version)
+    #if 0 // Begin Argument Checking (nop in fre version)
 
         ASSERT(ARGUMENT_PRESENT(IoStatus));
 
@@ -7972,7 +7972,7 @@ ClassSendIrpSynchronous(
 
     if (status == STATUS_PENDING) {
 
-        #if DBG
+        #if 0
             LARGE_INTEGER timeout;
 
             timeout.QuadPart = (LONGLONG)(-1 * 10 * 1000 * (LONGLONG)1000 *
@@ -8573,7 +8573,7 @@ ClassAddChild(
         ClassAcquireChildLock(Parent);
     }
 
-    #if DBG
+    #if 0
         //
         // Make sure this child's not already in the list.
         //
@@ -8756,7 +8756,7 @@ ClasspRetryRequestDpc(
         irp = CONTAINING_RECORD(retryList, IRP, Tail.Overlay.DriverContext[0]);
         DebugPrint((ClassDebugDelayedRetry, "ClassRetry:  -- %p\n", irp));
         retryList = retryList->Next;
-        #if DBG
+        #if 0
             irp->Tail.Overlay.DriverContext[0] = ULongToPtr(0xdddddddd); // invalidate data
             irp->Tail.Overlay.DriverContext[1] = ULongToPtr(0xdddddddd); // invalidate data
             irp->Tail.Overlay.DriverContext[2] = ULongToPtr(0xdddddddd); // invalidate data

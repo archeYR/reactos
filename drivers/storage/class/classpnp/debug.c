@@ -23,7 +23,7 @@ Revision History:
 
 #include "classp.h"
 
-#if DBG
+#if 0
 
     //
     // default to not breaking in for lost irps, five minutes before we even
@@ -686,7 +686,7 @@ Revision History:
     // We have to keep this in the retail build for legacy.
     VOID ClassDebugPrint(CLASS_DEBUG_LEVEL DebugPrintLevel, PCCHAR DebugMessage, ...)
     {
-        DbgPrint("retail build\n");
+        return;
     } 
 
 #endif 

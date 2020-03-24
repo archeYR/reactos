@@ -492,9 +492,6 @@ PMDL NTAPI BuildDeviceInputMdl(PVOID Buffer, ULONG BufferLen)
             MmProbeAndLockPages(mdl, KernelMode, IoWriteAccess);
 
         } _SEH2_EXCEPT(EXCEPTION_EXECUTE_HANDLER) {
-            NTSTATUS status = _SEH2_GetExceptionCode();
-
-            DBGWARN(("BuildReadMdl: MmProbeAndLockPages failed with %xh.", status));
             IoFreeMdl(mdl);
             mdl = NULL;
         } _SEH2_END;

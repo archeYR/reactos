@@ -86,16 +86,8 @@ ClassAcquireRemoveLockEx(
     )
 {
     PCOMMON_DEVICE_EXTENSION commonExtension = DeviceObject->DeviceExtension;
-    LONG lockValue;
 
-
-
-    //
-    // Grab the remove lock
-    //
-    lockValue = InterlockedIncrement(&commonExtension->RemoveLock);
-
-    #if DBG
+    #if 0
 
         DebugPrint((ClassDebugRemoveLock, "ClassAcquireRemoveLock: "
                     "Acquired for Object %p & irp %p - count is %d\n",
@@ -217,7 +209,7 @@ ClassReleaseRemoveLock(
     PCOMMON_DEVICE_EXTENSION commonExtension = DeviceObject->DeviceExtension;
     LONG lockValue;
 
-    #if DBG
+    #if 0
         PREMOVE_TRACKING_BLOCK *listEntry =
             (PREMOVE_TRACKING_BLOCK*)&commonExtension->RemoveTrackingList;
 
@@ -317,27 +309,7 @@ ClassReleaseRemoveLock(
 
     lockValue = InterlockedDecrement(&commonExtension->RemoveLock);
 
-    DebugPrint((ClassDebugRemoveLock, "ClassReleaseRemoveLock: "
-                "Released for Object %p & irp %p - count is %d\n",
-                DeviceObject, Tag, lockValue));
-
-    ASSERT(lockValue >= 0);
-
-    ASSERTMSG("RemoveLock decreased to meet LockLowWatermark",
-              ((LockLowWatermark == 0) || !(lockValue == LockLowWatermark)));
-
     if(lockValue == 0) {
-
-        ASSERT(commonExtension->IsRemoved);
-
-        //
-        // The device needs to be removed.  Signal the remove event
-        // that it's safe to go ahead.
-        //
-
-        DebugPrint((ClassDebugRemoveLock, "ClassReleaseRemoveLock: "
-                    "Release for object %p & irp %p caused lock to go to zero\n",
-                    DeviceObject, Tag));
 
         KeSetEvent(&commonExtension->RemoveEvent,
                    IO_NO_INCREMENT,
@@ -380,7 +352,7 @@ ClassCompleteRequest(
     )
 {
 
-    #if DBG
+    #if 0
         PCOMMON_DEVICE_EXTENSION commonExtension = DeviceObject->DeviceExtension;
         PREMOVE_TRACKING_BLOCK *listEntry =
             (PREMOVE_TRACKING_BLOCK*)&commonExtension->RemoveTrackingList;
