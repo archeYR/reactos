@@ -1164,7 +1164,7 @@ ClasspPowerHandler(
 
     context = &(fdoExtension->PowerContext);
 
-#if DBG
+#if 0
     //
     // Mark the context as in use.  We should be synchronizing this but
     // since it's just for debugging purposes we don't worry too much.

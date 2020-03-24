@@ -26,7 +26,7 @@ Revision History:
 
 VOID ClassDebugPrint(CLASS_DEBUG_LEVEL DebugPrintLevel, PCCHAR DebugMessage, ...);
 
-#if DBG
+#if 0
 
     typedef struct _CLASSPNP_GLOBALS {
 
