@@ -1,361 +1,455 @@
 /*
- * ReactOS Generic Framebuffer display driver
- *
- * Copyright (C) 2004 Filip Navara
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * PROJECT:         ReactOS Framebuffer Display Driver
+ * LICENSE:         Microsoft NT4 DDK Sample Code License
+ * FILE:            win32ss/drivers/displays/framebuf_new/pointer.c
+ * PURPOSE:         Hardware Pointer Support
+ * PROGRAMMERS:     Copyright (c) 1992-1995 Microsoft Corporation
  */
 
-#include "framebuf.h"
+#include "driver.h"
 
-#ifndef EXPERIMENTAL_MOUSE_CURSOR_SUPPORT
+BOOL NTAPI bCopyColorPointer(
+PPDEV ppdev,
+SURFOBJ *psoMask,
+SURFOBJ *psoColor,
+XLATEOBJ *pxlo);
 
-/*
- * DrvSetPointerShape
- *
- * Sets the new pointer shape.
- *
- * Status
- *    @unimplemented
- */
+BOOL NTAPI bCopyMonoPointer(
+PPDEV ppdev,
+SURFOBJ *psoMask);
 
-ULONG APIENTRY
-DrvSetPointerShape(
-   IN SURFOBJ *pso,
-   IN SURFOBJ *psoMask,
-   IN SURFOBJ *psoColor,
-   IN XLATEOBJ *pxlo,
-   IN LONG xHot,
-   IN LONG yHot,
-   IN LONG x,
-   IN LONG y,
-   IN RECTL *prcl,
-   IN FLONG fl)
+BOOL NTAPI bSetHardwarePointerShape(
+SURFOBJ  *pso,
+SURFOBJ  *psoMask,
+SURFOBJ  *psoColor,
+XLATEOBJ *pxlo,
+LONG      x,
+LONG      y,
+FLONG     fl);
+
+/******************************Public*Routine******************************\
+* DrvMovePointer
+*
+* Moves the hardware pointer to a new position.
+*
+\**************************************************************************/
+
+VOID NTAPI DrvMovePointer
+(
+    SURFOBJ *pso,
+    LONG     x,
+    LONG     y,
+    RECTL   *prcl
+)
 {
-/*   return SPS_DECLINE;*/
-   return EngSetPointerShape(pso, psoMask, psoColor, pxlo, xHot, yHot, x, y, prcl, fl);
+    PPDEV ppdev = (PPDEV) pso->dhpdev;
+    DWORD returnedDataLength;
+    VIDEO_POINTER_POSITION NewPointerPosition;
+
+    // We don't use the exclusion rectangle because we only support
+    // hardware Pointers. If we were doing our own Pointer simulations
+    // we would want to update prcl so that the engine would call us
+    // to exclude out pointer before drawing to the pixels in prcl.
+
+    UNREFERENCED_PARAMETER(prcl);
+
+    if (x == -1)
+    {
+        //
+        // A new position of (-1,-1) means hide the pointer.
+        //
+
+        if (EngDeviceIoControl(ppdev->hDriver,
+                               IOCTL_VIDEO_DISABLE_POINTER,
+                               NULL,
+                               0,
+                               NULL,
+                               0,
+                               &returnedDataLength))
+        {
+            //
+            // Not the end of the world, print warning in checked build.
+            //
+
+            DISPDBG((1, "DISP vMoveHardwarePointer failed IOCTL_VIDEO_DISABLE_POINTER\n"));
+        }
+    }
+    else
+    {
+        NewPointerPosition.Column = (SHORT) x - (SHORT) (ppdev->ptlHotSpot.x);
+        NewPointerPosition.Row    = (SHORT) y - (SHORT) (ppdev->ptlHotSpot.y);
+
+        //
+        // Call miniport driver to move Pointer.
+        //
+
+        if (EngDeviceIoControl(ppdev->hDriver,
+                               IOCTL_VIDEO_SET_POINTER_POSITION,
+                               &NewPointerPosition,
+                               sizeof(VIDEO_POINTER_POSITION),
+                               NULL,
+                               0,
+                               &returnedDataLength))
+        {
+            //
+            // Not the end of the world, print warning in checked build.
+            //
+
+            DISPDBG((1, "DISP vMoveHardwarePointer failed IOCTL_VIDEO_SET_POINTER_POSITION\n"));
+        }
+    }
 }
 
-/*
- * DrvMovePointer
- *
- * Moves the pointer to a new position and ensures that GDI does not interfere
- * with the display of the pointer.
- *
- * Status
- *    @unimplemented
- */
+/******************************Public*Routine******************************\
+* DrvSetPointerShape
+*
+* Sets the new pointer shape.
+*
+\**************************************************************************/
 
-VOID APIENTRY
-DrvMovePointer(
-   IN SURFOBJ *pso,
-   IN LONG x,
-   IN LONG y,
-   IN RECTL *prcl)
+ULONG NTAPI DrvSetPointerShape
+(
+    SURFOBJ  *pso,
+    SURFOBJ  *psoMask,
+    SURFOBJ  *psoColor,
+    XLATEOBJ *pxlo,
+    LONG      xHot,
+    LONG      yHot,
+    LONG      x,
+    LONG      y,
+    RECTL    *prcl,
+    FLONG     fl
+)
 {
-   EngMovePointer(pso, x, y, prcl);
+    PPDEV   ppdev = (PPDEV) pso->dhpdev;
+    DWORD   returnedDataLength;
+
+    // We don't use the exclusion rectangle because we only support
+    // hardware Pointers. If we were doing our own Pointer simulations
+    // we would want to update prcl so that the engine would call us
+    // to exclude out pointer before drawing to the pixels in prcl.
+    UNREFERENCED_PARAMETER(prcl);
+
+    if (ppdev->pPointerAttributes == (PVIDEO_POINTER_ATTRIBUTES) NULL)
+    {
+        // Mini-port has no hardware Pointer support.
+        return(SPS_ERROR);
+    }
+
+    // See if we are being asked to hide the pointer
+
+    if (psoMask == (SURFOBJ *) NULL)
+    {
+        if (EngDeviceIoControl(ppdev->hDriver,
+                               IOCTL_VIDEO_DISABLE_POINTER,
+                               NULL,
+                               0,
+                               NULL,
+                               0,
+                               &returnedDataLength))
+        {
+            //
+            // It should never be possible to fail.
+            // Message supplied for debugging.
+            //
+
+            DISPDBG((1, "DISP bSetHardwarePointerShape failed IOCTL_VIDEO_DISABLE_POINTER\n"));
+        }
+
+        return(TRUE);
+    }
+
+    ppdev->ptlHotSpot.x = xHot;
+    ppdev->ptlHotSpot.y = yHot;
+
+    if (!bSetHardwarePointerShape(pso,psoMask,psoColor,pxlo,x,y,fl))
+    {
+            if (ppdev->fHwCursorActive) {
+                ppdev->fHwCursorActive = FALSE;
+
+                if (EngDeviceIoControl(ppdev->hDriver,
+                                       IOCTL_VIDEO_DISABLE_POINTER,
+                                       NULL,
+                                       0,
+                                       NULL,
+                                       0,
+                                       &returnedDataLength)) {
+
+                    DISPDBG((1, "DISP bSetHardwarePointerShape failed IOCTL_VIDEO_DISABLE_POINTER\n"));
+                }
+            }
+
+            //
+            // Mini-port declines to realize this Pointer
+            //
+
+            return(SPS_DECLINE);
+    }
+    else
+    {
+        ppdev->fHwCursorActive = TRUE;
+    }
+
+    return(SPS_ACCEPT_NOEXCLUDE);
 }
 
-#else
+/******************************Public*Routine******************************\
+* bSetHardwarePointerShape
+*
+* Changes the shape of the Hardware Pointer.
+*
+* Returns: True if successful, False if Pointer shape can't be hardware.
+*
+\**************************************************************************/
 
-VOID FASTCALL
-IntHideMousePointer(PPDEV ppdev, SURFOBJ *DestSurface)
+BOOL NTAPI bSetHardwarePointerShape(
+SURFOBJ  *pso,
+SURFOBJ  *psoMask,
+SURFOBJ  *psoColor,
+XLATEOBJ *pxlo,
+LONG      x,
+LONG      y,
+FLONG     fl)
 {
-   if (ppdev->PointerAttributes.Enable == FALSE)
-   {
-      return;
-   }
+    PPDEV     ppdev = (PPDEV) pso->dhpdev;
+    PVIDEO_POINTER_ATTRIBUTES pPointerAttributes = ppdev->pPointerAttributes;
+    DWORD     returnedDataLength;
 
-   ppdev->PointerAttributes.Enable = FALSE;
-   if (ppdev->PointerSaveSurface != NULL)
-   {
-      RECTL DestRect;
-      POINTL SrcPoint;
-      SURFOBJ *SaveSurface;
-      SURFOBJ *MaskSurface;
+    if (psoColor != (SURFOBJ *) NULL)
+    {
+        if ((ppdev->PointerCapabilities.Flags & VIDEO_MODE_COLOR_POINTER) &&
+                bCopyColorPointer(ppdev, psoMask, psoColor, pxlo))
+        {
+            pPointerAttributes->Flags |= VIDEO_MODE_COLOR_POINTER;
+        } else {
+            return(FALSE);
+        }
 
-      DestRect.left = max(ppdev->PointerAttributes.Column, 0);
-      DestRect.top = max(ppdev->PointerAttributes.Row, 0);
-      DestRect.right = min(
-         ppdev->PointerAttributes.Column + ppdev->PointerAttributes.Width,
-         ppdev->ScreenWidth - 1);
-      DestRect.bottom = min(
-         ppdev->PointerAttributes.Row + ppdev->PointerAttributes.Height,
-         ppdev->ScreenHeight - 1);
+    } else {
 
-      SrcPoint.x = max(-ppdev->PointerAttributes.Column, 0);
-      SrcPoint.y = max(-ppdev->PointerAttributes.Row, 0);
+        if ((ppdev->PointerCapabilities.Flags & VIDEO_MODE_MONO_POINTER) &&
+                bCopyMonoPointer(ppdev, psoMask))
+        {
+            pPointerAttributes->Flags |= VIDEO_MODE_MONO_POINTER;
+        } else {
+            return(FALSE);
+        }
+    }
 
-      SaveSurface = EngLockSurface(ppdev->PointerSaveSurface);
-      MaskSurface = EngLockSurface(ppdev->PointerMaskSurface);
-      EngBitBlt(DestSurface, SaveSurface, MaskSurface, NULL, NULL,
-                &DestRect, &SrcPoint, &SrcPoint, NULL, NULL, SRCCOPY);
-      EngUnlockSurface(MaskSurface);
-      EngUnlockSurface(SaveSurface);
-   }
+    //
+    // Initialize Pointer attributes and position
+    //
+
+    pPointerAttributes->Enable = 1;
+
+    //
+    // if x,y = -1,-1 then pass them directly to the miniport so that
+    // the cursor will be disabled
+
+    pPointerAttributes->Column = (SHORT)(x);
+    pPointerAttributes->Row    = (SHORT)(y);
+
+    if ((x != -1) || (y != -1)) {
+        pPointerAttributes->Column -= (SHORT)(ppdev->ptlHotSpot.x);
+        pPointerAttributes->Row    -= (SHORT)(ppdev->ptlHotSpot.y);
+    }
+
+    //
+    // set animate flags
+    //
+
+    if (fl & SPS_ANIMATESTART) {
+        pPointerAttributes->Flags |= VIDEO_MODE_ANIMATE_START;
+    } else if (fl & SPS_ANIMATEUPDATE) {
+        pPointerAttributes->Flags |= VIDEO_MODE_ANIMATE_UPDATE;
+    }
+
+    //
+    // Set the new Pointer shape.
+    //
+
+    if (EngDeviceIoControl(ppdev->hDriver,
+                           IOCTL_VIDEO_SET_POINTER_ATTR,
+                           pPointerAttributes,
+                           ppdev->cjPointerAttributes,
+                           NULL,
+                           0,
+                           &returnedDataLength)) {
+
+        DISPDBG((1, "DISP:Failed IOCTL_VIDEO_SET_POINTER_ATTR call\n"));
+        return(FALSE);
+    }
+
+    return(TRUE);
 }
 
-VOID FASTCALL
-IntShowMousePointer(PPDEV ppdev, SURFOBJ *DestSurface)
+/******************************Public*Routine******************************\
+* bCopyMonoPointer
+*
+* Copies two monochrome masks into a buffer of the maximum size handled by the
+* miniport, with any extra bits set to 0.  The masks are converted to topdown
+* form if they aren't already.  Returns TRUE if we can handle this pointer in
+* hardware, FALSE if not.
+*
+\**************************************************************************/
+
+BOOL NTAPI bCopyMonoPointer(
+    PPDEV    ppdev,
+    SURFOBJ *pso)
 {
-   if (ppdev->PointerAttributes.Enable)
-   {
-      return;
-   }
+    ULONG cy;
+    PBYTE pjSrcAnd, pjSrcXor;
+    LONG  lDeltaSrc, lDeltaDst;
+    LONG  lSrcWidthInBytes;
+    ULONG cxSrc = pso->sizlBitmap.cx;
+    ULONG cySrc = pso->sizlBitmap.cy;
+    ULONG cxSrcBytes;
+    PVIDEO_POINTER_ATTRIBUTES pPointerAttributes = ppdev->pPointerAttributes;
+    PBYTE pjDstAnd = pPointerAttributes->Pixels;
+    PBYTE pjDstXor = pPointerAttributes->Pixels;
 
-   ppdev->PointerAttributes.Enable = TRUE;
+    // Make sure the new pointer isn't too big to handle
+    // (*2 because both masks are in there)
+    if ((cxSrc > ppdev->PointerCapabilities.MaxWidth) ||
+        (cySrc > (ppdev->PointerCapabilities.MaxHeight * 2)))
+    {
+        return(FALSE);
+    }
 
-   /*
-    * Copy the pixels under the cursor to temporary surface.
-    */
+    pjDstXor += ((ppdev->PointerCapabilities.MaxWidth + 7) / 8) *
+            ppdev->pPointerAttributes->Height;
 
-   if (ppdev->PointerSaveSurface != NULL)
-   {
-      RECTL DestRect;
-      POINTL SrcPoint;
-      SURFOBJ *SaveSurface;
+    // set the desk and mask to 0xff
+    RtlFillMemory(pjDstAnd, ppdev->pPointerAttributes->WidthInBytes *
+            ppdev->pPointerAttributes->Height, 0xFF);
 
-      SrcPoint.x = max(ppdev->PointerAttributes.Column, 0);
-      SrcPoint.y = max(ppdev->PointerAttributes.Row, 0);
+    // Zero the dest XOR mask
+    RtlZeroMemory(pjDstXor, ppdev->pPointerAttributes->WidthInBytes *
+            ppdev->pPointerAttributes->Height);
 
-      DestRect.left = SrcPoint.x - ppdev->PointerAttributes.Column;
-      DestRect.top = SrcPoint.y - ppdev->PointerAttributes.Row;
-      DestRect.right = min(
-         ppdev->PointerAttributes.Width,
-         ppdev->ScreenWidth - ppdev->PointerAttributes.Column - 1);
-      DestRect.bottom = min(
-         ppdev->PointerAttributes.Height,
-         ppdev->ScreenHeight - ppdev->PointerAttributes.Row - 1);
+    cxSrcBytes = (cxSrc + 7) / 8;
 
-      SaveSurface = EngLockSurface(ppdev->PointerSaveSurface);
-      EngBitBlt(SaveSurface, DestSurface, NULL, NULL, NULL,
-                &DestRect, &SrcPoint, NULL, NULL, NULL, SRCCOPY);
-      EngUnlockSurface(SaveSurface);
-   }
+    if ((lDeltaSrc = pso->lDelta) < 0)
+    {
+        lSrcWidthInBytes = -lDeltaSrc;
+    } else {
+        lSrcWidthInBytes = lDeltaSrc;
+    }
 
-   /*
-    * Blit the cursor on the screen.
-    */
+    pjSrcAnd = (PBYTE) pso->pvBits;
 
-   {
-      RECTL DestRect;
-      POINTL SrcPoint;
-      SURFOBJ *ColorSurf;
-      SURFOBJ *MaskSurf;
+    // If the incoming pointer bitmap is bottomup, we'll flip it to topdown to
+    // save the miniport some work
+    if (!(pso->fjBitmap & BMF_TOPDOWN))
+    {
+        // Copy from the bottom
+        pjSrcAnd += lSrcWidthInBytes * (cySrc - 1);
+    }
 
-      DestRect.left = max(ppdev->PointerAttributes.Column, 0);
-      DestRect.top = max(ppdev->PointerAttributes.Row, 0);
-      DestRect.right = min(
-         ppdev->PointerAttributes.Column + ppdev->PointerAttributes.Width,
-         ppdev->ScreenWidth - 1);
-      DestRect.bottom = min(
-         ppdev->PointerAttributes.Row + ppdev->PointerAttributes.Height,
-         ppdev->ScreenHeight - 1);
+    // Height of just AND mask
+    cySrc = cySrc / 2;
 
-      SrcPoint.x = max(-ppdev->PointerAttributes.Column, 0);
-      SrcPoint.y = max(-ppdev->PointerAttributes.Row, 0);
+    // Point to XOR mask
+    pjSrcXor = pjSrcAnd + (cySrc * lDeltaSrc);
 
-      MaskSurf = EngLockSurface(ppdev->PointerMaskSurface);
-      if (ppdev->PointerColorSurface != NULL)
-      {
-         ColorSurf = EngLockSurface(ppdev->PointerColorSurface);
-         EngBitBlt(DestSurface, ColorSurf, MaskSurf, NULL, ppdev->PointerXlateObject,
-                   &DestRect, &SrcPoint, &SrcPoint, NULL, NULL, 0xAACC);
-         EngUnlockSurface(ColorSurf);
-      }
-      else
-      {
-         /* FIXME */
-         EngBitBlt(DestSurface, MaskSurf, NULL, NULL, ppdev->PointerXlateObject,
-                   &DestRect, &SrcPoint, NULL, NULL, NULL, SRCAND);
-         SrcPoint.y += ppdev->PointerAttributes.Height;
-         EngBitBlt(DestSurface, MaskSurf, NULL, NULL, ppdev->PointerXlateObject,
-                   &DestRect, &SrcPoint, NULL, NULL, NULL, SRCINVERT);
-      }
-      EngUnlockSurface(MaskSurf);
-   }
+    // Offset from end of one dest scan to start of next
+    lDeltaDst = ppdev->pPointerAttributes->WidthInBytes;
+
+    for (cy = 0; cy < cySrc; ++cy)
+    {
+        RtlCopyMemory(pjDstAnd, pjSrcAnd, cxSrcBytes);
+        RtlCopyMemory(pjDstXor, pjSrcXor, cxSrcBytes);
+
+        // Point to next source and dest scans
+        pjSrcAnd += lDeltaSrc;
+        pjSrcXor += lDeltaSrc;
+        pjDstAnd += lDeltaDst;
+        pjDstXor += lDeltaDst;
+    }
+
+    return(TRUE);
 }
 
-/*
- * DrvSetPointerShape
- *
- * Sets the new pointer shape.
- *
- * Status
- *    @implemented
- */
-
-ULONG APIENTRY
-DrvSetPointerShape(
-   IN SURFOBJ *pso,
-   IN SURFOBJ *psoMask,
-   IN SURFOBJ *psoColor,
-   IN XLATEOBJ *pxlo,
-   IN LONG xHot,
-   IN LONG yHot,
-   IN LONG x,
-   IN LONG y,
-   IN RECTL *prcl,
-   IN FLONG fl)
+/******************************Public*Routine******************************\
+* bCopyColorPointer
+*
+* Copies the mono and color masks into the buffer of maximum size
+* handled by the miniport with any extra bits set to 0. Color translation
+* is handled at this time. The masks are converted to topdown form if they
+* aren't already.  Returns TRUE if we can handle this pointer in  hardware,
+* FALSE if not.
+*
+\**************************************************************************/
+BOOL NTAPI bCopyColorPointer(
+PPDEV ppdev,
+SURFOBJ *psoMask,
+SURFOBJ *psoColor,
+XLATEOBJ *pxlo)
 {
-   PPDEV ppdev = (PPDEV)pso->dhpdev;
-   SURFOBJ *TempSurfObj;
-
-   IntHideMousePointer(ppdev, pso);
-
-   if (ppdev->PointerColorSurface != NULL)
-   {
-      /* FIXME: Is this really needed? */
-      TempSurfObj = EngLockSurface(ppdev->PointerColorSurface);
-      EngFreeMem(TempSurfObj->pvBits);
-      TempSurfObj->pvBits = NULL;
-      EngUnlockSurface(TempSurfObj);
-
-      EngDeleteSurface(ppdev->PointerColorSurface);
-      ppdev->PointerColorSurface = NULL;
-   }
-
-   if (ppdev->PointerMaskSurface != NULL)
-   {
-      /* FIXME: Is this really needed? */
-      TempSurfObj = EngLockSurface(ppdev->PointerMaskSurface);
-      EngFreeMem(TempSurfObj->pvBits);
-      TempSurfObj->pvBits = NULL;
-      EngUnlockSurface(TempSurfObj);
-
-      EngDeleteSurface(ppdev->PointerMaskSurface);
-      ppdev->PointerMaskSurface = NULL;
-   }
-
-   if (ppdev->PointerSaveSurface != NULL)
-   {
-      EngDeleteSurface(ppdev->PointerSaveSurface);
-      ppdev->PointerSaveSurface = NULL;
-   }
-
-   /*
-    * See if we are being asked to hide the pointer.
-    */
-
-   if (psoMask == NULL)
-   {
-      return SPS_ACCEPT_EXCLUDE;
-   }
-
-   ppdev->PointerHotSpot.x = xHot;
-   ppdev->PointerHotSpot.y = yHot;
-
-   ppdev->PointerXlateObject = pxlo;
-   ppdev->PointerAttributes.Column = x - xHot;
-   ppdev->PointerAttributes.Row = y - yHot;
-   ppdev->PointerAttributes.Width = psoMask->lDelta << 3;
-   ppdev->PointerAttributes.Height = (psoMask->cjBits / psoMask->lDelta) >> 1;
-
-   if (psoColor != NULL)
-   {
-      SIZEL Size;
-      PBYTE Bits;
-
-      Size.cx = ppdev->PointerAttributes.Width;
-      Size.cy = ppdev->PointerAttributes.Height;
-      Bits = EngAllocMem(0, psoColor->cjBits, ALLOC_TAG);
-      memcpy(Bits, psoColor->pvBits, psoColor->cjBits);
-
-      ppdev->PointerColorSurface = (HSURF)EngCreateBitmap(Size,
-         psoColor->lDelta, psoColor->iBitmapFormat, 0, Bits);
-   }
-
-   {
-      SIZEL Size;
-      PBYTE Bits;
-
-      Size.cx = ppdev->PointerAttributes.Width;
-      Size.cy = ppdev->PointerAttributes.Height << 1;
-      Bits = EngAllocMem(0, psoMask->cjBits, ALLOC_TAG);
-      memcpy(Bits, psoMask->pvBits, psoMask->cjBits);
-
-      ppdev->PointerMaskSurface = (HSURF)EngCreateBitmap(Size,
-         psoMask->lDelta, psoMask->iBitmapFormat, 0, Bits);
-   }
-
-   /*
-    * Create surface for saving the pixels under the cursor.
-    */
-
-   {
-      SIZEL Size;
-      LONG lDelta;
-
-      Size.cx = ppdev->PointerAttributes.Width;
-      Size.cy = ppdev->PointerAttributes.Height;
-
-      switch (pso->iBitmapFormat)
-      {
-         case BMF_8BPP: lDelta = Size.cx; break;
-         case BMF_16BPP: lDelta = Size.cx << 1; break;
-         case BMF_24BPP: lDelta = Size.cx * 3; break;
-         case BMF_32BPP: lDelta = Size.cx << 2; break;
-      }
-
-      ppdev->PointerSaveSurface = (HSURF)EngCreateBitmap(
-         Size, lDelta, pso->iBitmapFormat, BMF_NOZEROINIT, NULL);
-   }
-
-   IntShowMousePointer(ppdev, pso);
-
-   return SPS_ACCEPT_EXCLUDE;
+    return(FALSE);
 }
 
-/*
- * DrvMovePointer
- *
- * Moves the pointer to a new position and ensures that GDI does not interfere
- * with the display of the pointer.
- *
- * Status
- *    @implemented
- */
 
-VOID APIENTRY
-DrvMovePointer(
-   IN SURFOBJ *pso,
-   IN LONG x,
-   IN LONG y,
-   IN RECTL *prcl)
+/******************************Public*Routine******************************\
+* bInitPointer
+*
+* Initialize the Pointer attributes.
+*
+\**************************************************************************/
+
+BOOL NTAPI bInitPointer(PPDEV ppdev, DEVINFO *pdevinfo)
 {
-   PPDEV ppdev = (PPDEV)pso->dhpdev;
-   BOOL WasVisible;
+    DWORD    returnedDataLength;
 
-   WasVisible = ppdev->PointerAttributes.Enable;
-   if (WasVisible)
-   {
-      IntHideMousePointer(ppdev, pso);
-   }
+    ppdev->pPointerAttributes = (PVIDEO_POINTER_ATTRIBUTES) NULL;
+    ppdev->cjPointerAttributes = 0; // initialized in screen.c
 
-   if (x == -1)
-   {
-      return;
-   }
+    //
+    // Ask the miniport whether it provides pointer support.
+    //
 
-   ppdev->PointerAttributes.Column = x - ppdev->PointerHotSpot.x;
-   ppdev->PointerAttributes.Row = y - ppdev->PointerHotSpot.y;
+    if (EngDeviceIoControl(ppdev->hDriver,
+                           IOCTL_VIDEO_QUERY_POINTER_CAPABILITIES,
+                           NULL,
+                           0,
+                           &ppdev->PointerCapabilities,
+                           sizeof(ppdev->PointerCapabilities),
+                           &returnedDataLength))
+    {
+         return(FALSE);
+    }
 
-   if (WasVisible)
-   {
-      IntShowMousePointer(ppdev, pso);
-   }
+    //
+    // If neither mono nor color hardware pointer is supported, there's no
+    // hardware pointer support and we're done.
+    //
+
+    if ((!(ppdev->PointerCapabilities.Flags & VIDEO_MODE_MONO_POINTER)) &&
+        (!(ppdev->PointerCapabilities.Flags & VIDEO_MODE_COLOR_POINTER)))
+    {
+        return(TRUE);
+    }
+
+    //
+    // Note: The buffer itself is allocated after we set the
+    // mode. At that time we know the pixel depth and we can
+    // allocate the correct size for the color pointer if supported.
+    //
+
+    //
+    // Set the asynchronous support status (async means miniport is capable of
+    // drawing the Pointer at any time, with no interference with any ongoing
+    // drawing operation)
+    //
+
+    if (ppdev->PointerCapabilities.Flags & VIDEO_MODE_ASYNC_POINTER)
+    {
+       pdevinfo->flGraphicsCaps |= GCAPS_ASYNCMOVE;
+    }
+    else
+    {
+       pdevinfo->flGraphicsCaps &= ~GCAPS_ASYNCMOVE;
+    }
+
+    return(TRUE);
 }
-
-#endif

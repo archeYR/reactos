@@ -1,199 +1,332 @@
 /*
- * ReactOS Generic Framebuffer display driver
- *
- * Copyright (C) 2004 Filip Navara
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * PROJECT:         ReactOS Framebuffer Display Driver
+ * LICENSE:         Microsoft NT4 DDK Sample Code License
+ * FILE:            win32ss/drivers/displays/framebuf_new/palette.c
+ * PURPOSE:         Palette Support
+ * PROGRAMMERS:     Copyright (c) 1992-1995 Microsoft Corporation
  */
 
-#include "framebuf.h"
+#include "driver.h"
 
-/*
- * Standard color that must be in palette, because they're used for
- * drawing window borders and other GUI elements.
- */
+// Global Table defining the 20 Window Default Colors.        For 256 color
+// palettes the first 10 must be put at the beginning of the palette
+// and the last 10 at the end of the palette.
 
 const PALETTEENTRY BASEPALETTE[20] =
 {
-   { 0x00, 0x00, 0x00, 0x00 },
-   { 0x80, 0x00, 0x00, 0x00 },
-   { 0x00, 0x80, 0x00, 0x00 },
-   { 0x80, 0x80, 0x00, 0x00 },
-   { 0x00, 0x00, 0x80, 0x00 },
-   { 0x80, 0x00, 0x80, 0x00 },
-   { 0x00, 0x80, 0x80, 0x00 },
-   { 0xC0, 0xC0, 0xC0, 0x00 },
-   { 0xC0, 0xDC, 0xC0, 0x00 },
-   { 0xD4, 0xD0, 0xC8, 0x00 },
-   { 0xFF, 0xFB, 0xF0, 0x00 },
-   { 0x3A, 0x6E, 0xA5, 0x00 },
-   { 0x80, 0x80, 0x80, 0x00 },
-   { 0xFF, 0x00, 0x00, 0x00 },
-   { 0x00, 0xFF, 0x00, 0x00 },
-   { 0xFF, 0xFF, 0x00, 0x00 },
-   { 0x00, 0x00, 0xFF, 0x00 },
-   { 0xFF, 0x00, 0xFF, 0x00 },
-   { 0x00, 0xFF, 0xFF, 0x00 },
-   { 0xFF, 0xFF, 0xFF, 0x00 },
+    { 0,   0,   0,   0 },       // 0
+    { 0x80,0,   0,   0 },       // 1
+    { 0,   0x80,0,   0 },       // 2
+    { 0x80,0x80,0,   0 },       // 3
+    { 0,   0,   0x80,0 },       // 4
+    { 0x80,0,   0x80,0 },       // 5
+    { 0,   0x80,0x80,0 },       // 6
+    { 0xC0,0xC0,0xC0,0 },       // 7
+    { 192, 220, 192, 0 },       // 8
+    { 166, 202, 240, 0 },       // 9
+    { 255, 251, 240, 0 },       // 10
+    { 160, 160, 164, 0 },       // 11
+    { 0x80,0x80,0x80,0 },       // 12
+    { 0xFF,0,   0   ,0 },       // 13
+    { 0,   0xFF,0   ,0 },       // 14
+    { 0xFF,0xFF,0   ,0 },       // 15
+    { 0   ,0,   0xFF,0 },       // 16
+    { 0xFF,0,   0xFF,0 },       // 17
+    { 0,   0xFF,0xFF,0 },       // 18
+    { 0xFF,0xFF,0xFF,0 },       // 19
 };
 
-/*
- * IntInitDefaultPalette
- *
- * Initializes default palette for PDEV and fill it with the colors specified
- * by the GDI standard.
- */
+BOOL NTAPI bInitDefaultPalette(PPDEV ppdev, DEVINFO *pDevInfo);
 
-BOOL
-IntInitDefaultPalette(
-   PPDEV ppdev,
-   PDEVINFO pDevInfo)
+/******************************Public*Routine******************************\
+* bInitPaletteInfo
+*
+* Initializes the palette information for this PDEV.
+*
+* Called by DrvEnablePDEV.
+*
+\**************************************************************************/
+
+BOOL NTAPI bInitPaletteInfo(PPDEV ppdev, DEVINFO *pDevInfo)
 {
-   ULONG ColorLoop;
-   PPALETTEENTRY PaletteEntryPtr;
+    if (!bInitDefaultPalette(ppdev, pDevInfo))
+        return(FALSE);
 
-   if (ppdev->BitsPerPixel > 8)
-   {
-      ppdev->DefaultPalette = pDevInfo->hpalDefault =
-         EngCreatePalette(PAL_BITFIELDS, 0, NULL,
-            ppdev->RedMask, ppdev->GreenMask, ppdev->BlueMask);
-   }
-   else
-   {
-      ppdev->PaletteEntries = EngAllocMem(0, sizeof(PALETTEENTRY) << 8, ALLOC_TAG);
-      if (ppdev->PaletteEntries == NULL)
-      {
-         return FALSE;
-      }
+    return(TRUE);
+}
 
-      for (ColorLoop = 256, PaletteEntryPtr = ppdev->PaletteEntries;
-           ColorLoop != 0;
-           ColorLoop--, PaletteEntryPtr++)
-      {
-         PaletteEntryPtr->peRed = ((ColorLoop >> 5) & 7) * 255 / 7;
-         PaletteEntryPtr->peGreen = ((ColorLoop >> 3) & 3) * 255 / 3;
-         PaletteEntryPtr->peBlue = (ColorLoop & 7) * 255 / 7;
-         PaletteEntryPtr->peFlags = 0;
-      }
+/******************************Public*Routine******************************\
+* vDisablePalette
+*
+* Frees resources allocated by bInitPaletteInfo.
+*
+\**************************************************************************/
 
-      memcpy(ppdev->PaletteEntries, BASEPALETTE, 10 * sizeof(PALETTEENTRY));
-      memcpy(ppdev->PaletteEntries + 246, BASEPALETTE + 10, 10 * sizeof(PALETTEENTRY));
+VOID NTAPI vDisablePalette(PPDEV ppdev)
+{
+// Delete the default palette if we created one.
 
-      ppdev->DefaultPalette = pDevInfo->hpalDefault =
-         EngCreatePalette(PAL_INDEXED, 256, (PULONG)ppdev->PaletteEntries, 0, 0, 0);
+    if (ppdev->hpalDefault)
+    {
+        EngDeletePalette(ppdev->hpalDefault);
+        ppdev->hpalDefault = (HPALETTE) 0;
     }
 
-    return ppdev->DefaultPalette != NULL;
+    if (ppdev->pPal != (PPALETTEENTRY)NULL)
+        EngFreeMem((PVOID)ppdev->pPal);
 }
 
-/*
- * IntSetPalette
- *
- * Requests that the driver realize the palette for a specified device. The
- * driver sets the hardware palette to match the entries in the given palette
- * as closely as possible.
- */
+/******************************Public*Routine******************************\
+* bInitDefaultPalette
+*
+* Initializes default palette for PDEV.
+*
+\**************************************************************************/
 
-BOOL APIENTRY
-IntSetPalette(
-   IN DHPDEV dhpdev,
-   IN PPALETTEENTRY ppalent,
-   IN ULONG iStart,
-   IN ULONG cColors)
+BOOL NTAPI bInitDefaultPalette(PPDEV ppdev, DEVINFO *pDevInfo)
 {
-   PVIDEO_CLUT pClut;
-   ULONG ClutSize;
+    if (ppdev->ulBitCount == 8)
+    {
+        ULONG ulLoop;
+        BYTE jRed,jGre,jBlu;
 
-   ClutSize = sizeof(VIDEO_CLUT) + (cColors * sizeof(ULONG));
-   pClut = EngAllocMem(0, ClutSize, ALLOC_TAG);
-   pClut->FirstEntry = iStart;
-   pClut->NumEntries = cColors;
-   memcpy(&pClut->LookupTable[0].RgbLong, ppalent, sizeof(ULONG) * cColors);
+        //
+        // Allocate our palette
+        //
 
-   if (((PPDEV)dhpdev)->PaletteShift)
-   {
-      while (cColors--)
-      {
-         pClut->LookupTable[cColors].RgbArray.Red >>= ((PPDEV)dhpdev)->PaletteShift;
-         pClut->LookupTable[cColors].RgbArray.Green >>= ((PPDEV)dhpdev)->PaletteShift;
-         pClut->LookupTable[cColors].RgbArray.Blue >>= ((PPDEV)dhpdev)->PaletteShift;
-         pClut->LookupTable[cColors].RgbArray.Unused = 0;
-      }
-   }
-   else
-   {
-      while (cColors--)
-      {
-         pClut->LookupTable[cColors].RgbArray.Unused = 0;
-      }
-   }
+        ppdev->pPal = (PPALETTEENTRY)EngAllocMem(0, sizeof(PALETTEENTRY) * 256,
+                                                 ALLOC_TAG);
 
-   /*
-    * Set the palette registers.
-    */
+        if ((ppdev->pPal) == NULL) {
+            RIP("DISP bInitDefaultPalette() failed EngAllocMem\n");
+            return(FALSE);
+        }
 
-   if (EngDeviceIoControl(((PPDEV)dhpdev)->hDriver, IOCTL_VIDEO_SET_COLOR_REGISTERS,
-                          pClut, ClutSize, NULL, 0, &cColors))
-   {
-      EngFreeMem(pClut);
-      return FALSE;
-   }
+        //
+        // Generate 256 (8*4*4) RGB combinations to fill the palette
+        //
 
-   EngFreeMem(pClut);
-   return TRUE;
+        jRed = jGre = jBlu = 0;
+
+        for (ulLoop = 0; ulLoop < 256; ulLoop++)
+        {
+            ppdev->pPal[ulLoop].peRed   = jRed;
+            ppdev->pPal[ulLoop].peGreen = jGre;
+            ppdev->pPal[ulLoop].peBlue  = jBlu;
+            ppdev->pPal[ulLoop].peFlags = (BYTE)0;
+
+            if (!(jRed += 32))
+            if (!(jGre += 32))
+            jBlu += 64;
+        }
+
+        //
+        // Fill in Windows Reserved Colors from the WIN 3.0 DDK
+        // The Window Manager reserved the first and last 10 colors for
+        // painting windows borders and for non-palette managed applications.
+        //
+
+        for (ulLoop = 0; ulLoop < 10; ulLoop++)
+        {
+            //
+            // First 10
+            //
+
+            ppdev->pPal[ulLoop] = BASEPALETTE[ulLoop];
+
+            //
+            // Last 10
+            //
+
+            ppdev->pPal[246 + ulLoop] = BASEPALETTE[ulLoop+10];
+        }
+
+        //
+        // Create handle for palette.
+        //
+
+        ppdev->hpalDefault =
+        pDevInfo->hpalDefault = EngCreatePalette(PAL_INDEXED,
+                                                   256,
+                                                   (PULONG) ppdev->pPal,
+                                                   0,0,0);
+
+        if (ppdev->hpalDefault == (HPALETTE) 0)
+        {
+            RIP("DISP bInitDefaultPalette failed EngCreatePalette\n");
+            EngFreeMem(ppdev->pPal);
+            return(FALSE);
+        }
+
+        //
+        // Initialize the hardware with the initial palette.
+        //
+
+        return(TRUE);
+
+    } else {
+
+        ppdev->hpalDefault =
+        pDevInfo->hpalDefault = EngCreatePalette(PAL_BITFIELDS,
+                                                   0,(PULONG) NULL,
+                                                   ppdev->flRed,
+                                                   ppdev->flGreen,
+                                                   ppdev->flBlue);
+
+        if (ppdev->hpalDefault == (HPALETTE) 0)
+        {
+            RIP("DISP bInitDefaultPalette failed EngCreatePalette\n");
+            return(FALSE);
+        }
+    }
+
+    return(TRUE);
 }
 
-/*
- * DrvSetPalette
- *
- * Requests that the driver realize the palette for a specified device. The
- * driver sets the hardware palette to match the entries in the given palette
- * as closely as possible.
- *
- * Status
- *    @implemented
- */
+/******************************Public*Routine******************************\
+* bInit256ColorPalette
+*
+* Initialize the hardware's palette registers.
+*
+\**************************************************************************/
 
-BOOL APIENTRY
-DrvSetPalette(
-   IN DHPDEV dhpdev,
-   IN PALOBJ *ppalo,
-   IN FLONG fl,
-   IN ULONG iStart,
-   IN ULONG cColors)
+BOOL NTAPI bInit256ColorPalette(PPDEV ppdev)
 {
-   PPALETTEENTRY PaletteEntries;
-   BOOL bRet;
+    BYTE        ajClutSpace[MAX_CLUT_SIZE];
+    PVIDEO_CLUT pScreenClut;
+    ULONG       ulReturnedDataLength;
+    ULONG       cColors;
+    PVIDEO_CLUTDATA pScreenClutData;
 
-   if (cColors == 0)
-       return FALSE;
+    if (ppdev->ulBitCount == 8)
+    {
+        //
+        // Fill in pScreenClut header info:
+        //
 
-   PaletteEntries = EngAllocMem(0, cColors * sizeof(ULONG), ALLOC_TAG);
-   if (PaletteEntries == NULL)
-   {
-      return FALSE;
-   }
+        pScreenClut             = (PVIDEO_CLUT) ajClutSpace;
+        pScreenClut->NumEntries = 256;
+        pScreenClut->FirstEntry = 0;
 
-   if (PALOBJ_cGetColors(ppalo, iStart, cColors, (PULONG)PaletteEntries) !=
-       cColors)
-   {
-      EngFreeMem(PaletteEntries);
-      return FALSE;
-   }
+        //
+        // Copy colours in:
+        //
 
-   bRet = IntSetPalette(dhpdev, PaletteEntries, iStart, cColors);
-   EngFreeMem(PaletteEntries);
-   return bRet;
+        cColors = 256;
+        pScreenClutData = (PVIDEO_CLUTDATA) (&(pScreenClut->LookupTable[0]));
+
+        while(cColors--)
+        {
+            pScreenClutData[cColors].Red =    ppdev->pPal[cColors].peRed >>
+                                              ppdev->cPaletteShift;
+            pScreenClutData[cColors].Green =  ppdev->pPal[cColors].peGreen >>
+                                              ppdev->cPaletteShift;
+            pScreenClutData[cColors].Blue =   ppdev->pPal[cColors].peBlue >>
+                                              ppdev->cPaletteShift;
+            pScreenClutData[cColors].Unused = 0;
+        }
+
+        //
+        // Set palette registers:
+        //
+
+        if (EngDeviceIoControl(ppdev->hDriver,
+                               IOCTL_VIDEO_SET_COLOR_REGISTERS,
+                               pScreenClut,
+                               MAX_CLUT_SIZE,
+                               NULL,
+                               0,
+                               &ulReturnedDataLength))
+        {
+            DISPDBG((0, "Failed bEnablePalette"));
+            return(FALSE);
+        }
+    }
+
+    DISPDBG((5, "Passed bEnablePalette"));
+
+    return(TRUE);
+}
+
+/******************************Public*Routine******************************\
+* DrvSetPalette
+*
+* DDI entry point for manipulating the palette.
+*
+\**************************************************************************/
+
+BOOL NTAPI DrvSetPalette(
+DHPDEV  dhpdev,
+PALOBJ* ppalo,
+FLONG   fl,
+ULONG   iStart,
+ULONG   cColors)
+{
+    BYTE            ajClutSpace[MAX_CLUT_SIZE];
+    PVIDEO_CLUT     pScreenClut;
+    PVIDEO_CLUTDATA pScreenClutData;
+    PDEV*           ppdev;
+
+    UNREFERENCED_PARAMETER(fl);
+
+    ppdev = (PDEV*) dhpdev;
+
+    //
+    // Fill in pScreenClut header info:
+    //
+
+    pScreenClut             = (PVIDEO_CLUT) ajClutSpace;
+    pScreenClut->NumEntries = (USHORT) cColors;
+    pScreenClut->FirstEntry = (USHORT) iStart;
+
+    pScreenClutData = (PVIDEO_CLUTDATA) (&(pScreenClut->LookupTable[0]));
+
+    if (cColors != PALOBJ_cGetColors(ppalo, iStart, cColors,
+                                     (ULONG*) pScreenClutData))
+    {
+        DISPDBG((0, "DrvSetPalette failed PALOBJ_cGetColors\n"));
+        return (FALSE);
+    }
+
+    //
+    // Set the high reserved byte in each palette entry to 0.
+    // Do the appropriate palette shifting to fit in the DAC.
+    //
+
+    if (ppdev->cPaletteShift)
+    {
+        while(cColors--)
+        {
+            pScreenClutData[cColors].Red >>= ppdev->cPaletteShift;
+            pScreenClutData[cColors].Green >>= ppdev->cPaletteShift;
+            pScreenClutData[cColors].Blue >>= ppdev->cPaletteShift;
+            pScreenClutData[cColors].Unused = 0;
+        }
+    }
+    else
+    {
+        while(cColors--)
+        {
+            pScreenClutData[cColors].Unused = 0;
+        }
+    }
+
+    //
+    // Set palette registers
+    //
+
+    if (EngDeviceIoControl(ppdev->hDriver,
+                           IOCTL_VIDEO_SET_COLOR_REGISTERS,
+                           pScreenClut,
+                           MAX_CLUT_SIZE,
+                           NULL,
+                           0,
+                           &cColors))
+    {
+        DISPDBG((0, "DrvSetPalette failed EngDeviceIoControl\n"));
+        return (FALSE);
+    }
+
+    return(TRUE);
+
 }

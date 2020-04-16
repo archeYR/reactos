@@ -1,415 +1,605 @@
 /*
- * ReactOS Generic Framebuffer display driver
- *
- * Copyright (C) 2004 Filip Navara
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * PROJECT:         ReactOS Framebuffer Display Driver
+ * LICENSE:         Microsoft NT4 DDK Sample Code License
+ * FILE:            win32ss/drivers/displays/framebuf_new/screen.c
+ * PURPOSE:         Surface, Screen and PDEV support/initialization
+ * PROGRAMMERS:     Copyright (c) 1992-1995 Microsoft Corporation
+ *                  ReactOS Portable Systems Group
  */
 
-#include "framebuf.h"
+#include "driver.h"
 
-static LOGFONTW SystemFont = { 16, 7, 0, 0, 700, 0, 0, 0, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, VARIABLE_PITCH | FF_DONTCARE, L"System" };
-static LOGFONTW AnsiVariableFont = { 12, 9, 0, 0, 400, 0, 0, 0, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_STROKE_PRECIS, PROOF_QUALITY, VARIABLE_PITCH | FF_DONTCARE, L"MS Sans Serif" };
-static LOGFONTW AnsiFixedFont = { 12, 9, 0, 0, 400, 0, 0, 0, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_STROKE_PRECIS, PROOF_QUALITY, FIXED_PITCH | FF_DONTCARE, L"Courier" };
+#define SYSTM_LOGFONT {16,7,0,0,700,0,0,0,ANSI_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,VARIABLE_PITCH | FF_DONTCARE,L"System"}
+#define HELVE_LOGFONT {12,9,0,0,400,0,0,0,ANSI_CHARSET,OUT_DEFAULT_PRECIS,CLIP_STROKE_PRECIS,PROOF_QUALITY,VARIABLE_PITCH | FF_DONTCARE,L"MS Sans Serif"}
+#define COURI_LOGFONT {12,9,0,0,400,0,0,0,ANSI_CHARSET,OUT_DEFAULT_PRECIS,CLIP_STROKE_PRECIS,PROOF_QUALITY,FIXED_PITCH | FF_DONTCARE, L"Courier"}
 
-/*
- * GetAvailableModes
- *
- * Calls the miniport to get the list of modes supported by the kernel driver,
- * and returns the list of modes supported by the display driver.
- */
+// This is the basic devinfo for a default driver.  This is used as a base and customized based
+// on information passed back from the miniport driver.
 
-DWORD
-GetAvailableModes(
-   HANDLE hDriver,
-   PVIDEO_MODE_INFORMATION *ModeInfo,
-   DWORD *ModeInfoSize)
+const DEVINFO gDevInfoFrameBuffer = {
+    ( GCAPS_OPAQUERECT
+// eVb: 2.8 [DDK CHANGE] - No dithering support
+// eVb: 2.8 [END]
+                   ), /* Graphics capabilities         */
+    SYSTM_LOGFONT,    /* Default font description */
+    HELVE_LOGFONT,    /* ANSI variable font description   */
+    COURI_LOGFONT,    /* ANSI fixed font description          */
+    0,                /* Count of device fonts          */
+    0,                /* Preferred DIB format          */
+// eVb: 2.9 [DDK CHANGE] - No dithering support
+    0,                /* Width of color dither          */
+    0,                /* Height of color dither   */
+// eVb: 2.9 [END]
+    0                 /* Default palette to use for this device */
+};
+
+/******************************Public*Routine******************************\
+* bInitSURF
+*
+* Enables the surface.        Maps the frame buffer into memory.
+*
+\**************************************************************************/
+
+BOOL NTAPI bInitSURF(PPDEV ppdev, BOOL bFirst)
 {
-   ULONG ulTemp;
-   VIDEO_NUM_MODES Modes;
-   PVIDEO_MODE_INFORMATION ModeInfoPtr;
+    DWORD returnedDataLength;
+    DWORD MaxWidth, MaxHeight;
+    VIDEO_MEMORY videoMemory;
+    VIDEO_MEMORY_INFORMATION videoMemoryInformation;
+// eVb: 2.1 [DDK Change] - Support new VGA Miniport behavior w.r.t updated framebuffer remapping
+    ULONG RemappingNeeded = 0;  
+// eVb: 2.1 [END]
+    //
+    // Set the current mode into the hardware.
+    //
 
-   /*
-    * Get the number of modes supported by the mini-port
-    */
+    if (EngDeviceIoControl(ppdev->hDriver,
+                           IOCTL_VIDEO_SET_CURRENT_MODE,
+                           &(ppdev->ulMode),
+                           sizeof(ULONG),
+// eVb: 2.2 [DDK Change] - Support new VGA Miniport behavior w.r.t updated framebuffer remapping
+                           &RemappingNeeded,
+                           sizeof(ULONG),
+// eVb: 2.2 [END]
+                           &returnedDataLength))
+    {
+        RIP("DISP bInitSURF failed IOCTL_SET_MODE\n");
+        return(FALSE);
+    }
 
-   if (EngDeviceIoControl(hDriver, IOCTL_VIDEO_QUERY_NUM_AVAIL_MODES, NULL,
-                          0, &Modes, sizeof(VIDEO_NUM_MODES), &ulTemp))
-   {
-      return 0;
-   }
+    //
+    // If this is the first time we enable the surface we need to map in the
+    // memory also.
+    //
+// eVb: 2.3 [DDK Change] - Support new VGA Miniport behavior w.r.t updated framebuffer remapping
+    if (bFirst || RemappingNeeded)
+    {
+// eVb: 2.3 [END]
+        videoMemory.RequestedVirtualAddress = NULL;
 
-   *ModeInfoSize = Modes.ModeInformationLength;
+        if (EngDeviceIoControl(ppdev->hDriver,
+                               IOCTL_VIDEO_MAP_VIDEO_MEMORY,
+                               &videoMemory,
+                               sizeof(VIDEO_MEMORY),
+                               &videoMemoryInformation,
+                               sizeof(VIDEO_MEMORY_INFORMATION),
+                               &returnedDataLength))
+        {
+            RIP("DISP bInitSURF failed IOCTL_VIDEO_MAP\n");
+            return(FALSE);
+        }
 
-   /*
-    * Allocate the buffer for the miniport to write the modes in.
-    */
+        ppdev->pjScreen = (PBYTE)(videoMemoryInformation.FrameBufferBase);
 
-   *ModeInfo = (PVIDEO_MODE_INFORMATION)EngAllocMem(0, Modes.NumModes *
-      Modes.ModeInformationLength, ALLOC_TAG);
+        if (videoMemoryInformation.FrameBufferBase !=
+            videoMemoryInformation.VideoRamBase)
+        {
+            RIP("VideoRamBase does not correspond to FrameBufferBase\n");
+        }
+// eVb: 2.4 [DDK Change] - Make sure frame buffer mapping worked
+        //
+        // Make sure we can access this video memory
+        //
 
-   if (*ModeInfo == NULL)
-   {
-      return 0;
-   }
+        *(PULONG)(ppdev->pjScreen) = 0xaa55aa55;
 
-   /*
-    * Ask the miniport to fill in the available modes.
-    */
+        if (*(PULONG)(ppdev->pjScreen) != 0xaa55aa55) {
 
-   if (EngDeviceIoControl(hDriver, IOCTL_VIDEO_QUERY_AVAIL_MODES, NULL, 0,
-                          *ModeInfo, Modes.NumModes * Modes.ModeInformationLength,
-                          &ulTemp))
-   {
-      EngFreeMem(*ModeInfo);
-      *ModeInfo = (PVIDEO_MODE_INFORMATION)NULL;
-      return 0;
-   }
+            DISPDBG((1, "Frame buffer memory is not accessible.\n"));
+            return(FALSE);
+        }
+// eVb: 2.4 [END]
+        ppdev->cScreenSize = videoMemoryInformation.VideoRamLength;
 
-   /*
-    * Now see which of these modes are supported by the display driver.
-    * As an internal mechanism, set the length to 0 for the modes we
-    * DO NOT support.
-    */
+        //
+        // Initialize the head of the offscreen list to NULL.
+        //
 
-   ulTemp = Modes.NumModes;
-   ModeInfoPtr = *ModeInfo;
+        ppdev->pOffscreenList = NULL;
 
-   /*
-    * Mode is rejected if it is not one plane, or not graphics, or is not
-    * one of 8, 16 or 32 bits per pel.
-    */
+        // It's a hardware pointer; set up pointer attributes.
 
-   while (ulTemp--)
-   {
-      if ((ModeInfoPtr->NumberOfPlanes != 1) ||
-          !(ModeInfoPtr->AttributeFlags & VIDEO_MODE_GRAPHICS) ||
-          ((ModeInfoPtr->BitsPerPlane != 8) &&
-           (ModeInfoPtr->BitsPerPlane != 16) &&
-           (ModeInfoPtr->BitsPerPlane != 24) &&
-           (ModeInfoPtr->BitsPerPlane != 32)))
-      {
-         ModeInfoPtr->Length = 0;
-      }
+        MaxHeight = ppdev->PointerCapabilities.MaxHeight;
 
-      ModeInfoPtr = (PVIDEO_MODE_INFORMATION)
-         (((PUCHAR)ModeInfoPtr) + Modes.ModeInformationLength);
-   }
+        // Allocate space for two DIBs (data/mask) for the pointer. If this
+        // device supports a color Pointer, we will allocate a larger bitmap.
+        // If this is a color bitmap we allocate for the largest possible
+        // bitmap because we have no idea of what the pixel depth might be.
 
-   return Modes.NumModes;
+        // Width rounded up to nearest byte multiple
+
+        if (!(ppdev->PointerCapabilities.Flags & VIDEO_MODE_COLOR_POINTER))
+        {
+            MaxWidth = (ppdev->PointerCapabilities.MaxWidth + 7) / 8;
+        }
+        else
+        {
+            MaxWidth = ppdev->PointerCapabilities.MaxWidth * sizeof(DWORD);
+        }
+
+        ppdev->cjPointerAttributes =
+                sizeof(VIDEO_POINTER_ATTRIBUTES) +
+                ((sizeof(UCHAR) * MaxWidth * MaxHeight) * 2);
+
+        ppdev->pPointerAttributes = (PVIDEO_POINTER_ATTRIBUTES)
+                EngAllocMem(0, ppdev->cjPointerAttributes, ALLOC_TAG);
+
+        if (ppdev->pPointerAttributes == NULL) {
+
+            DISPDBG((0, "bInitPointer EngAllocMem failed\n"));
+            return(FALSE);
+        }
+
+        ppdev->pPointerAttributes->Flags = ppdev->PointerCapabilities.Flags;
+        ppdev->pPointerAttributes->WidthInBytes = MaxWidth;
+        ppdev->pPointerAttributes->Width = ppdev->PointerCapabilities.MaxWidth;
+        ppdev->pPointerAttributes->Height = MaxHeight;
+        ppdev->pPointerAttributes->Column = 0;
+        ppdev->pPointerAttributes->Row = 0;
+        ppdev->pPointerAttributes->Enable = 0;
+    }
+
+    return(TRUE);
 }
 
-BOOL
-IntInitScreenInfo(
-   PPDEV ppdev,
-   LPDEVMODEW pDevMode,
-   PGDIINFO pGdiInfo,
-   PDEVINFO pDevInfo)
+/******************************Public*Routine******************************\
+* vDisableSURF
+*
+* Disable the surface. Un-Maps the frame in memory.
+*
+\**************************************************************************/
+
+VOID NTAPI vDisableSURF(PPDEV ppdev)
 {
-   ULONG ModeCount;
-   ULONG ModeInfoSize;
-   PVIDEO_MODE_INFORMATION ModeInfo, ModeInfoPtr, SelectedMode = NULL;
-   VIDEO_COLOR_CAPABILITIES ColorCapabilities;
-   ULONG Temp;
+    DWORD returnedDataLength;
+    VIDEO_MEMORY videoMemory;
 
-   /*
-    * Call miniport to get information about video modes.
-    */
+    videoMemory.RequestedVirtualAddress = (PVOID) ppdev->pjScreen;
 
-   ModeCount = GetAvailableModes(ppdev->hDriver, &ModeInfo, &ModeInfoSize);
-   if (ModeCount == 0)
-   {
-      return FALSE;
-   }
+    if (EngDeviceIoControl(ppdev->hDriver,
+                           IOCTL_VIDEO_UNMAP_VIDEO_MEMORY,
+                           &videoMemory,
+                           sizeof(VIDEO_MEMORY),
+                           NULL,
+                           0,
+                           &returnedDataLength))
+    {
+        RIP("DISP vDisableSURF failed IOCTL_VIDEO_UNMAP\n");
+    }
+}
 
-   /*
-    * Select the video mode depending on the info passed in pDevMode.
-    */
 
-   if (pDevMode->dmPelsWidth == 0 && pDevMode->dmPelsHeight == 0 &&
-       pDevMode->dmBitsPerPel == 0 && pDevMode->dmDisplayFrequency == 0)
-   {
-      ModeInfoPtr = ModeInfo;
-      while (ModeCount-- > 0)
-      {
-         if (ModeInfoPtr->Length == 0)
-         {
-            ModeInfoPtr = (PVIDEO_MODE_INFORMATION)
-               (((PUCHAR)ModeInfoPtr) + ModeInfoSize);
-            continue;
-         }
-         SelectedMode = ModeInfoPtr;
-         break;
-      }
-   }
-   else
-   {
-      ModeInfoPtr = ModeInfo;
-      while (ModeCount-- > 0)
-      {
-         if (ModeInfoPtr->Length > 0 &&
-             pDevMode->dmPelsWidth == ModeInfoPtr->VisScreenWidth &&
-             pDevMode->dmPelsHeight == ModeInfoPtr->VisScreenHeight &&
-             pDevMode->dmBitsPerPel == (ModeInfoPtr->BitsPerPlane *
-                                        ModeInfoPtr->NumberOfPlanes) &&
-             pDevMode->dmDisplayFrequency == ModeInfoPtr->Frequency)
-         {
-            SelectedMode = ModeInfoPtr;
-            break;
-         }
+/******************************Public*Routine******************************\
+* bInitPDEV
+*
+* Determine the mode we should be in based on the DEVMODE passed in.
+* Query mini-port to get information needed to fill in the DevInfo and the
+* GdiInfo .
+*
+\**************************************************************************/
 
-         ModeInfoPtr = (PVIDEO_MODE_INFORMATION)
-            (((PUCHAR)ModeInfoPtr) + ModeInfoSize);
-      }
-   }
+BOOL NTAPI bInitPDEV(
+PPDEV ppdev,
+DEVMODEW *pDevMode,
+GDIINFO *pGdiInfo,
+DEVINFO *pDevInfo)
+{
+    ULONG cModes;
+    PVIDEO_MODE_INFORMATION pVideoBuffer, pVideoModeSelected, pVideoTemp;
+    VIDEO_COLOR_CAPABILITIES colorCapabilities;
+    ULONG ulTemp;
+    BOOL bSelectDefault;
+    ULONG cbModeSize;
 
-   if (SelectedMode == NULL)
-   {
-      EngFreeMem(ModeInfo);
-      return FALSE;
-   }
+    //
+    // calls the miniport to get mode information.
+    //
 
-   /*
-    * Fill in the GDIINFO data structure with the information returned from
-    * the kernel driver.
-    */
+    cModes = getAvailableModes(ppdev->hDriver, &pVideoBuffer, &cbModeSize);
 
-   ppdev->ModeIndex = SelectedMode->ModeIndex;
-   ppdev->ScreenWidth = SelectedMode->VisScreenWidth;
-   ppdev->ScreenHeight = SelectedMode->VisScreenHeight;
-   ppdev->ScreenDelta = SelectedMode->ScreenStride;
-   ppdev->BitsPerPixel = (UCHAR)(SelectedMode->BitsPerPlane * SelectedMode->NumberOfPlanes);
+    if (cModes == 0)
+    {
+        return(FALSE);
+    }
 
-   ppdev->MemWidth = SelectedMode->VideoMemoryBitmapWidth;
-   ppdev->MemHeight = SelectedMode->VideoMemoryBitmapHeight;
+    //
+    // Now see if the requested mode has a match in that table.
+    //
 
-   ppdev->RedMask = SelectedMode->RedMask;
-   ppdev->GreenMask = SelectedMode->GreenMask;
-   ppdev->BlueMask = SelectedMode->BlueMask;
+    pVideoModeSelected = NULL;
+    pVideoTemp = pVideoBuffer;
 
-   pGdiInfo->ulVersion = GDI_DRIVER_VERSION;
-   pGdiInfo->ulTechnology = DT_RASDISPLAY;
-   pGdiInfo->ulHorzSize = SelectedMode->XMillimeter;
-   pGdiInfo->ulVertSize = SelectedMode->YMillimeter;
-   pGdiInfo->ulHorzRes = SelectedMode->VisScreenWidth;
-   pGdiInfo->ulVertRes = SelectedMode->VisScreenHeight;
-   pGdiInfo->ulPanningHorzRes = SelectedMode->VisScreenWidth;
-   pGdiInfo->ulPanningVertRes = SelectedMode->VisScreenHeight;
-   pGdiInfo->cBitsPixel = SelectedMode->BitsPerPlane;
-   pGdiInfo->cPlanes = SelectedMode->NumberOfPlanes;
-   pGdiInfo->ulVRefresh = SelectedMode->Frequency;
-   pGdiInfo->ulBltAlignment = 1;
-   pGdiInfo->ulLogPixelsX = pDevMode->dmLogPixels;
-   pGdiInfo->ulLogPixelsY = pDevMode->dmLogPixels;
-   pGdiInfo->flTextCaps = TC_RA_ABLE;
-   pGdiInfo->flRaster = 0;
-   pGdiInfo->ulDACRed = SelectedMode->NumberRedBits;
-   pGdiInfo->ulDACGreen = SelectedMode->NumberGreenBits;
-   pGdiInfo->ulDACBlue = SelectedMode->NumberBlueBits;
-   pGdiInfo->ulAspectX = 0x24;
-   pGdiInfo->ulAspectY = 0x24;
-   pGdiInfo->ulAspectXY = 0x33;
-   pGdiInfo->xStyleStep = 1;
-   pGdiInfo->yStyleStep = 1;
-   pGdiInfo->denStyleStep = 3;
-   pGdiInfo->ptlPhysOffset.x = 0;
-   pGdiInfo->ptlPhysOffset.y = 0;
-   pGdiInfo->szlPhysSize.cx = 0;
-   pGdiInfo->szlPhysSize.cy = 0;
+    if ((pDevMode->dmPelsWidth        == 0) &&
+        (pDevMode->dmPelsHeight       == 0) &&
+        (pDevMode->dmBitsPerPel       == 0) &&
+        (pDevMode->dmDisplayFrequency == 0))
+    {
+        DISPDBG((2, "Default mode requested"));
+        bSelectDefault = TRUE;
+    }
+    else
+    {
+// eVb: 2.5 [DDK Change] - Add missing newlines to debug output
+        DISPDBG((2, "Requested mode...\n"));
+        DISPDBG((2, "   Screen width  -- %li\n", pDevMode->dmPelsWidth));
+        DISPDBG((2, "   Screen height -- %li\n", pDevMode->dmPelsHeight));
+        DISPDBG((2, "   Bits per pel  -- %li\n", pDevMode->dmBitsPerPel));
+        DISPDBG((2, "   Frequency     -- %li\n", pDevMode->dmDisplayFrequency));
+// eVb: 2.5 [END]
+        bSelectDefault = FALSE;
+    }
 
-   /*
-    * Try to get the color info from the miniport.
-    */
+    while (cModes--)
+    {
+        if (pVideoTemp->Length != 0)
+        {
+            if (bSelectDefault ||
+                ((pVideoTemp->VisScreenWidth  == pDevMode->dmPelsWidth) &&
+                 (pVideoTemp->VisScreenHeight == pDevMode->dmPelsHeight) &&
+                 (pVideoTemp->BitsPerPlane *
+                  pVideoTemp->NumberOfPlanes  == pDevMode->dmBitsPerPel) &&
+                 (pVideoTemp->Frequency  == pDevMode->dmDisplayFrequency)))
+            {
+                pVideoModeSelected = pVideoTemp;
+                DISPDBG((3, "Found a match\n")) ;
+                break;
+            }
+        }
 
-   if (!EngDeviceIoControl(ppdev->hDriver, IOCTL_VIDEO_QUERY_COLOR_CAPABILITIES,
-                           NULL, 0, &ColorCapabilities,
-                           sizeof(VIDEO_COLOR_CAPABILITIES), &Temp))
-   {
-      pGdiInfo->ciDevice.Red.x = ColorCapabilities.RedChromaticity_x;
-      pGdiInfo->ciDevice.Red.y = ColorCapabilities.RedChromaticity_y;
-      pGdiInfo->ciDevice.Green.x = ColorCapabilities.GreenChromaticity_x;
-      pGdiInfo->ciDevice.Green.y = ColorCapabilities.GreenChromaticity_y;
-      pGdiInfo->ciDevice.Blue.x = ColorCapabilities.BlueChromaticity_x;
-      pGdiInfo->ciDevice.Blue.y = ColorCapabilities.BlueChromaticity_y;
-      pGdiInfo->ciDevice.AlignmentWhite.x = ColorCapabilities.WhiteChromaticity_x;
-      pGdiInfo->ciDevice.AlignmentWhite.y = ColorCapabilities.WhiteChromaticity_y;
-      pGdiInfo->ciDevice.AlignmentWhite.Y = ColorCapabilities.WhiteChromaticity_Y;
-      if (ColorCapabilities.AttributeFlags & VIDEO_DEVICE_COLOR)
-      {
-         pGdiInfo->ciDevice.RedGamma = ColorCapabilities.RedGamma;
-         pGdiInfo->ciDevice.GreenGamma = ColorCapabilities.GreenGamma;
-         pGdiInfo->ciDevice.BlueGamma = ColorCapabilities.BlueGamma;
-      }
-      else
-      {
-         pGdiInfo->ciDevice.RedGamma = ColorCapabilities.WhiteGamma;
-         pGdiInfo->ciDevice.GreenGamma = ColorCapabilities.WhiteGamma;
-         pGdiInfo->ciDevice.BlueGamma = ColorCapabilities.WhiteGamma;
-      }
-   }
-   else
-   {
-      pGdiInfo->ciDevice.Red.x = 6700;
-      pGdiInfo->ciDevice.Red.y = 3300;
-      pGdiInfo->ciDevice.Green.x = 2100;
-      pGdiInfo->ciDevice.Green.y = 7100;
-      pGdiInfo->ciDevice.Blue.x = 1400;
-      pGdiInfo->ciDevice.Blue.y = 800;
-      pGdiInfo->ciDevice.AlignmentWhite.x = 3127;
-      pGdiInfo->ciDevice.AlignmentWhite.y = 3290;
-      pGdiInfo->ciDevice.AlignmentWhite.Y = 0;
-      pGdiInfo->ciDevice.RedGamma = 20000;
-      pGdiInfo->ciDevice.GreenGamma = 20000;
-      pGdiInfo->ciDevice.BlueGamma = 20000;
-   }
+        pVideoTemp = (PVIDEO_MODE_INFORMATION)
+            (((PUCHAR)pVideoTemp) + cbModeSize);
+    }
 
-   pGdiInfo->ciDevice.Red.Y = 0;
-   pGdiInfo->ciDevice.Green.Y = 0;
-   pGdiInfo->ciDevice.Blue.Y = 0;
-   pGdiInfo->ciDevice.Cyan.x = 0;
-   pGdiInfo->ciDevice.Cyan.y = 0;
-   pGdiInfo->ciDevice.Cyan.Y = 0;
-   pGdiInfo->ciDevice.Magenta.x = 0;
-   pGdiInfo->ciDevice.Magenta.y = 0;
-   pGdiInfo->ciDevice.Magenta.Y = 0;
-   pGdiInfo->ciDevice.Yellow.x = 0;
-   pGdiInfo->ciDevice.Yellow.y = 0;
-   pGdiInfo->ciDevice.Yellow.Y = 0;
-   pGdiInfo->ciDevice.MagentaInCyanDye = 0;
-   pGdiInfo->ciDevice.YellowInCyanDye = 0;
-   pGdiInfo->ciDevice.CyanInMagentaDye = 0;
-   pGdiInfo->ciDevice.YellowInMagentaDye = 0;
-   pGdiInfo->ciDevice.CyanInYellowDye = 0;
-   pGdiInfo->ciDevice.MagentaInYellowDye = 0;
-   pGdiInfo->ulDevicePelsDPI = 0;
-   pGdiInfo->ulPrimaryOrder = PRIMARY_ORDER_CBA;
-   pGdiInfo->ulHTPatternSize = HT_PATSIZE_4x4_M;
-   pGdiInfo->flHTFlags = HT_FLAG_ADDITIVE_PRIMS;
+    //
+    // If no mode has been found, return an error
+    //
 
-   pDevInfo->flGraphicsCaps = 0;
-   pDevInfo->lfDefaultFont = SystemFont;
-   pDevInfo->lfAnsiVarFont = AnsiVariableFont;
-   pDevInfo->lfAnsiFixFont = AnsiFixedFont;
-   pDevInfo->cFonts = 0;
-   pDevInfo->cxDither = 0;
-   pDevInfo->cyDither = 0;
-   pDevInfo->hpalDefault = 0;
-   pDevInfo->flGraphicsCaps2 = 0;
+    if (pVideoModeSelected == NULL)
+    {
+        EngFreeMem(pVideoBuffer);
+        DISPDBG((0,"DISP bInitPDEV failed - no valid modes\n"));
+        return(FALSE);
+    }
 
-   if (ppdev->BitsPerPixel == 8)
-   {
-      pGdiInfo->ulNumColors = 20;
-      pGdiInfo->ulNumPalReg = 1 << ppdev->BitsPerPixel;
-      pGdiInfo->ulHTOutputFormat = HT_FORMAT_8BPP;
-      pDevInfo->flGraphicsCaps |= GCAPS_PALMANAGED;
-      pDevInfo->iDitherFormat = BMF_8BPP;
-      /* Assuming palette is orthogonal - all colors are same size. */
-      ppdev->PaletteShift = (UCHAR)(8 - pGdiInfo->ulDACRed);
-   }
-   else
-   {
-      pGdiInfo->ulNumColors = (ULONG)(-1);
-      pGdiInfo->ulNumPalReg = 0;
-      switch (ppdev->BitsPerPixel)
-      {
-         case 16:
+    //
+    // Fill in the GDIINFO data structure with the information returned from
+    // the kernel driver.
+    //
+
+    ppdev->ulMode = pVideoModeSelected->ModeIndex;
+    ppdev->cxScreen = pVideoModeSelected->VisScreenWidth;
+    ppdev->cyScreen = pVideoModeSelected->VisScreenHeight;
+    ppdev->ulBitCount = pVideoModeSelected->BitsPerPlane *
+                        pVideoModeSelected->NumberOfPlanes;
+    ppdev->lDeltaScreen = pVideoModeSelected->ScreenStride;
+
+    ppdev->flRed = pVideoModeSelected->RedMask;
+    ppdev->flGreen = pVideoModeSelected->GreenMask;
+    ppdev->flBlue = pVideoModeSelected->BlueMask;
+
+
+    pGdiInfo->ulVersion    = GDI_DRIVER_VERSION;
+    pGdiInfo->ulTechnology = DT_RASDISPLAY;
+    pGdiInfo->ulHorzSize   = pVideoModeSelected->XMillimeter;
+    pGdiInfo->ulVertSize   = pVideoModeSelected->YMillimeter;
+
+    pGdiInfo->ulHorzRes        = ppdev->cxScreen;
+    pGdiInfo->ulVertRes        = ppdev->cyScreen;
+    pGdiInfo->ulPanningHorzRes = ppdev->cxScreen;
+    pGdiInfo->ulPanningVertRes = ppdev->cyScreen;
+    pGdiInfo->cBitsPixel       = pVideoModeSelected->BitsPerPlane;
+    pGdiInfo->cPlanes          = pVideoModeSelected->NumberOfPlanes;
+    pGdiInfo->ulVRefresh       = pVideoModeSelected->Frequency;
+    pGdiInfo->ulBltAlignment   = 1;     // We don't have accelerated screen-
+                                        //   to-screen blts, and any
+                                        //   window alignment is okay
+
+    pGdiInfo->ulLogPixelsX = pDevMode->dmLogPixels;
+    pGdiInfo->ulLogPixelsY = pDevMode->dmLogPixels;
+
+#ifdef MIPS
+    if (ppdev->ulBitCount == 8)
+        pGdiInfo->flTextCaps = (TC_RA_ABLE | TC_SCROLLBLT);
+    else
+#endif
+    pGdiInfo->flTextCaps = TC_RA_ABLE;
+
+    pGdiInfo->flRaster = 0;           // flRaster is reserved by DDI
+
+    pGdiInfo->ulDACRed   = pVideoModeSelected->NumberRedBits;
+    pGdiInfo->ulDACGreen = pVideoModeSelected->NumberGreenBits;
+    pGdiInfo->ulDACBlue  = pVideoModeSelected->NumberBlueBits;
+
+    pGdiInfo->ulAspectX    = 0x24;    // One-to-one aspect ratio
+    pGdiInfo->ulAspectY    = 0x24;
+    pGdiInfo->ulAspectXY   = 0x33;
+
+    pGdiInfo->xStyleStep   = 1;       // A style unit is 3 pels
+    pGdiInfo->yStyleStep   = 1;
+    pGdiInfo->denStyleStep = 3;
+
+    pGdiInfo->ptlPhysOffset.x = 0;
+    pGdiInfo->ptlPhysOffset.y = 0;
+    pGdiInfo->szlPhysSize.cx  = 0;
+    pGdiInfo->szlPhysSize.cy  = 0;
+
+    // RGB and CMY color info.
+
+    //
+    // try to get it from the miniport.
+    // if the miniport doesn ot support this feature, use defaults.
+    //
+
+    if (EngDeviceIoControl(ppdev->hDriver,
+                           IOCTL_VIDEO_QUERY_COLOR_CAPABILITIES,
+                           NULL,
+                           0,
+                           &colorCapabilities,
+                           sizeof(VIDEO_COLOR_CAPABILITIES),
+                           &ulTemp))
+    {
+
+        DISPDBG((2, "getcolorCapabilities failed \n"));
+
+        pGdiInfo->ciDevice.Red.x = 6700;
+        pGdiInfo->ciDevice.Red.y = 3300;
+        pGdiInfo->ciDevice.Red.Y = 0;
+        pGdiInfo->ciDevice.Green.x = 2100;
+        pGdiInfo->ciDevice.Green.y = 7100;
+        pGdiInfo->ciDevice.Green.Y = 0;
+        pGdiInfo->ciDevice.Blue.x = 1400;
+        pGdiInfo->ciDevice.Blue.y = 800;
+        pGdiInfo->ciDevice.Blue.Y = 0;
+        pGdiInfo->ciDevice.AlignmentWhite.x = 3127;
+        pGdiInfo->ciDevice.AlignmentWhite.y = 3290;
+        pGdiInfo->ciDevice.AlignmentWhite.Y = 0;
+
+        pGdiInfo->ciDevice.RedGamma = 20000;
+        pGdiInfo->ciDevice.GreenGamma = 20000;
+        pGdiInfo->ciDevice.BlueGamma = 20000;
+
+    }
+    else
+    {
+        pGdiInfo->ciDevice.Red.x = colorCapabilities.RedChromaticity_x;
+        pGdiInfo->ciDevice.Red.y = colorCapabilities.RedChromaticity_y;
+        pGdiInfo->ciDevice.Red.Y = 0;
+        pGdiInfo->ciDevice.Green.x = colorCapabilities.GreenChromaticity_x;
+        pGdiInfo->ciDevice.Green.y = colorCapabilities.GreenChromaticity_y;
+        pGdiInfo->ciDevice.Green.Y = 0;
+        pGdiInfo->ciDevice.Blue.x = colorCapabilities.BlueChromaticity_x;
+        pGdiInfo->ciDevice.Blue.y = colorCapabilities.BlueChromaticity_y;
+        pGdiInfo->ciDevice.Blue.Y = 0;
+        pGdiInfo->ciDevice.AlignmentWhite.x = colorCapabilities.WhiteChromaticity_x;
+        pGdiInfo->ciDevice.AlignmentWhite.y = colorCapabilities.WhiteChromaticity_y;
+        pGdiInfo->ciDevice.AlignmentWhite.Y = colorCapabilities.WhiteChromaticity_Y;
+
+        // if we have a color device store the three color gamma values,
+        // otherwise store the unique gamma value in all three.
+
+        if (colorCapabilities.AttributeFlags & VIDEO_DEVICE_COLOR)
+        {
+            pGdiInfo->ciDevice.RedGamma = colorCapabilities.RedGamma;
+            pGdiInfo->ciDevice.GreenGamma = colorCapabilities.GreenGamma;
+            pGdiInfo->ciDevice.BlueGamma = colorCapabilities.BlueGamma;
+        }
+        else
+        {
+            pGdiInfo->ciDevice.RedGamma = colorCapabilities.WhiteGamma;
+            pGdiInfo->ciDevice.GreenGamma = colorCapabilities.WhiteGamma;
+            pGdiInfo->ciDevice.BlueGamma = colorCapabilities.WhiteGamma;
+        }
+
+    };
+
+    pGdiInfo->ciDevice.Cyan.x = 0;
+    pGdiInfo->ciDevice.Cyan.y = 0;
+    pGdiInfo->ciDevice.Cyan.Y = 0;
+    pGdiInfo->ciDevice.Magenta.x = 0;
+    pGdiInfo->ciDevice.Magenta.y = 0;
+    pGdiInfo->ciDevice.Magenta.Y = 0;
+    pGdiInfo->ciDevice.Yellow.x = 0;
+    pGdiInfo->ciDevice.Yellow.y = 0;
+    pGdiInfo->ciDevice.Yellow.Y = 0;
+
+    // No dye correction for raster displays.
+
+    pGdiInfo->ciDevice.MagentaInCyanDye = 0;
+    pGdiInfo->ciDevice.YellowInCyanDye = 0;
+    pGdiInfo->ciDevice.CyanInMagentaDye = 0;
+    pGdiInfo->ciDevice.YellowInMagentaDye = 0;
+    pGdiInfo->ciDevice.CyanInYellowDye = 0;
+    pGdiInfo->ciDevice.MagentaInYellowDye = 0;
+
+    pGdiInfo->ulDevicePelsDPI = 0;   // For printers only
+    pGdiInfo->ulPrimaryOrder = PRIMARY_ORDER_CBA;
+
+    // BUGBUG this should be modified to take into account the size
+    // of the display and the resolution.
+
+    pGdiInfo->ulHTPatternSize = HT_PATSIZE_4x4_M;
+
+    pGdiInfo->flHTFlags = HT_FLAG_ADDITIVE_PRIMS;
+
+    // Fill in the basic devinfo structure
+
+    *pDevInfo = gDevInfoFrameBuffer;
+
+    // Fill in the rest of the devinfo and GdiInfo structures.
+
+    if (ppdev->ulBitCount == 8)
+    {
+        // It is Palette Managed.
+
+        pGdiInfo->ulNumColors = 20;
+        pGdiInfo->ulNumPalReg = 1 << ppdev->ulBitCount;
+// eVb: 2.7 [DDK CHANGE] - No dithering support
+        pDevInfo->flGraphicsCaps |= GCAPS_PALMANAGED;
+// eVb: 2.7 [END]
+        pGdiInfo->ulHTOutputFormat = HT_FORMAT_8BPP;
+        pDevInfo->iDitherFormat = BMF_8BPP;
+
+        // Assuming palette is orthogonal - all colors are same size.
+
+        ppdev->cPaletteShift   = 8 - pGdiInfo->ulDACRed;
+    }
+    else
+    {
+        pGdiInfo->ulNumColors = (ULONG) (-1);
+        pGdiInfo->ulNumPalReg = 0;
+
+        if (ppdev->ulBitCount == 16)
+        {
             pGdiInfo->ulHTOutputFormat = HT_FORMAT_16BPP;
             pDevInfo->iDitherFormat = BMF_16BPP;
-            break;
-
-         case 24:
+        }
+        else if (ppdev->ulBitCount == 24)
+        {
             pGdiInfo->ulHTOutputFormat = HT_FORMAT_24BPP;
             pDevInfo->iDitherFormat = BMF_24BPP;
-            break;
-
-         default:
+        }
+        else
+        {
             pGdiInfo->ulHTOutputFormat = HT_FORMAT_32BPP;
             pDevInfo->iDitherFormat = BMF_32BPP;
-      }
-   }
+        }
+    }
 
-   EngFreeMem(ModeInfo);
-   return TRUE;
+    EngFreeMem(pVideoBuffer);
+
+    return(TRUE);
 }
 
-/*
- * DrvGetModes
- *
- * Returns the list of available modes for the device.
- *
- * Status
- *    @implemented
- */
 
-ULONG APIENTRY
-DrvGetModes(
-   IN HANDLE hDriver,
-   IN ULONG cjSize,
-   OUT DEVMODEW *pdm)
+/******************************Public*Routine******************************\
+* getAvailableModes
+*
+* Calls the miniport to get the list of modes supported by the kernel driver,
+* and returns the list of modes supported by the diplay driver among those
+*
+* returns the number of entries in the videomode buffer.
+* 0 means no modes are supported by the miniport or that an error occured.
+*
+* NOTE: the buffer must be freed up by the caller.
+*
+\**************************************************************************/
+
+DWORD NTAPI getAvailableModes(
+HANDLE hDriver,
+PVIDEO_MODE_INFORMATION *modeInformation,
+DWORD *cbModeSize)
 {
-   ULONG ModeCount;
-   ULONG ModeInfoSize;
-   PVIDEO_MODE_INFORMATION ModeInfo, ModeInfoPtr;
-   ULONG OutputSize;
+    ULONG ulTemp;
+    VIDEO_NUM_MODES modes;
+    PVIDEO_MODE_INFORMATION pVideoTemp;
 
-   ModeCount = GetAvailableModes(hDriver, &ModeInfo, &ModeInfoSize);
-   if (ModeCount == 0)
-   {
-      return 0;
-   }
+    //
+    // Get the number of modes supported by the mini-port
+    //
 
-   if (pdm == NULL)
-   {
-      EngFreeMem(ModeInfo);
-      return ModeCount * sizeof(DEVMODEW);
-   }
+    if (EngDeviceIoControl(hDriver,
+                           IOCTL_VIDEO_QUERY_NUM_AVAIL_MODES,
+                           NULL,
+                           0,
+                           &modes,
+                           sizeof(VIDEO_NUM_MODES),
+                           &ulTemp))
+    {
+        DISPDBG((0, "getAvailableModes failed VIDEO_QUERY_NUM_AVAIL_MODES\n"));
+        return(0);
+    }
 
-   /*
-    * Copy the information about supported modes into the output buffer.
-    */
+    *cbModeSize = modes.ModeInformationLength;
 
-   OutputSize = 0;
-   ModeInfoPtr = ModeInfo;
+    //
+    // Allocate the buffer for the mini-port to write the modes in.
+    //
 
-   while (ModeCount-- > 0)
-   {
-      if (ModeInfoPtr->Length == 0)
-      {
-         ModeInfoPtr = (PVIDEO_MODE_INFORMATION)(((ULONG_PTR)ModeInfoPtr) + ModeInfoSize);
-         continue;
-      }
+    *modeInformation = (PVIDEO_MODE_INFORMATION)
+                        EngAllocMem(0, modes.NumModes *
+                                    modes.ModeInformationLength, ALLOC_TAG);
 
-      memset(pdm, 0, sizeof(DEVMODEW));
-      memcpy(pdm->dmDeviceName, DEVICE_NAME, sizeof(DEVICE_NAME));
-      pdm->dmSpecVersion =
-      pdm->dmDriverVersion = DM_SPECVERSION;
-      pdm->dmSize = sizeof(DEVMODEW);
-      pdm->dmDriverExtra = 0;
-      pdm->dmBitsPerPel = ModeInfoPtr->NumberOfPlanes * ModeInfoPtr->BitsPerPlane;
-      pdm->dmPelsWidth = ModeInfoPtr->VisScreenWidth;
-      pdm->dmPelsHeight = ModeInfoPtr->VisScreenHeight;
-      pdm->dmDisplayFrequency = ModeInfoPtr->Frequency;
-      pdm->dmDisplayFlags = 0;
-      pdm->dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT |
-                      DM_DISPLAYFREQUENCY | DM_DISPLAYFLAGS;
+    if (*modeInformation == (PVIDEO_MODE_INFORMATION) NULL)
+    {
+        DISPDBG((0, "getAvailableModes failed EngAllocMem\n"));
 
-      ModeInfoPtr = (PVIDEO_MODE_INFORMATION)(((ULONG_PTR)ModeInfoPtr) + ModeInfoSize);
-      pdm = (LPDEVMODEW)(((ULONG_PTR)pdm) + sizeof(DEVMODEW));
-      OutputSize += sizeof(DEVMODEW);
-   }
+        return 0;
+    }
 
-   EngFreeMem(ModeInfo);
-   return OutputSize;
+    //
+    // Ask the mini-port to fill in the available modes.
+    //
+
+    if (EngDeviceIoControl(hDriver,
+                           IOCTL_VIDEO_QUERY_AVAIL_MODES,
+                           NULL,
+                           0,
+                           *modeInformation,
+                           modes.NumModes * modes.ModeInformationLength,
+                           &ulTemp))
+    {
+
+        DISPDBG((0, "getAvailableModes failed VIDEO_QUERY_AVAIL_MODES\n"));
+
+        EngFreeMem(*modeInformation);
+        *modeInformation = (PVIDEO_MODE_INFORMATION) NULL;
+
+        return(0);
+    }
+
+    //
+    // Now see which of these modes are supported by the display driver.
+    // As an internal mechanism, set the length to 0 for the modes we
+    // DO NOT support.
+    //
+
+    ulTemp = modes.NumModes;
+    pVideoTemp = *modeInformation;
+
+    //
+    // Mode is rejected if it is not one plane, or not graphics, or is not
+    // one of 8, 16 or 32 bits per pel.
+    //
+
+    while (ulTemp--)
+    {
+        if ((pVideoTemp->NumberOfPlanes != 1 ) ||
+            !(pVideoTemp->AttributeFlags & VIDEO_MODE_GRAPHICS) ||
+// eVb: 2.6 [DDK CHANGE] - Do not process banked video modes
+             (pVideoTemp->AttributeFlags & VIDEO_MODE_BANKED) ||
+// eVb: 2.6 [END]
+            ((pVideoTemp->BitsPerPlane != 8) &&
+             (pVideoTemp->BitsPerPlane != 16) &&
+             (pVideoTemp->BitsPerPlane != 24) &&
+             (pVideoTemp->BitsPerPlane != 32)))
+        {
+            pVideoTemp->Length = 0;
+        }
+
+        pVideoTemp = (PVIDEO_MODE_INFORMATION)
+            (((PUCHAR)pVideoTemp) + modes.ModeInformationLength);
+    }
+
+    return modes.NumModes;
+
 }
