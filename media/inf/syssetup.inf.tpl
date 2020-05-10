@@ -18,7 +18,7 @@ battery.inf
 bth.inf
 cdrom.inf
 cpu.inf
-disk.inf
+diskdev.inf
 display.inf
 fdc.inf
 hal.inf

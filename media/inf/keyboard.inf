@@ -71,8 +71,8 @@ AddReg = PS2_AddReg
 i8042prt.sys
 
 [PS2_Inst.NT.Services]
-AddService = i8042prt, 0x00000002, i8042prt_Service_Inst
-AddService = kbdclass, , kbdclass_Service_Inst
+;AddService = i8042prt, 0x00000002, i8042prt_Service_Inst
+;AddService = kbdclass, , kbdclass_Service_Inst
 
 [i8042prt_Service_Inst]
 ServiceType   = 1

@@ -53,7 +53,7 @@ AddService = disk, 0x00000002 , disk_Service_Inst
 [disk_Service_Inst]
 DisplayName    = %disk.SvcDesc%
 ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
-StartType      = 1                  ; SERVICE_SYSTEM_START
+StartType      = 0                  ; SERVICE_BOOT_START
 ErrorControl   = 0x1                  ; SERVICE_ERROR_NORMAL
 LoadOrderGroup = Pointer Port
 ServiceBinary  = %12%\disk.sys
