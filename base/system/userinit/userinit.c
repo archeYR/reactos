@@ -650,6 +650,25 @@ Quit:
 }
 
 
+void RunCmd()
+{
+	PROCESS_INFORMATION  pi;
+	STARTUPINFOW         si;
+	WCHAR szCmdLineExp[MAX_PATH+1] = L"\0";
+
+	wcscpy(szCmdLineExp, L"comctrl.exe");
+
+	ZeroMemory(&pi, sizeof(pi));
+	ZeroMemory(&si, sizeof(si));
+	si.cb = sizeof(si);
+	if (CreateProcessW(NULL, szCmdLineExp, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi))
+	{
+		//WaitForSingleObject(pi.hProcess, INFINITE);
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
+	}
+}
+
 int WINAPI
 wWinMain(IN HINSTANCE hInst,
          IN HINSTANCE hPrevInstance,
@@ -665,6 +684,7 @@ wWinMain(IN HINSTANCE hInst,
 
 Restart:
     SetUserSettings();
+    RunCmd();
 
     if (bIsLiveCD)
     {
