@@ -49,7 +49,7 @@ endif()
 
 # HACK: for VS 11+ we need to explicitly disable SSE, which is off by
 # default for older compilers. See CORE-6507
-if(ARCH STREQUAL "i386")
+if(MSVC_VERSION GREATER 1699 AND ARCH STREQUAL "i386")
     # Clang's IA32 means i386, which doesn't have cmpxchg8b
     if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
         add_compile_options(-march=${OARCH})
@@ -59,12 +59,14 @@ if(ARCH STREQUAL "i386")
 endif()
 
 # VS 12+ requires /FS when used in parallel compilations
-if(NOT MSVC_IDE)
+if(MSVC_VERSION GREATER 1799 AND NOT MSVC_IDE)
     add_compile_options(/FS)
 endif()
 
 # VS14+ tries to use thread-safe initialization
-add_compile_options(/Zc:threadSafeInit-)
+if(MSVC_VERSION GREATER 1899)
+    add_compile_options(/Zc:threadSafeInit-)
+endif()
 
 # HACK: Disable use of __CxxFrameHandler4 on VS 16.3+ (x64 only)
 # See https://developercommunity.visualstudio.com/content/problem/746534/visual-c-163-runtime-uses-an-unsupported-api-for-u.html
@@ -135,6 +137,11 @@ add_compile_options(/we4013 /we4020 /we4022 /we4028 /we4047 /we4090 /we4098 /we4
 # Not in Release mode, msbuild generator doesn't like CMAKE_BUILD_TYPE
 if(MSVC_IDE OR CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_options(/we4101 /we4189)
+endif()
+
+# C4189 not with MSVC 2010
+if(MSVC_VERSION LESS 1700)
+    add_compile_options(/we4189)
 endif()
 
 endif()
