@@ -897,6 +897,7 @@ function(create_registry_hives)
         DESTINATION reactos/system32/config
         FOR livecd)
 
+    if(ENABLE_ROSLOAD)
     # BCD Hive
     add_custom_command(
         OUTPUT ${CMAKE_BINARY_DIR}/boot/bootdata/BCD
@@ -912,6 +913,7 @@ function(create_registry_hives)
         DESTINATION efi/boot
         NO_CAB
         FOR bootcd regtest livecd)
+    endif()
 
 endfunction()
 

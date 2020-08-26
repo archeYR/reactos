@@ -11,12 +11,20 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/caroots.inf
                    DEPENDS native-utf16le ${CMAKE_CURRENT_SOURCE_DIR}/caroots.inf)
 add_cd_file(TARGET converted_caroots_inf FILE ${CMAKE_CURRENT_BINARY_DIR}/caroots.inf DESTINATION reactos NO_CAB FOR all)
 
+if(ENABLE_ROSLOAD)
 add_registry_inf(
     hivecls.inf
     hivedef.inf
     hivesft.inf
     hivesys.inf
     hivebcd.inf)
+else()
+add_registry_inf(
+    hivecls.inf
+    hivedef.inf
+    hivesft.inf
+    hivesys.inf)
+endif()
 
 
 # Regtest

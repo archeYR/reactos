@@ -1,3 +1,5 @@
+
+if(ENABLE_ROSLOAD)
 ## efisys.bin
 
 # EFI platform ID, used in environ/CMakelists.txt for bootmgfw filename naming also.
@@ -19,6 +21,7 @@ add_custom_target(efisys
     COMMAND native-fatten ${CMAKE_CURRENT_BINARY_DIR}/efisys.bin -format 2880 EFIBOOT -boot ${CMAKE_CURRENT_BINARY_DIR}/freeldr/bootsect/fat.bin -mkdir EFI -mkdir EFI/BOOT -add $<TARGET_FILE:bootmgfw> EFI/BOOT/boot${EFI_PLATFORM_ID}.efi
     DEPENDS native-fatten fat bootmgfw
     VERBATIM)
+endif()
 
 
 # Create an 'empty' directory (guaranteed to be empty) to be able to add
@@ -29,7 +32,9 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/empty)
 set(_isombr_file  ${CMAKE_CURRENT_BINARY_DIR}/freeldr/bootsect/isombr.bin)  # get_target_property(_isombr_file  isombr  LOCATION)
 set(_isoboot_file ${CMAKE_CURRENT_BINARY_DIR}/freeldr/bootsect/isoboot.bin) # get_target_property(_isoboot_file isoboot LOCATION)
 set(_isobtrt_file ${CMAKE_CURRENT_BINARY_DIR}/freeldr/bootsect/isobtrt.bin) # get_target_property(_isobtrt_file isobtrt LOCATION)
+if(ENABLE_ROSLOAD)
 set(_efisys_file  ${CMAKE_CURRENT_BINARY_DIR}/efisys.bin) # get_target_property(_efisys_file  efisys  LOCATION)
+endif()
 
 # Create a mkisofs sort file to specify an explicit ordering for the boot files
 # to place them at the beginning of the image (makes ISO image analysis easier).
@@ -46,13 +51,21 @@ set(_efisys_file  ${CMAKE_CURRENT_BINARY_DIR}/efisys.bin) # get_target_property(
 # - since its contents are included by mkisofs in the root of the ISO image,
 #   using the empty directory ensures that no extra unwanted files are added.
 #
+if(ENABLE_ROSLOAD)
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/bootfiles.sort "\
 ${CMAKE_CURRENT_BINARY_DIR}/empty/boot.catalog 4
 ${_isoboot_file} 3
 ${_isobtrt_file} 2
 ${_efisys_file} 1
 ")
+else()
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/bootfiles.sort "\
+${CMAKE_CURRENT_BINARY_DIR}/empty/boot.catalog 3
+${_isoboot_file} 2
+${_isobtrt_file} 1
+")
 
+endif()
 # ISO image identifier names
 set(ISO_MANUFACTURER "ReactOS Foundation")  # For both the publisher and the preparer
 set(ISO_VOLNAME      "ReactOS")             # For both the Volume ID and the Volume set ID
@@ -97,6 +110,7 @@ endfunction()
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/bootcd.cmake.lst "")
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/bootcd.cmake.lst "${CMAKE_CURRENT_BINARY_DIR}/empty\n")
 
+if(ENABLE_ROSLOAD)
 add_custom_target(bootcd
     COMMAND native-mkisofs -quiet -o ${REACTOS_BINARY_DIR}/bootcd.iso -iso-level 4
         -publisher ${ISO_MANUFACTURER} -preparer ${ISO_MANUFACTURER} -volid ${ISO_VOLNAME} -volset ${ISO_VOLNAME}
@@ -106,12 +120,24 @@ add_custom_target(bootcd
     COMMAND native-isohybrid -b ${_isombr_file} -t 0x96 ${REACTOS_BINARY_DIR}/bootcd.iso
     DEPENDS isombr native-isohybrid native-mkisofs
     VERBATIM)
+else()
+add_custom_target(bootcd
+    COMMAND native-mkisofs -quiet -o ${REACTOS_BINARY_DIR}/bootcd.iso -iso-level 4
+        -publisher ${ISO_MANUFACTURER} -preparer ${ISO_MANUFACTURER} -volid ${ISO_VOLNAME} -volset ${ISO_VOLNAME}
+        -eltorito-boot loader/isoboot.bin -no-emul-boot -boot-load-size 4 -hide boot.catalog
+        -sort ${CMAKE_CURRENT_BINARY_DIR}/bootfiles.sort
+        -no-cache-inodes -graft-points -path-list ${CMAKE_CURRENT_BINARY_DIR}/bootcd.$<CONFIG>.lst
+    COMMAND native-isohybrid -b ${_isombr_file} -t 0x96 ${REACTOS_BINARY_DIR}/bootcd.iso
+    DEPENDS isombr native-isohybrid native-mkisofs
+    VERBATIM)
+endif()
 
 ## BootCDRegTest
 # Create the file list
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/bootcdregtest.cmake.lst "")
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/bootcdregtest.cmake.lst "${CMAKE_CURRENT_BINARY_DIR}/empty\n")
 
+if(ENABLE_ROSLOAD)
 add_custom_target(bootcdregtest
     COMMAND native-mkisofs -quiet -o ${REACTOS_BINARY_DIR}/bootcdregtest.iso -iso-level 4
         -publisher ${ISO_MANUFACTURER} -preparer ${ISO_MANUFACTURER} -volid ${ISO_VOLNAME} -volset ${ISO_VOLNAME}
@@ -121,6 +147,17 @@ add_custom_target(bootcdregtest
     COMMAND native-isohybrid -b ${_isombr_file} -t 0x96 ${REACTOS_BINARY_DIR}/bootcdregtest.iso
     DEPENDS isombr native-isohybrid native-mkisofs
     VERBATIM)
+else()
+add_custom_target(bootcdregtest
+    COMMAND native-mkisofs -quiet -o ${REACTOS_BINARY_DIR}/bootcdregtest.iso -iso-level 4
+        -publisher ${ISO_MANUFACTURER} -preparer ${ISO_MANUFACTURER} -volid ${ISO_VOLNAME} -volset ${ISO_VOLNAME}
+        -eltorito-boot loader/isobtrt.bin -no-emul-boot -boot-load-size 4 -hide boot.catalog
+        -sort ${CMAKE_CURRENT_BINARY_DIR}/bootfiles.sort
+        -no-cache-inodes -graft-points -path-list ${CMAKE_CURRENT_BINARY_DIR}/bootcdregtest.$<CONFIG>.lst
+    COMMAND native-isohybrid -b ${_isombr_file} -t 0x96 ${REACTOS_BINARY_DIR}/bootcdregtest.iso
+    DEPENDS isombr native-isohybrid native-mkisofs
+    VERBATIM)
+endif()
 
 ## LiveCD
 # Create the file list
@@ -131,6 +168,7 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/livecd.cmake.lst "${CMAKE_CURRENT_BINARY_
 add_allusers_profile_dirs(${CMAKE_CURRENT_BINARY_DIR}/livecd.cmake.lst "Profiles")
 add_user_profile_dirs(${CMAKE_CURRENT_BINARY_DIR}/livecd.cmake.lst "Profiles" "Default User")
 
+if(ENABLE_ROSLOAD)
 add_custom_target(livecd
     COMMAND native-mkisofs -quiet -o ${REACTOS_BINARY_DIR}/livecd.iso -iso-level 4
         -publisher ${ISO_MANUFACTURER} -preparer ${ISO_MANUFACTURER} -volid ${ISO_VOLNAME} -volset ${ISO_VOLNAME}
@@ -140,6 +178,17 @@ add_custom_target(livecd
     COMMAND native-isohybrid -b ${_isombr_file} -t 0x96 ${REACTOS_BINARY_DIR}/livecd.iso
     DEPENDS isombr native-isohybrid native-mkisofs
     VERBATIM)
+else()
+add_custom_target(livecd
+    COMMAND native-mkisofs -quiet -o ${REACTOS_BINARY_DIR}/livecd.iso -iso-level 4
+        -publisher ${ISO_MANUFACTURER} -preparer ${ISO_MANUFACTURER} -volid ${ISO_VOLNAME} -volset ${ISO_VOLNAME}
+        -eltorito-boot loader/isoboot.bin -no-emul-boot -boot-load-size 4 -hide boot.catalog
+        -sort ${CMAKE_CURRENT_BINARY_DIR}/bootfiles.sort
+        -no-cache-inodes -graft-points -path-list ${CMAKE_CURRENT_BINARY_DIR}/livecd.$<CONFIG>.lst
+    COMMAND native-isohybrid -b ${_isombr_file} -t 0x96 ${REACTOS_BINARY_DIR}/livecd.iso
+    DEPENDS isombr native-isohybrid native-mkisofs
+    VERBATIM)
+endif()
 
 ## HybridCD
 # Create the file list
@@ -150,6 +199,7 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/hybridcd.cmake.lst "${CMAKE_CURRENT_BINAR
 add_allusers_profile_dirs(${CMAKE_CURRENT_BINARY_DIR}/hybridcd.cmake.lst "livecd/Profiles")
 add_user_profile_dirs(${CMAKE_CURRENT_BINARY_DIR}/hybridcd.cmake.lst "livecd/Profiles" "Default User")
 
+if(ENABLE_ROSLOAD)
 add_custom_target(hybridcd
     COMMAND native-mkisofs -quiet -o ${REACTOS_BINARY_DIR}/hybridcd.iso -iso-level 4
         -publisher ${ISO_MANUFACTURER} -preparer ${ISO_MANUFACTURER} -volid ${ISO_VOLNAME} -volset ${ISO_VOLNAME}
@@ -159,9 +209,24 @@ add_custom_target(hybridcd
     COMMAND native-isohybrid -b ${_isombr_file} -t 0x96 ${REACTOS_BINARY_DIR}/hybridcd.iso
     DEPENDS bootcd livecd
     VERBATIM)
+else()
+add_custom_target(hybridcd
+    COMMAND native-mkisofs -quiet -o ${REACTOS_BINARY_DIR}/hybridcd.iso -iso-level 4
+        -publisher ${ISO_MANUFACTURER} -preparer ${ISO_MANUFACTURER} -volid ${ISO_VOLNAME} -volset ${ISO_VOLNAME}
+        -eltorito-boot loader/isoboot.bin -no-emul-boot -boot-load-size 4 -hide boot.catalog
+        -sort ${CMAKE_CURRENT_BINARY_DIR}/bootfiles.sort
+        -duplicates-once -no-cache-inodes -graft-points -path-list ${CMAKE_CURRENT_BINARY_DIR}/hybridcd.$<CONFIG>.lst
+    COMMAND native-isohybrid -b ${_isombr_file} -t 0x96 ${REACTOS_BINARY_DIR}/hybridcd.iso
+    DEPENDS bootcd livecd
+    VERBATIM)
+endif()
 
+if(ENABLE_ROSLOAD)
 add_cd_file(TARGET efisys FILE ${CMAKE_CURRENT_BINARY_DIR}/efisys.bin DESTINATION loader NO_CAB NOT_IN_HYBRIDCD FOR bootcd regtest livecd hybridcd)
+endif()
 
 add_subdirectory(freeldr)
 add_subdirectory(bootdata)
+if(ENABLE_ROSLOAD)
 add_subdirectory(environ)
+endif()
