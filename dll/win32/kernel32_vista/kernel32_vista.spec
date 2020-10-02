@@ -1,6 +1,7 @@
 
 @ stdcall InitOnceExecuteOnce(ptr ptr ptr ptr)
 @ stdcall GetFileInformationByHandleEx(long long ptr long)
+@ stdcall GetFinalPathNameByHandleW(long ptr long long)
 @ stdcall -ret64 GetTickCount64()
 
 @ stdcall InitializeSRWLock(ptr)
@@ -16,3 +17,10 @@
 @ stdcall WakeConditionVariable(ptr)
 
 @ stdcall InitializeCriticalSectionEx(ptr long long)
+@ stdcall TryAcquireSRWLockExclusive(ptr)
+@ stdcall TryAcquireSRWLockShared(ptr) ntdll_vista.RtlTryAcquireSRWLockShared
+
+@ stdcall InitOnceBeginInitialize(ptr long ptr ptr)
+@ stdcall InitOnceComplete(ptr long ptr)
+
+@ stdcall SetFileInformationByHandle(long long ptr long)

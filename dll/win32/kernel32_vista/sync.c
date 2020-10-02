@@ -36,6 +36,10 @@ VOID
 NTAPI
 RtlAcquireSRWLockShared(IN OUT PRTL_SRWLOCK SRWLock);
 
+BOOLEAN
+NTAPI
+RtlTryAcquireSRWLockExclusive( IN OUT PRTL_SRWLOCK SRWLock );
+
 VOID
 NTAPI
 RtlReleaseSRWLockShared(IN OUT PRTL_SRWLOCK SRWLock);
@@ -48,6 +52,13 @@ VOID
 NTAPI
 RtlReleaseSRWLockExclusive(IN OUT PRTL_SRWLOCK SRWLock);
 
+DWORD
+WINAPI
+RtlRunOnceBeginInitialize( RTL_RUN_ONCE *once, ULONG flags, void **context );
+
+VOID
+WINAPI
+RtlRunOnceInitialize( RTL_RUN_ONCE *once );
 
 VOID
 WINAPI
@@ -61,6 +72,13 @@ WINAPI
 AcquireSRWLockShared(PSRWLOCK Lock)
 {
     RtlAcquireSRWLockShared((PRTL_SRWLOCK)Lock);
+}
+
+BOOLEAN
+WINAPI
+TryAcquireSRWLockExclusive(PSRWLOCK Lock)
+{
+    return(RtlTryAcquireSRWLockExclusive((PRTL_SRWLOCK)Lock));
 }
 
 VOID
@@ -173,3 +191,23 @@ BOOL WINAPI InitializeCriticalSectionEx(OUT LPCRITICAL_SECTION lpCriticalSection
     return TRUE;
 }
 
+/***********************************************************************
+ *           InitOnceBeginInitialize    (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH InitOnceBeginInitialize( INIT_ONCE *once, DWORD flags,
+                                                       BOOL *pending, void **context )
+{
+    NTSTATUS status = RtlRunOnceBeginInitialize( once, flags, context );
+    if (status >= 0) *pending = (status == STATUS_PENDING);
+    else SetLastError( RtlNtStatusToDosError(status) );
+    return status >= 0;
+}
+
+/***********************************************************************
+ *           InitOnceComplete    (kernelbase.@)
+ */
+BOOL WINAPI DECLSPEC_HOTPATCH InitOnceComplete( INIT_ONCE *once, DWORD flags, void *context )
+{
+	NTSTATUS status = RtlRunOnceComplete( once, flags, context );
+    return status;
+}

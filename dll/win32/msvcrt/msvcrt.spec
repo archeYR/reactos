@@ -459,7 +459,7 @@
 @ stub -version=0x600+ _cwscanf_s_l
 @ extern _daylight
 @ stub -version=0x600+ _difftime32
-@ stub -version=0x600+ _difftime64
+@ cdecl _difftime64(long long)
 @ extern _dstbias
 @ cdecl _dup(long)
 @ cdecl _dup2(long long)

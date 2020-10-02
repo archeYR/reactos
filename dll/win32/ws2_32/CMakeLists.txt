@@ -23,6 +23,8 @@ list(APPEND SOURCE
     src/event.c
     src/getproto.c
     src/getxbyxx.c
+    src/inet_ntop.c
+    src/inet_pton.c
     src/ioctl.c
     src/nscatalo.c
     src/nscatent.c

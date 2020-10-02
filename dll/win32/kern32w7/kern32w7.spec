@@ -1,0 +1,1 @@
+@ stdcall SetThreadErrorMode(long ptr)

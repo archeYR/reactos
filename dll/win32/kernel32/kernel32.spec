@@ -1,5 +1,7 @@
-@ stdcall -stub -version=0x600+ AcquireSRWLockExclusive(ptr) NTDLL.RtlAcquireSRWLockExclusive
-@ stdcall -stub -version=0x600+ AcquireSRWLockShared(ptr) NTDLL.RtlAcquireSRWLockShared
+@ stdcall AcquireSRWLockExclusive(ptr) kernel32_vista.AcquireSRWLockExclusive
+@ stdcall TryAcquireSRWLockExclusive(ptr) kernel32_vista.TryAcquireSRWLockExclusive
+@ stdcall TryAcquireSRWLockShared(ptr) kernel32_vista.TryAcquireSRWLockShared
+@ stdcall AcquireSRWLockShared(ptr) kernel32_vista.AcquireSRWLockShared
 @ stdcall ActivateActCtx(ptr ptr)
 @ stdcall AddAtomA(str)
 @ stdcall AddAtomW(wstr)
@@ -482,7 +484,7 @@
 @ stub -version=0x600+ GetFinalPathNameByHandleA
 @ stub -version=0x600+ GetFinalPathNameByHandleW
 @ stdcall GetFirmwareEnvironmentVariableA(str str ptr long)
-@ stdcall GetFirmwareEnvironmentVariableW(wstr wstr ptr long)
+@ stdcall GetFinalPathNameByHandleW(long ptr long long) kernel32_vista.GetFinalPathNameByHandleW
 @ stdcall GetFullPathNameA(str long ptr ptr)
 @ stub -version=0x600+ GetFullPathNameTransactedA
 @ stub -version=0x600+ GetFullPathNameTransactedW
@@ -630,7 +632,10 @@
 @ stdcall GetThreadTimes(long ptr ptr ptr ptr)
 @ stub -version=0x600+ GetThreadUILanguage
 @ stdcall GetTickCount()
-@ stub -version=0x600+ GetTickCount64
+@ stdcall GetTickCount64() kernel32_vista.GetTickCount64
+@ stdcall K32GetProcessMemoryInfo(ptr ptr long) psapi.GetProcessMemoryInfo
+@ stdcall K32GetModuleBaseNameA(ptr ptr ptr long) psapi.GetModuleBaseNameA
+@ stdcall K32EnumProcessModules(ptr ptr long ptr) psapi.EnumProcessModules
 @ stdcall GetTimeFormatA(long long ptr str ptr long)
 @ stdcall -version=0x600+ GetTimeFormatEx(wstr long ptr wstr wstr long)
 @ stdcall GetTimeFormatW(long long ptr wstr ptr long)
@@ -707,17 +712,17 @@
 @ stub -version=0x600+ IdnToNameprepUnicode
 @ stub -version=0x600+ IdnToUnicode
 @ stdcall InitAtomTable(long)
-@ stub -version=0x600+ InitOnceBeginInitialize
-@ stub -version=0x600+ InitOnceComplete
+@ stdcall InitOnceBeginInitialize(ptr long ptr ptr) kernel32_vista.InitOnceBeginInitialize
+@ stdcall InitOnceComplete(ptr long ptr) kernel32_vista.InitOnceComplete
 @ stub -version=0x600+ InitOnceExecuteOnce
 @ stub -version=0x600+ InitOnceInitialize
-@ stub -version=0x600+ InitializeConditionVariable
+@ stdcall InitializeConditionVariable(ptr) kernel32_vista.InitializeConditionVariable
 @ stdcall InitializeCriticalSection(ptr)
 @ stdcall InitializeCriticalSectionAndSpinCount(ptr long)
 @ stub -version=0x600+ InitializeCriticalSectionEx
 @ stub -version=0x600+ InitializeProcThreadAttributeList
 @ stdcall InitializeSListHead(ptr) ntdll.RtlInitializeSListHead
-@ stub -version=0x600+ InitializeSRWLock
+@ stdcall InitializeSRWLock(ptr) kernel32_vista.InitializeSRWLock
 @ stdcall -arch=i386 -ret64 InterlockedCompareExchange64(ptr double double) ntdll.RtlInterlockedCompareExchange64
 @ stdcall -arch=i386 InterlockedCompareExchange (ptr long long)
 @ stdcall -arch=i386 InterlockedDecrement(ptr)
@@ -912,8 +917,8 @@
 @ stdcall ReleaseActCtx(ptr)
 @ stdcall ReleaseMutex(long)
 @ stub -version=0x600+ ReleaseMutexWhenCallbackReturns
-@ stub -version=0x600+ ReleaseSRWLockExclusive
-@ stub -version=0x600+ ReleaseSRWLockShared
+@ stdcall ReleaseSRWLockExclusive(ptr) kernel32_vista.ReleaseSRWLockExclusive
+@ stdcall ReleaseSRWLockShared(ptr) kernel32_vista.ReleaseSRWLockShared
 @ stdcall ReleaseSemaphore(long long ptr)
 @ stub -version=0x600+ ReleaseSemaphoreWhenCallbackReturns
 @ stdcall RemoveDirectoryA(str)
@@ -1027,7 +1032,7 @@
 @ stdcall SetFileAttributesW(wstr long)
 @ stub -version=0x600+ SetFileBandwidthReservation
 @ stdcall SetFileCompletionNotificationModes(ptr long)
-@ stub -version=0x600+ SetFileInformationByHandle
+@ stdcall SetFileInformationByHandle(long long ptr long) kernel32_vista.SetFileInformationByHandle
 @ stub -version=0x600+ SetFileIoOverlappedRange
 @ stdcall SetFilePointer(long long ptr long)
 @ stdcall SetFilePointerEx(long double ptr long)
@@ -1100,7 +1105,7 @@
 @ stdcall SizeofResource(long long)
 @ stdcall Sleep(long)
 @ stub -version=0x600+ SleepConditionVariableCS
-@ stub -version=0x600+ SleepConditionVariableSRW
+@ stdcall SleepConditionVariableSRW(ptr ptr long long) kernel32_vista.SleepConditionVariableSRW
 @ stdcall SleepEx(long long)
 @ stub -version=0x600+ StartThreadpoolIo
 @ stub -version=0x600+ SubmitThreadpoolWork
@@ -1175,8 +1180,8 @@
 @ stub -version=0x600+ WaitForThreadpoolWorkCallbacks
 @ stdcall WaitNamedPipeA (str long)
 @ stdcall WaitNamedPipeW (wstr long)
-@ stub -version=0x600+ WakeAllConditionVariable
-@ stub -version=0x600+ WakeConditionVariable
+@ stdcall WakeAllConditionVariable(ptr) kernel32_vista.WakeAllConditionVariable
+@ stdcall WakeConditionVariable(ptr) kernel32_vista.WakeConditionVariable
 @ stub -version=0x600+ WerGetFlags
 @ stub -version=0x600+ WerRegisterFile
 @ stub -version=0x600+ WerRegisterMemoryBlock

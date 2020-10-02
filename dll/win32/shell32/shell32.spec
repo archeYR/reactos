@@ -464,3 +464,4 @@
 754 stub -noname SHLimitInputEditWithFlags
 755 stdcall -noname PathIsEqualOrSubFolder(wstr wstr)
 756 stub -noname DeleteFileThumbnail
+@ stdcall SHGetKnownFolderPath(ptr long ptr ptr)

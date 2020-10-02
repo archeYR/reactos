@@ -763,3 +763,23 @@ RtlReleaseSRWLockExclusive(IN OUT PRTL_SRWLOCK SRWLock)
         YieldProcessor();
     }
 }
+
+/***********************************************************************
+ *              RtlTryAcquireSRWLockExclusive (NTDLL.@)
+ *
+ * NOTES
+ *  Similarly to AcquireSRWLockExclusive, recursive calls are not allowed
+ *  and will fail with a FALSE return value.
+ */
+BOOLEAN NTAPI RtlTryAcquireSRWLockExclusive( IN OUT PRTL_SRWLOCK SRWLock )
+{
+    return STATUS_SUCCESS;
+}
+
+/***********************************************************************
+ *              RtlTryAcquireSRWLockShared (NTDLL.@)
+ */
+BOOLEAN WINAPI RtlTryAcquireSRWLockShared( RTL_SRWLOCK *lock )
+{
+    return STATUS_SUCCESS;
+}
