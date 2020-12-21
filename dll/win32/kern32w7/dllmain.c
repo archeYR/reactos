@@ -1,5 +1,6 @@
 ﻿#include <ndk/rtlfuncs.h>
 #include "winbase.h"
+#include "appmodel.h"
 
 /* Windows 7 kernel32 exports */
 #pragma comment(linker, "/export:Module32Next=kernel32.Module32Next")
@@ -387,6 +388,7 @@
 #pragma comment(linker, "/export:GetUserDefaultUILanguage=kernel32.GetUserDefaultUILanguage")
 #pragma comment(linker, "/export:GlobalAddAtomW=kernel32.GlobalAddAtomW")
 #pragma comment(linker, "/export:GlobalFindAtomW=kernel32.GlobalFindAtomW")
+#pragma comment(linker, "/export:GetNumberFormatW=kernel32.GetNumberFormatW")
 
 
 /* kernel32 > psapi redirection */
@@ -449,4 +451,16 @@ BOOL WINAPI SetThreadErrorMode(DWORD mode, DWORD* old)
     status = RtlSetThreadErrorMode(new, old);
     if (!status && old) *old = rtlmode_to_win32mode(*old);
     return status;
+}
+
+
+/***********************************************************************
+ *          AppPolicyGetWindowingModel (KERNELBASE.@)
+ */
+LONG WINAPI AppPolicyGetWindowingModel(HANDLE token, AppPolicyWindowingModel *policy)
+{
+    if(policy)
+        *policy = AppPolicyWindowingModel_ClassicDesktop;
+
+    return ERROR_SUCCESS;
 }
