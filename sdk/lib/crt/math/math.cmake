@@ -120,7 +120,6 @@ if(NOT ARCH STREQUAL "i386")
     list(APPEND CRT_MATH_SOURCE
         math/_chgsignf.c
         math/_copysignf.c
-        math/_hypotf.c
         math/acosf.c
         math/asinf.c
         math/atan2f.c
@@ -153,6 +152,7 @@ list(APPEND CRT_MATH_SOURCE
     math/frexp.c
     math/huge_val.c
     math/hypot.c
+    math/_hypotf.c
     math/ieee754/j0_y0.c
     math/ieee754/j1_y1.c
     math/ieee754/jn_yn.c

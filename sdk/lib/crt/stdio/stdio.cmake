@@ -2,6 +2,7 @@
 list(APPEND CRT_STDIO_SOURCE
     stdio/_flsbuf.c
     stdio/_flswbuf.c
+    stdio/acrt_iob_func.c
     stdio/access.c
     stdio/file.c
     stdio/find.c
