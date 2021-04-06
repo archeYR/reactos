@@ -390,6 +390,70 @@
 #pragma comment(linker, "/export:GlobalFindAtomW=kernel32.GlobalFindAtomW")
 #pragma comment(linker, "/export:GetNumberFormatW=kernel32.GetNumberFormatW")
 
+#pragma comment(linker, "/export:GetSystemTimePreciseAsFileTime=kernel32.GetSystemTimeAsFileTime")
+
+#pragma comment(linker, "/export:GetProcessIoCounters=kernel32.GetProcessIoCounters")
+#pragma comment(linker, "/export:CreateThreadpool=kernel32.CreateThreadpool")
+#pragma comment(linker, "/export:SetThreadpoolThreadMaximum=kernel32.SetThreadpoolThreadMaximum")
+#pragma comment(linker, "/export:SetThreadpoolThreadMinimum=kernel32.SetThreadpoolThreadMinimum")
+#pragma comment(linker, "/export:SetThreadpoolStackInformation=kernel32.SetThreadpoolStackInformation")
+#pragma comment(linker, "/export:CloseThreadpool=kernel32.CloseThreadpool")
+#pragma comment(linker, "/export:CallbackMayRunLong=kernel32.CallbackMayRunLong")
+#pragma comment(linker, "/export:CloseThreadpoolWork=kernel32.CloseThreadpoolWork")
+#pragma comment(linker, "/export:CreateThreadpoolIo=kernel32.CreateThreadpoolIo")
+#pragma comment(linker, "/export:StartThreadpoolIo=kernel32.StartThreadpoolIo")
+#pragma comment(linker, "/export:CancelThreadpoolIo=kernel32.CancelThreadpoolIo")
+#pragma comment(linker, "/export:CloseThreadpoolIo=kernel32.CloseThreadpoolIo")
+#pragma comment(linker, "/export:SetFileCompletionNotificationModes=kernel32.SetFileCompletionNotificationModes")
+#pragma comment(linker, "/export:GetQueuedCompletionStatusEx=kernel32.GetQueuedCompletionStatusEx")
+#pragma comment(linker, "/export:ConnectNamedPipe=kernel32.ConnectNamedPipe")
+#pragma comment(linker, "/export:TrySubmitThreadpoolCallback=kernel32.TrySubmitThreadpoolCallback")
+#pragma comment(linker, "/export:CreateNamedPipeA=kernel32.CreateNamedPipeA")
+#pragma comment(linker, "/export:SuspendThread=kernel32.SuspendThread")
+#pragma comment(linker, "/export:lstrcpyA=kernel32.lstrcpyA")
+#pragma comment(linker, "/export:lstrlenA=kernel32.lstrlenA")
+#pragma comment(linker, "/export:GetLocaleInfoA=kernel32.GetLocaleInfoA")
+#pragma comment(linker, "/export:GetWindowsDirectoryA=kernel32.GetWindowsDirectoryA")
+#pragma comment(linker, "/export:GetSystemWindowsDirectoryA=kernel32.GetSystemWindowsDirectoryA")
+#pragma comment(linker, "/export:GetTempFileNameA=kernel32.GetTempFileNameA")
+#pragma comment(linker, "/export:GetLogicalDrives=kernel32.GetLogicalDrives")
+#pragma comment(linker, "/export:SetFileAttributesA=kernel32.SetFileAttributesA")
+#pragma comment(linker, "/export:MoveFileA=kernel32.MoveFileA")
+#pragma comment(linker, "/export:GetVolumeInformationByHandleW=kernel32.GetVolumeInformationByHandleW")
+#pragma comment(linker, "/export:MoveFileExA=kernel32.MoveFileExA")
+#pragma comment(linker, "/export:TryAcquireSRWLockExclusive=kernel32.TryAcquireSRWLockExclusive")
+#pragma comment(linker, "/export:TryAcquireSRWLockShared=kernel32.TryAcquireSRWLockShared")
+#pragma comment(linker, "/export:SwitchToFiber=kernel32.SwitchToFiber")
+#pragma comment(linker, "/export:DeleteFiber=kernel32.DeleteFiber")
+#pragma comment(linker, "/export:CreateFiber=kernel32.CreateFiber")
+#pragma comment(linker, "/export:ConvertThreadToFiber=kernel32.ConvertThreadToFiber")
+#pragma comment(linker, "/export:GetLargePageMinimum=kernel32.GetLargePageMinimum")
+#pragma comment(linker, "/export:InitOnceExecuteOnce=kernel32.InitOnceExecuteOnce")
+#pragma comment(linker, "/export:TerminateThread=kernel32.TerminateThread")
+#pragma comment(linker, "/export:InitializeConditionVariable=kernel32.InitializeConditionVariable")
+#pragma comment(linker, "/export:SleepConditionVariableCS=kernel32.SleepConditionVariableCS")
+#pragma comment(linker, "/export:GetFileAttributesExA=kernel32.GetFileAttributesExA")
+#pragma comment(linker, "/export:ReadConsoleA=kernel32.ReadConsoleA")
+#pragma comment(linker, "/export:SetHandleInformation=kernel32.SetHandleInformation")
+#pragma comment(linker, "/export:CreatePipe=kernel32.CreatePipe")
+#pragma comment(linker, "/export:CreateProcessA=kernel32.CreateProcessA")
+#pragma comment(linker, "/export:PeekNamedPipe=kernel32.PeekNamedPipe")
+#pragma comment(linker, "/export:CancelIo=kernel32.CancelIo")
+#pragma comment(linker, "/export:FindFirstFileA=kernel32.FindFirstFileA")
+#pragma comment(linker, "/export:FindNextFileA=kernel32.FindNextFileA")
+#pragma comment(linker, "/export:CreateDirectoryA=kernel32.CreateDirectoryA")
+#pragma comment(linker, "/export:GetCompressedFileSizeA=kernel32.GetCompressedFileSizeA")
+#pragma comment(linker, "/export:GetVolumeNameForVolumeMountPointA=kernel32.GetVolumeNameForVolumeMountPointA")
+#pragma comment(linker, "/export:GetVolumePathNameA=kernel32.GetVolumePathNameA")
+#pragma comment(linker, "/export:GetVersionExA=kernel32.GetVersionExA")
+#pragma comment(linker, "/export:CloseThreadpoolCleanupGroup=kernel32.CloseThreadpoolCleanupGroup")
+#pragma comment(linker, "/export:CloseThreadpoolCleanupGroupMembers=kernel32.CloseThreadpoolCleanupGroupMembers")
+#pragma comment(linker, "/export:CreateThreadpoolCleanupGroup=kernel32.CreateThreadpoolCleanupGroup")
+#pragma comment(linker, "/export:WerRegisterFile=kernel32.WerRegisterFile")
+#pragma comment(linker, "/export:GetDynamicTimeZoneInformation=kernel32.GetDynamicTimeZoneInformation")
+#pragma comment(linker, "/export:WaitNamedPipeA=kernel32.WaitNamedPipeA")
+#pragma comment(linker, "/export:SetNamedPipeHandleState=kernel32.SetNamedPipeHandleState")
+
 
 /* kernel32 > psapi redirection */
 /*#pragma comment(linker, "/export:K32EnumProcessModulesEx=psapi.EnumProcessModulesEx")*/
@@ -453,6 +517,10 @@ BOOL WINAPI SetThreadErrorMode(DWORD mode, DWORD* old)
     return status;
 }
 
+void WINAPI WakeByAddressSingle(const void *addr)
+{
+	
+}
 
 /***********************************************************************
  *          AppPolicyGetWindowingModel (KERNELBASE.@)
@@ -464,3 +532,10 @@ LONG WINAPI AppPolicyGetWindowingModel(HANDLE token, AppPolicyWindowingModel *po
 
     return ERROR_SUCCESS;
 }
+
+BOOL WINAPI DECLSPEC_HOTPATCH WaitOnAddress( volatile void *addr, void *cmp, SIZE_T size, DWORD timeout )
+{
+	return FALSE;
+}
+
+
