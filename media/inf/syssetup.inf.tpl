@@ -23,6 +23,7 @@ display.inf
 fdc.inf
 hal.inf
 hdc.inf
+iaAHCI.inf
 input.inf
 keyboard.inf
 legcydrv.inf
