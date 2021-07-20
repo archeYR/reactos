@@ -31,6 +31,7 @@ machine.inf
 monitor.inf
 msmouse.inf
 NET_NIC.inf
+pnpscsi.inf
 ports.inf
 scsi.inf
 unknown.inf

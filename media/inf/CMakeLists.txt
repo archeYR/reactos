@@ -21,6 +21,7 @@ list(APPEND INF_FILES
     msmouse.inf
     NET_NIC.inf
     nettcpip.inf
+	pnpscsi.inf
     ports.inf
     scsi.inf
     shortcuts.inf
