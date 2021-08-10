@@ -9,5 +9,14 @@ HKLM,"SYSTEM\CurrentControlSet\Enum\PCI\VEN_10DE&DEV_02A0&SUBSYS_00000000&REV_A1
 
 HKLM,"SYSTEM\CurrentControlSet\Hardware Profiles\Current\System\CurrentControlSet\Services\XboxVmp\Device0","InstalledDisplayDrivers",0x00010000,"framebuf"
 
+; For Windows XP+ videoprt.sys
+HKLM,"SYSTEM\CurrentControlSet\Services\XboxVmp\Video","VideoID",0x00000000,"{23A77BF7-ED98-40EC-AF06-9B1F4867732A}"
+HKLM,"SYSTEM\CurrentControlSet\Services\XboxVmp\Video","Service",0x00000000,"XboxVmp"
+HKLM,"SYSTEM\CurrentControlSet\Services\XboxVmp\Device0","InstalledDisplayDrivers",0x00010000,"framebuf"
+HKLM,"SYSTEM\CurrentControlSet\Control\Video\{23A77BF7-ED98-40EC-AF06-9B1F4867732A}\Video","Service",0x00000000,"XboxVmp"
+HKLM,"SYSTEM\CurrentControlSet\Control\Video\{23A77BF7-ED98-40EC-AF06-9B1F4867732A}\0000","InstalledDisplayDrivers",0x00010000,"framebuf"
+
 ; This is not true but it allows to use 3rd party drivers while having the XboxVmp driver installed
 HKLM,"SYSTEM\CurrentControlSet\Hardware Profiles\Current\System\CurrentControlSet\Services\XboxVmp\Device0","VgaCompatible",0x00010001,1
+HKLM,"SYSTEM\CurrentControlSet\Services\XboxVmp\Device0","VgaCompatible",0x00010001,1
+HKLM,"SYSTEM\CurrentControlSet\Control\Video\{23A77BF7-ED98-40EC-AF06-9B1F4867732A}\0000","VgaCompatible",0x00010001,1

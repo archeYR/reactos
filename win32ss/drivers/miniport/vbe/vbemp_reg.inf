@@ -23,5 +23,28 @@ HKLM,"SYSTEM\CurrentControlSet\Hardware Profiles\Current\System\CurrentControlSe
 HKLM,"SYSTEM\CurrentControlSet\Hardware Profiles\Current\System\CurrentControlSet\Services\VBE\Device0","Attach.PrimaryDevice",0x00010001,1
 HKLM,"SYSTEM\CurrentControlSet\Hardware Profiles\Current\System\CurrentControlSet\Services\VBE\Device0","Device Description",0x00020000,"Generic VESA Adapter"
 
+; For Windows XP+ videoprt.sys
+HKLM,"SYSTEM\CurrentControlSet\Services\VBE\Video","VideoID",0x00000000,"{23A77BF7-ED97-40EC-AF06-9B1F4867732A}"
+HKLM,"SYSTEM\CurrentControlSet\Services\VBE\Video","Service",0x00000000,"VBE"
+HKLM,"SYSTEM\CurrentControlSet\Services\VBE\Device0","InstalledDisplayDrivers",0x00010000,"framebuf"
+HKLM,"SYSTEM\CurrentControlSet\Services\VBE\Device0","DefaultSettings.VRefresh",0x00010001,1
+HKLM,"SYSTEM\CurrentControlSet\Services\VBE\Device0","DefaultSettings.BitsPerPel",0x00010001,32
+HKLM,"SYSTEM\CurrentControlSet\Services\VBE\Device0","DefaultSettings.XResolution",0x00010001,800
+HKLM,"SYSTEM\CurrentControlSet\Services\VBE\Device0","DefaultSettings.YResolution",0x00010001,600
+HKLM,"SYSTEM\CurrentControlSet\Services\VBE\Device0","DefaultSettings.FixedOutput",0x00010001,0
+HKLM,"SYSTEM\CurrentControlSet\Services\VBE\Device0","DefaultSettings.Flags",0x00010001,0
+HKLM,"SYSTEM\CurrentControlSet\Services\VBE\Device0","DefaultSettings.Orientation",0x00010001,0
+HKLM,"SYSTEM\CurrentControlSet\Services\VBE\Device0","DefaultSettings.XPanning",0x00010001,0
+HKLM,"SYSTEM\CurrentControlSet\Services\VBE\Device0","DefaultSettings.YPanning",0x00010001,0
+HKLM,"SYSTEM\CurrentControlSet\Services\VBE\Device0","Attach.RelativeX",0x00010001,0
+HKLM,"SYSTEM\CurrentControlSet\Services\VBE\Device0","Attach.RelativeY",0x00010001,0
+HKLM,"SYSTEM\CurrentControlSet\Services\VBE\Device0","Attach.ToDesktop",0x00010001,1
+HKLM,"SYSTEM\CurrentControlSet\Services\VBE\Device0","Attach.PrimaryDevice",0x00010001,1
+HKLM,"SYSTEM\CurrentControlSet\Services\VBE\Device0","Device Description",0x00020000,"Generic VESA Adapter"
+HKLM,"SYSTEM\CurrentControlSet\Control\Video\{23A77BF7-ED97-40EC-AF06-9B1F4867732A}\Video","Service",0x00000000,"VBE"
+HKLM,"SYSTEM\CurrentControlSet\Control\Video\{23A77BF7-ED97-40EC-AF06-9B1F4867732A}\0000","InstalledDisplayDrivers",0x00010000,"framebuf"
+
 ; This is not true but it allows to use 3rd party drivers while having the VBE driver installed
 HKLM,"SYSTEM\CurrentControlSet\Hardware Profiles\Current\System\CurrentControlSet\Services\VBE\Device0","VgaCompatible",0x00010001,1
+HKLM,"SYSTEM\CurrentControlSet\Services\VBE\Device0","VgaCompatible",0x00010001,1
+HKLM,"SYSTEM\CurrentControlSet\Control\Video\{23A77BF7-ED97-40EC-AF06-9B1F4867732A}\0000","VgaCompatible",0x00010001,1
