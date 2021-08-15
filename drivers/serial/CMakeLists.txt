@@ -1,3 +1,3 @@
 
 add_subdirectory(serenum)
-add_subdirectory(serial)
+add_subdirectory(serial_new)
