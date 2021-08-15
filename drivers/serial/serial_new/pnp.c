@@ -22,6 +22,10 @@ Environment:
 #include <ntddser.h>
 #include <stdlib.h>
 
+#ifdef __REACTOS__
+#include <ndk/haltypes.h>
+#endif
+
 #if defined(EVENT_TRACING)
 #include "pnp.tmh"
 #endif
@@ -107,6 +111,7 @@ PVOID LocalMmMapIoSpace(
 }
 
 NTSTATUS
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialEvtDeviceAdd(
     IN WDFDRIVER Driver,
     IN PWDFDEVICE_INIT DeviceInit
@@ -614,13 +619,14 @@ Return Value:
     //
     // Register with WMI.
     //
+#ifndef __REACTOS__
     status = SerialWmiRegistration(device);
     if(!NT_SUCCESS (status)) {
         SerialDbgPrintEx(TRACE_LEVEL_ERROR, DBG_PNP, "SerialWmiRegistration failed %!STATUS!\n", status);
         return status;
 
     }
-
+#endif
     //
     // Upto this point, if we fail, we don't have to worry about freeing any resource because
     // framework will free all the objects.
@@ -652,6 +658,7 @@ Return Value:
 #pragma warning(disable:28118) // this callback will run at IRQL=PASSIVE_LEVEL
 _Use_decl_annotations_
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialEvtDeviceContextCleanup (
     WDFOBJECT       Device
     )
@@ -705,6 +712,7 @@ Return Value:
 #pragma warning(pop) // enable 28118 again
 
 NTSTATUS
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialEvtPrepareHardware(
     WDFDEVICE Device,
     WDFCMRESLIST Resources,
@@ -835,6 +843,7 @@ End:
 }
 
 NTSTATUS
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialEvtReleaseHardware(
     IN  WDFDEVICE Device,
     IN  WDFCMRESLIST ResourcesTranslated
@@ -903,6 +912,7 @@ Return Value:
 
 
 NTSTATUS
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialEvtDeviceD0EntryPostInterruptsEnabled(
     IN WDFDEVICE Device,
     IN WDF_POWER_DEVICE_STATE PreviousState
@@ -956,6 +966,7 @@ Return Value:
 
 
 NTSTATUS
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialEvtDeviceD0ExitPreInterruptsDisabled(
     IN WDFDEVICE Device,
     IN WDF_POWER_DEVICE_STATE TargetState
@@ -1516,7 +1527,11 @@ Return Value:
        break;
 
     default:
+#ifdef __REACTOS__
+       ASSERTMSG("Illegal Parity setting for WMI", FALSE);
+#else
        ASSERTMSG(0, "Illegal Parity setting for WMI");
+#endif
        pDevExt->WmiCommData.Parity = SERIAL_WMI_PARITY_NONE;
        break;
     }
@@ -1732,9 +1747,11 @@ Return Value:
    if(PConfig->AddressSpace == CM_RESOURCE_PORT_MEMORY) {
 
         PHYSICAL_ADDRESS  KdComPhysical;
-
+#ifdef __REACTOS__
+        KdComPhysical = MmGetPhysicalAddress(KdComPortInUse);
+#else
         KdComPhysical = MmGetPhysicalAddress(*KdComPortInUse);
-
+#endif
         if(KdComPhysical.LowPart == PConfig->Controller.LowPart) {
             DebugPortInUse = TRUE;
         }
@@ -1744,16 +1761,24 @@ Return Value:
               // This compare is done using **untranslated** values since that is what
               // the kernel shoves in regardless of the architecture.
               //
-
+#ifdef __REACTOS__
+        if ((KdComPortInUse) == (ULongToPtr(PConfig->Controller.LowPart)))    {
+            DebugPortInUse = TRUE;
+#else
         if ((*KdComPortInUse) == (ULongToPtr(PConfig->Controller.LowPart)))    {
             DebugPortInUse = TRUE;
+#endif
         }
    }
 
    if (DebugPortInUse) {
-
+#ifdef __REACTOS__
+      SerialDbgPrintEx(TRACE_LEVEL_ERROR, DBG_PNP, "Kernel debugger is using port at "
+                       "address %p\n", KdComPortInUse);
+#else
       SerialDbgPrintEx(TRACE_LEVEL_ERROR, DBG_PNP, "Kernel debugger is using port at "
                        "address %p\n", *KdComPortInUse);
+#endif
       SerialDbgPrintEx(TRACE_LEVEL_ERROR, DBG_PNP, "Serial driver will not load port\n");
 
       SerialLogError(
@@ -2429,6 +2454,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialReset(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID Context

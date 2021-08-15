@@ -389,6 +389,7 @@ Return Value:
 
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialEvtIoStop(
     IN WDFQUEUE                 Queue,
     IN WDFREQUEST               Request,
@@ -469,6 +470,7 @@ Return Value:
 }
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialEvtIoResume(
     IN WDFQUEUE   Queue,
     IN WDFREQUEST Request
@@ -760,6 +762,7 @@ Return Value:
 }
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialEvtCanceledOnQueue(
     IN WDFQUEUE   Queue,
     IN WDFREQUEST Request

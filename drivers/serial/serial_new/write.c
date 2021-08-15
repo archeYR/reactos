@@ -32,6 +32,7 @@ EVT_WDF_INTERRUPT_SYNCHRONIZE SerialGrabXoffFromIsr;
 
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialEvtIoWrite(
     IN WDFQUEUE         Queue,
     IN WDFREQUEST       Request,
@@ -514,6 +515,7 @@ Return Value:
 
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialCompleteWrite(
     IN WDFDPC Dpc
     )
@@ -565,6 +567,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialProcessEmptyTransmit(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID Context
@@ -630,6 +633,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialGiveWriteToIsr(
     IN WDFINTERRUPT Interrupt,
     IN PVOID Context
@@ -757,6 +761,7 @@ Return Value:
 
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialCancelCurrentWrite(
     IN WDFREQUEST Request
     )
@@ -805,6 +810,7 @@ Return Value:
 
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialWriteTimeout(
     IN WDFTIMER Timer
     )
@@ -845,6 +851,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialGrabWriteFromIsr(
     IN WDFINTERRUPT Interrupt,
     IN PVOID Context
@@ -928,6 +935,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialGrabXoffFromIsr(
     IN WDFINTERRUPT Interrupt,
     IN PVOID Context
@@ -995,6 +1003,7 @@ Return Value:
 
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialCompleteXoff(
     IN WDFDPC Dpc
     )
@@ -1045,6 +1054,7 @@ Return Value:
 
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialTimeoutXoff(
     IN WDFTIMER Timer
     )
@@ -1083,6 +1093,7 @@ Return Value:
 
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialCancelCurrentXoff(
     IN WDFREQUEST Request
     )
@@ -1131,6 +1142,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialGiveXoffToIsr(
     IN WDFINTERRUPT Interrupt,
     IN PVOID Context

@@ -152,6 +152,7 @@ Return Value:
 }
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialCompleteImmediate(
     IN WDFDPC Dpc
     )
@@ -183,6 +184,7 @@ SerialCompleteImmediate(
 }
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialTimeoutImmediate(
     IN WDFTIMER Timer
     )
@@ -272,6 +274,7 @@ Return Value:
 }
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialCancelImmediate(
     IN WDFREQUEST Request
     )
@@ -317,6 +320,7 @@ Return Value:
 }
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialGiveImmediateToIsr(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID         Context
@@ -399,6 +403,7 @@ Return Value:
 }
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialGrabImmediateFromIsr(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID         Context

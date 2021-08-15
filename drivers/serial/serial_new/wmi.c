@@ -150,6 +150,7 @@ Routine Description
 //
 
 NTSTATUS
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 EvtWmiQueryPortName(
     IN  WDFWMIINSTANCE WmiInstance,
     IN  ULONG OutBufferSize,
@@ -181,6 +182,7 @@ EvtWmiQueryPortName(
 }
 
 NTSTATUS
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 EvtWmiQueryPortCommData(
     IN  WDFWMIINSTANCE WmiInstance,
     IN  ULONG  OutBufferSize,
@@ -208,6 +210,7 @@ EvtWmiQueryPortCommData(
 }
 
 NTSTATUS
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 EvtWmiQueryPortHWData(
     IN  WDFWMIINSTANCE WmiInstance,
     IN  ULONG  OutBufferSize,
@@ -235,6 +238,7 @@ EvtWmiQueryPortHWData(
 }
 
 NTSTATUS
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 EvtWmiQueryPortPerfData(
     IN  WDFWMIINSTANCE WmiInstance,
     IN  ULONG OutBufferSize,
@@ -262,6 +266,7 @@ EvtWmiQueryPortPerfData(
 }
 
 NTSTATUS
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 EvtWmiQueryPortPropData(
     IN  WDFWMIINSTANCE WmiInstance,
     IN  ULONG OutBufferSize,

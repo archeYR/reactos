@@ -25,6 +25,7 @@ Environment:
 
 
 NTSTATUS
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialEvtInterruptEnable(
     IN WDFINTERRUPT  Interrupt,
     IN WDFDEVICE     AssociatedDevice
@@ -62,6 +63,7 @@ Return Value:
 }
 
 NTSTATUS
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialEvtInterruptDisable(
     IN WDFINTERRUPT  Interrupt,
     IN WDFDEVICE     AssociatedDevice
@@ -99,6 +101,7 @@ Return Value:
 }
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialISR(
     IN WDFINTERRUPT Interrupt,
     IN ULONG        MessageID

@@ -31,6 +31,7 @@ Environment:
 #pragma warning(disable:28118) // this callback will run at IRQL=PASSIVE_LEVEL
 _Use_decl_annotations_
 NTSTATUS
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialFlush(
     WDFDEVICE Device,
     PIRP Irp

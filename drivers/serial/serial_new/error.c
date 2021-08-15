@@ -24,6 +24,7 @@ Environment:
 
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialCommError(
     IN WDFDPC Dpc
     )

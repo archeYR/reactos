@@ -20,6 +20,13 @@ Environment:
 
 #include "precomp.h"
 
+#ifdef __REACTOS__
+#define ExAllocatePool2 ExAllocatePoolWithQuotaTag
+#define POOL_FLAG_NON_PAGED NonPagedPool
+#undef POOL_FLAG_USE_QUOTA
+#define POOL_FLAG_USE_QUOTA 0
+#endif
+
 #if defined(EVENT_TRACING)
 #include "ioctl.tmh"
 #endif
@@ -85,6 +92,7 @@ Routine Description:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialGetStats(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID         Context
@@ -122,6 +130,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialClearStats(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID         Context
@@ -162,6 +171,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialSetChars(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID         Context
@@ -197,6 +207,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialSetBaud(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID         Context
@@ -237,6 +248,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialSetLineControl(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID         Context
@@ -273,6 +285,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialGetModemUpdate(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID         Context
@@ -313,6 +326,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialSetMCRContents(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID         Context
@@ -351,6 +365,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialGetMCRContents(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID         Context
@@ -388,6 +403,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialSetFCRContents(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID         Context
@@ -425,6 +441,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialGetCommStatus(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID         Context
@@ -536,6 +553,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialSetEscapeChar(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID         Context
@@ -575,6 +593,7 @@ Return Value:
 }
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialEvtIoDeviceControl(
     IN WDFQUEUE     Queue,
     IN WDFREQUEST   Request,
@@ -1968,6 +1987,7 @@ Return Value:
 }
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialEvtIoInternalDeviceControl(
     IN WDFQUEUE     Queue,
     IN WDFREQUEST Request,

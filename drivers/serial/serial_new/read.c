@@ -49,6 +49,7 @@ SerialMoveToNewIntBuffer(
     );
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialEvtIoRead(
     IN WDFQUEUE         Queue,
     IN WDFREQUEST       Request,
@@ -534,6 +535,7 @@ Return Value:
 
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialCompleteRead(
     IN WDFDPC Dpc
     )
@@ -597,6 +599,7 @@ Return Value:
 
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialCancelCurrentRead(
     WDFREQUEST  Request
     )
@@ -654,6 +657,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialGrabReadFromIsr(
     IN WDFINTERRUPT Interrupt,
     IN PVOID Context
@@ -733,6 +737,7 @@ Return Value:
 }
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialReadTimeout(
     IN WDFTIMER Timer
     )
@@ -792,6 +797,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialUpdateReadByIsr(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID Context
@@ -834,6 +840,7 @@ Return Value:
 
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialIntervalReadTimeout(
     IN WDFTIMER Timer
     )
@@ -1197,6 +1204,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialUpdateInterruptBuffer(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID Context
@@ -1250,6 +1258,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialUpdateAndSwitchToUser(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID Context
@@ -1648,6 +1657,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialUpdateAndSwitchToNew(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID Context

@@ -1739,7 +1739,9 @@ extern SERIAL_FIRMWARE_DATA    driverDefaults;
 // to the address that the kernel debugger is using.
 //
 
+#ifndef __REACTOS__
 extern PUCHAR *KdComPortInUse;
+#endif
 
 
 typedef enum _SERIAL_MEM_COMPARES {

@@ -236,6 +236,7 @@ Return Value:
 }
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialGrabWaitFromIsr(
     IN WDFINTERRUPT Interrupt,
     IN PVOID Context
@@ -309,6 +310,7 @@ Return Value:
 }
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialGiveWaitToIsr(
     IN WDFINTERRUPT Interrupt,
     IN PVOID Context
@@ -414,6 +416,7 @@ Return Value:
 }
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialFinishOldWait(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID Context
@@ -498,6 +501,7 @@ Return Value:
 }
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialCancelWait(
      IN WDFREQUEST Request
     )
@@ -545,6 +549,7 @@ Return Value:
 
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialCompleteWait(
     IN WDFDPC Dpc
     )

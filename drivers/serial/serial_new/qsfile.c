@@ -30,6 +30,7 @@ Environment:
 
 
 NTSTATUS
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialQueryInformationFile(
     IN WDFDEVICE Device,
     IN PIRP Irp
@@ -119,6 +120,7 @@ Return Value:
 }
 
 NTSTATUS
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialSetInformationFile(
     IN WDFDEVICE Device,
     IN PIRP Irp

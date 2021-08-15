@@ -71,6 +71,7 @@ Updated Routine Description:
 }
 
 NTSTATUS
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialEvtDeviceD0Entry(
     IN  WDFDEVICE Device,
     IN  WDF_POWER_DEVICE_STATE PreviousState
@@ -202,6 +203,7 @@ Return Value:
 
 
 NTSTATUS
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialEvtDeviceD0Exit(
     IN  WDFDEVICE Device,
     IN  WDF_POWER_DEVICE_STATE TargetState

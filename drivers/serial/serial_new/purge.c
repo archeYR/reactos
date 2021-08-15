@@ -121,6 +121,7 @@ Return Value:
 }
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialPurgeInterruptBuff(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID Context

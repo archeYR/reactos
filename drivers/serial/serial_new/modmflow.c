@@ -31,6 +31,7 @@ Environment:
 EVT_WDF_INTERRUPT_SYNCHRONIZE SerialDecrementRTSCounter;
  
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialSetDTR(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID Context
@@ -73,6 +74,7 @@ Return Value:
 }
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialClrDTR(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID Context
@@ -115,6 +117,7 @@ Return Value:
 }
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialSetRTS(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID Context
@@ -157,6 +160,7 @@ Return Value:
 }
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialClrRTS(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID Context
@@ -665,6 +669,7 @@ Return Value:
 }
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialSetHandFlow(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID Context
@@ -712,6 +717,7 @@ Return Value:
 }
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialTurnOnBreak(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID Context
@@ -766,6 +772,7 @@ Return Value:
 }
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialTurnOffBreak(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID Context
@@ -853,6 +860,7 @@ Return Value:
 }
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialPretendXoff(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID Context
@@ -905,6 +913,7 @@ Return Value:
 }
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialPretendXon(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID Context
@@ -1435,6 +1444,7 @@ Return Value:
 }
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialPerhapsLowerRTS(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID Context
@@ -1556,6 +1566,7 @@ Return Value:
 }
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialStartTimerLowerRTS(
     IN WDFDPC Dpc
     )
@@ -1631,6 +1642,7 @@ Return Value:
 }
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialInvokePerhapsLowerRTS(
     IN WDFTIMER Timer
     )
@@ -1668,6 +1680,7 @@ Return Value:
 }
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialDecrementRTSCounter(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID Context

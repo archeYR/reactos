@@ -32,9 +32,14 @@ Environment:
 #pragma alloc_text(PAGESRP0,SerialCreateTimersAndDpcs)
 #endif // ALLOC_PRAGMA
 
+#ifdef __REACTOS__
+#define ExAllocatePool2 ExAllocatePoolWithTag
+#define POOL_FLAG_NON_PAGED NonPagedPool
+#endif
 
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialEvtDeviceFileCreate (
     IN WDFDEVICE     Device,
     IN WDFREQUEST    Request,
@@ -86,6 +91,7 @@ Return Value:
 
 
 NTSTATUS
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialWdmDeviceFileCreate (
     IN WDFDEVICE Device,
     IN PIRP Irp
@@ -298,6 +304,7 @@ SerialDeviceFileCreateWorker (
 
 
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialEvtFileClose(
     IN WDFFILEOBJECT FileObject
     )
@@ -330,6 +337,7 @@ Return Value:
 
 
 NTSTATUS
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialWdmFileClose (
     IN WDFDEVICE Device,
     IN PIRP Irp
@@ -619,6 +627,7 @@ SerialFileCloseWorker(
 }
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialMarkOpen(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID Context
@@ -728,6 +737,7 @@ Return Value:
 
 
 BOOLEAN
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialMarkClose(
     IN WDFINTERRUPT  Interrupt,
     IN PVOID Context

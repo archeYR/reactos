@@ -40,7 +40,9 @@ SERIAL_FIRMWARE_DATA    driverDefaults;
 // This is exported from the kernel.  It is used to point
 // to the address that the kernel debugger is using.
 //
+#ifndef __REACTOS__
 extern PUCHAR *KdComPortInUse;
+#endif
 //
 // INIT - only needed during init and then can be disposed
 // PAGESRP0 - always paged / never locked
@@ -57,8 +59,10 @@ extern PUCHAR *KdComPortInUse;
 // performance and IRQL reasons.
 //
 
+#ifndef __REACTOS__
 ULONG DebugLevel = TRACE_LEVEL_INFORMATION;
 ULONG DebugFlag = 0xf;//0x46;//0x4FF; //0x00000006;
+#endif
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text(INIT, DriverEntry)
@@ -68,6 +72,7 @@ ULONG DebugFlag = 0xf;//0x46;//0x4FF; //0x00000006;
 
 
 NTSTATUS
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 DriverEntry(
     IN PDRIVER_OBJECT DriverObject,
     IN PUNICODE_STRING RegistryPath
@@ -158,6 +163,7 @@ Return Value:
 
 _Use_decl_annotations_
 VOID
+NTAPI /* ReactOS Change: GCC Does not support STDCALL by default */
 SerialEvtDriverContextCleanup(
     WDFOBJECT Driver
     )
