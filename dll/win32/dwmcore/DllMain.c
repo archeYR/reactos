@@ -1,6 +1,6 @@
 
 #include "dwmcore.h"
-
+#include <psdk/winnls.h>
 BOOL
 WINAPI
 DllMain(HANDLE hDll,
