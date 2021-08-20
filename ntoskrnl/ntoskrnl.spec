@@ -362,6 +362,7 @@
 @ stdcall IoCheckShareAccess(long long ptr ptr long)
 @ stdcall IoCompleteRequest(ptr long)
 @ stdcall IoConnectInterrupt(ptr ptr ptr ptr long long long long long long long)
+@ stdcall -version=0x600+ IoConnectInterruptEx(ptr ptr ptr ptr long long long long long long long) ntoskrnl.IoConnectInterrupt
 @ stdcall IoCreateController(long)
 @ stdcall IoCreateDevice(ptr long ptr long long long ptr)
 @ stdcall IoCreateDisk(ptr ptr)
@@ -390,6 +391,7 @@
 @ extern IoDeviceHandlerObjectType
 @ extern IoDeviceObjectType
 @ stdcall IoDisconnectInterrupt(ptr)
+@ stdcall -version=0x600+ IoDisconnectInterruptEx(ptr) ntoskrnl.IoDisconnectInterrupt
 @ extern IoDriverObjectType
 @ stdcall IoEnqueueIrp(ptr)
 @ stdcall IoEnumerateDeviceObjectList(ptr ptr long ptr)
@@ -450,6 +452,7 @@
 @ stdcall IoQueryVolumeInformation(ptr long long ptr ptr)
 @ stdcall IoQueueThreadIrp(ptr)
 @ stdcall IoQueueWorkItem(ptr ptr long ptr)
+@ stdcall -version=0x600+ IoQueueWorkItemEx(ptr ptr long ptr)
 @ stdcall IoRaiseHardError(ptr ptr ptr)
 @ stdcall IoRaiseInformationalHardError(long ptr ptr)
 @ stdcall IoReadDiskSignature(ptr long ptr)
@@ -622,6 +625,7 @@
 @ stdcall KeInsertQueueApc(ptr ptr ptr long)
 @ stdcall KeInsertQueueDpc(ptr ptr ptr)
 @ stdcall KeInvalidateAllCaches()
+@ stdcall -version=0x600+ KeInvalidateRangeAllCaches() ntoskrnl.KeInvalidateAllCaches
 @ stdcall KeIpiGenericCall(ptr ptr)
 @ stdcall KeIsAttachedProcess()
 @ stdcall -arch=i386,arm KeIsExecutingDpc()
@@ -635,6 +639,8 @@
 @ stdcall -arch=i386,arm KeProfileInterrupt(ptr)
 @ stdcall KeProfileInterruptWithSource(ptr long)
 @ stdcall KePulseEvent(ptr long long)
+@ stdcall -version=0x600+ KeQueryActiveProcessorCount(long)
+@ stdcall -stub -version=0x601+ KeQueryActiveProcessorCountEx(long)
 @ stdcall KeQueryActiveProcessors()
 @ stdcall -arch=i386,arm KeQueryInterruptTime()
 ;@ cdecl -arch=x86_64 KeQueryMultiThreadProcessorSet
@@ -684,6 +690,7 @@
 @ stdcall -arch=x86_64 KeSaveFloatingPointState(ptr) KxSaveFloatingPointState
 @ cdecl KeSaveStateForHibernate(ptr)
 @ extern KeServiceDescriptorTable
+@ stub -version=0x600+ KeSetActualBasePriorityThread
 @ stdcall KeSetAffinityThread(ptr long)
 @ stdcall KeSetBasePriorityThread(ptr long)
 @ stdcall KeSetDmaIoCoherency(long)
@@ -811,6 +818,7 @@
 @ stdcall MmQuerySystemSize()
 @ stdcall MmRemovePhysicalMemory(ptr ptr)
 @ stdcall MmResetDriverPaging(ptr)
+@ stdcall -stub -version=0x600+ MmRotatePhysicalView(ptr ptr ptr long ptr ptr)
 @ extern MmSectionObjectType
 @ stdcall MmSecureVirtualMemory(ptr long long)
 @ stdcall MmSetAddressRangeModified(ptr long)
@@ -1069,6 +1077,7 @@
 @ stdcall RtlClearAllBits(ptr)
 @ stdcall RtlClearBit(ptr long)
 @ stdcall RtlClearBits(ptr long long)
+@ stub -version=0x600+ RtlCmDecodeMemIoResource
 @ stdcall RtlCompareMemory(ptr ptr long)
 @ stdcall RtlCompareMemoryUlong(ptr long long)
 @ stdcall RtlCompareString(ptr ptr long)
@@ -1413,6 +1422,7 @@
 @ stdcall ZwAddDriverEntry(ptr long)
 @ stdcall ZwAdjustPrivilegesToken(ptr long ptr long ptr ptr)
 @ stdcall ZwAlertThread(ptr)
+@ stdcall -version=0x600+ ZwAllocateLocallyUniqueId(ptr)
 @ stdcall ZwAllocateVirtualMemory(ptr ptr long ptr long long)
 @ stdcall ZwAssignProcessToJobObject(ptr ptr)
 @ stdcall ZwCancelIoFile(ptr ptr)
@@ -1494,6 +1504,7 @@
 @ stdcall ZwQuerySymbolicLinkObject(ptr ptr ptr)
 @ stdcall ZwQuerySystemInformation(long ptr long ptr)
 @ stdcall ZwQueryValueKey(ptr ptr long ptr long ptr)
+@ stdcall -version=0x600+ ZwQueryVirtualMemory(long ptr long ptr long ptr)
 @ stdcall ZwQueryVolumeInformationFile(ptr ptr ptr long long)
 @ stdcall ZwReadFile(ptr ptr ptr ptr ptr ptr long ptr ptr)
 @ stdcall ZwReplaceKey(ptr ptr ptr)
@@ -1533,6 +1544,7 @@
 @ stdcall ZwYieldExecution()
 @ cdecl -arch=x86_64,arm __C_specific_handler(ptr long ptr ptr)
 @ cdecl -arch=arm __jump_unwind()
+@ cdecl -version=0x600+ -arch=i386 _chkstk()
 @ cdecl -arch=x86_64 __chkstk()
 ;@ cdecl -arch=x86_64 __misaligned_access()
 @ cdecl -arch=i386 _CIcos()
