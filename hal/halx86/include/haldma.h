@@ -359,10 +359,10 @@ typedef struct _ADAPTER_OBJECT {
 } ADAPTER_OBJECT;
 
 typedef struct _MASTER_ADAPTER {
-	PADAPTER_OBJECT AdapterObject;
-	ULONG MaxMapRegisters;
-	ULONG InitialMapRegistersBufferLength;
-	PHYSICAL_ADDRESS InitialMapRegistersBuffer;
+   PADAPTER_OBJECT AdapterObject;
+   ULONG MaxMapRegisters;
+   ULONG InitialMapRegistersBufferLength;
+   PHYSICAL_ADDRESS InitialMapRegistersBuffer;
 } MASTER_ADAPTER, *PMASTER_ADAPTER;
 
 typedef struct _GROW_WORK_ITEM {
@@ -388,30 +388,33 @@ HalpDmaGetDmaAlignment(
 
 NTSTATUS
 NTAPI 
-HalCalculateScatterGatherListSize(IN PADAPTER_OBJECT AdapterObject,
-								  IN PMDL Mdl OPTIONAL,
-								  IN PVOID CurrentVa,
-								  IN ULONG Length,
-								  OUT PULONG ScatterGatherListSize,
-								  OUT OPTIONAL PULONG pNumberOfMapRegisters);
+HalCalculateScatterGatherListSize(
+   IN PADAPTER_OBJECT AdapterObject,
+   IN PMDL Mdl OPTIONAL,
+   IN PVOID CurrentVa,
+   IN ULONG Length,
+   OUT PULONG ScatterGatherListSize,
+   OUT OPTIONAL PULONG pNumberOfMapRegisters);
 
 NTSTATUS
 NTAPI
-HalBuildScatterGatherList(IN PADAPTER_OBJECT AdapterObject,
-						  IN PDEVICE_OBJECT DeviceObject,
-						  IN PMDL Mdl,
-						  IN PVOID CurrentVa,
-						  IN ULONG Length,
-						  IN PDRIVER_LIST_CONTROL ExecutionRoutine,
-						  IN PVOID Context,
-						  IN BOOLEAN WriteToDevice,
-						  IN PVOID ScatterGatherBuffer,
-						  IN ULONG ScatterGatherBufferLength);
+HalBuildScatterGatherList(
+   IN PADAPTER_OBJECT AdapterObject,
+   IN PDEVICE_OBJECT DeviceObject,
+   IN PMDL Mdl,
+   IN PVOID CurrentVa,
+   IN ULONG Length,
+   IN PDRIVER_LIST_CONTROL ExecutionRoutine,
+   IN PVOID Context,
+   IN BOOLEAN WriteToDevice,
+   IN PVOID ScatterGatherBuffer,
+   IN ULONG ScatterGatherBufferLength);
 
 NTSTATUS
 NTAPI
-HalBuildMdlFromScatterGatherList(IN PADAPTER_OBJECT AdapterObject,
-								 IN PSCATTER_GATHER_LIST ScatterGather,
-								 IN PMDL OriginalMdl,
-								 OUT PMDL *TargetMdl);
+HalBuildMdlFromScatterGatherList(
+   IN PADAPTER_OBJECT AdapterObject,
+   IN PSCATTER_GATHER_LIST ScatterGather,
+   IN PMDL OriginalMdl,
+   OUT PMDL *TargetMdl);
 
