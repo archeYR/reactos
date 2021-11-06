@@ -359,10 +359,10 @@ typedef struct _ADAPTER_OBJECT {
 } ADAPTER_OBJECT;
 
 typedef struct _MASTER_ADAPTER {
-	PADAPTER_OBJECT AdapterObject;
-	ULONG MaxMapRegisters;
-	ULONG InitialMapRegistersBufferLength;
-	PHYSICAL_ADDRESS InitialMapRegistersBuffer;
+   PADAPTER_OBJECT AdapterObject;
+   ULONG MaxMapRegisters;
+   ULONG InitialMapRegistersBufferLength;
+   PHYSICAL_ADDRESS InitialMapRegistersBuffer;
 } MASTER_ADAPTER, *PMASTER_ADAPTER;
 
 typedef struct _GROW_WORK_ITEM {
