@@ -3,7 +3,6 @@
 
 set(baseaddress_ntdll                          0x7c920000) # should be above 0x7c920000
 set(baseaddress_kernel32                       0x7c620000)
-set(baseaddress_msvcrt                         0x7c5b0000)
 set(baseaddress_advapi32                       0x7c520000)
 set(baseaddress_gdi32                          0x7c4c0000)
 set(baseaddress_user32                         0x77a20000) # reserved
