@@ -23,5 +23,5 @@
 @ stdcall qsort() msvcrt.qsort
 @ stub qsort_s
 @ stdcall rand() msvcrt.rand
-@ stub rand_s
+@ stdcall -version=0x600+ rand_s() msvcrt.rand_s
 @ stdcall srand() msvcrt.srand

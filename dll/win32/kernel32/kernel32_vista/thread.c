@@ -1,5 +1,5 @@
 #include <k32_vista.h>
-
+#include <debug.h>
 #if 1
 
 NTSYSAPI NTSTATUS  WINAPI TpAllocCleanupGroup(TP_CLEANUP_GROUP **);

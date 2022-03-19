@@ -46,6 +46,7 @@
 @ stdcall DbgBreakPoint()
 @ stdcall DbgBreakPointWithStatus(long)
 @ stdcall DbgCommandString(ptr ptr)
+@ stdcall -stub -version=0x601+ DbgkLkmdRegisterCallback()
 @ stdcall DbgLoadImageSymbols(ptr ptr long)
 @ varargs DbgPrint(str)
 @ varargs DbgPrintEx(long long str)
@@ -53,6 +54,12 @@
 @ stdcall DbgPrompt(str ptr long)
 @ stdcall DbgQueryDebugFilterState(long long)
 @ stdcall DbgSetDebugFilterState(long long long)
+@ stdcall -stub -version=0x600+ EmProviderDeregister()
+@ stdcall -stub -version=0x600+ EmProviderRegister()
+@ stdcall -version=0x600+ EtwEventEnabled(int64 ptr)
+@ stdcall -version=0x600+ EtwRegister(ptr ptr ptr ptr)
+@ stdcall -version=0x600+ EtwUnregister(int64)
+@ stdcall -version=0x600+ EtwWrite(int64 ptr ptr long ptr)
 @ stdcall -arch=x86_64 ExAcquireFastMutex(ptr)
 @ fastcall ExAcquireFastMutexUnsafe(ptr)
 @ stdcall ExAcquireResourceExclusiveLite(ptr long)
@@ -81,6 +88,8 @@
 @ stdcall ExEnterCriticalRegionAndAcquireResourceExclusive(ptr)
 @ stdcall ExEnterCriticalRegionAndAcquireResourceShared(ptr)
 @ stdcall ExEnterCriticalRegionAndAcquireSharedWaitForExclusive(ptr)
+@ stdcall -version=0x600+ ExEnterPriorityRegionAndAcquireResourceExclusive(ptr)
+@ stdcall -version=0x600+ ExEnterPriorityRegionAndAcquireResourceShared(ptr)
 @ stdcall ExEnumHandleTable(ptr ptr ptr ptr)
 @ extern ExEventObjectType
 @ stdcall ExExtendZone(ptr ptr long)
@@ -93,6 +102,8 @@
 @ stdcall ExGetExclusiveWaiterCount(ptr)
 @ stdcall ExGetPreviousMode()
 @ stdcall ExGetSharedWaiterCount(ptr)
+@ stdcall -version=0x600+ ExDeleteLookasideListEx(ptr)
+@ stdcall -version=0x600+ ExInitializeLookasideListEx(ptr ptr ptr ptr long long long long)
 @ stdcall ExInitializeNPagedLookasideList(ptr ptr ptr long long long long)
 @ stdcall ExInitializePagedLookasideList(ptr ptr ptr long long long long)
 @ stdcall ExInitializeResourceLite(ptr)
@@ -136,6 +147,7 @@
 @ fastcall ExReleaseFastMutexUnsafe(ptr)
 @ fastcall ExReleaseFastMutexUnsafeAndLeaveCriticalRegion(ptr)
 @ fastcall ExReleaseResourceAndLeaveCriticalRegion(ptr)
+@ fastcall -version=0x600+ ExReleaseResourceAndLeavePriorityRegion(ptr)
 @ stdcall ExReleaseResourceForThreadLite(ptr long)
 @ fastcall ExReleaseResourceLite(ptr)
 @ fastcall ExReleaseRundownProtection(ptr) ExfReleaseRundownProtection
@@ -488,6 +500,7 @@
 @ stdcall IoSetHardErrorOrVerifyDevice(ptr ptr)
 @ stdcall IoSetInformation(ptr ptr long ptr)
 @ stdcall IoSetIoCompletion(ptr ptr ptr long ptr long)
+@ stdcall -stub -version=0x600+ IoSetIoCompletionEx()
 @ fastcall IoSetPartitionInformation(ptr long long long)
 @ stdcall IoSetPartitionInformationEx(ptr long ptr)
 @ stdcall IoSetShareAccess(long long ptr ptr)
@@ -565,6 +578,7 @@
 @ stdcall -arch=x86_64 KeAcquireSpinLockRaiseToDpc(ptr)
 @ stdcall -arch=x86_64 KeAcquireSpinLockRaiseToSynch(ptr)
 @ stdcall KeAddSystemServiceTable(ptr ptr long ptr long)
+@ stdcall -version=0x600+ KeAlertThread(ptr ptr)
 @ stdcall KeAreAllApcsDisabled()
 @ stdcall KeAreApcsDisabled()
 @ stdcall KeAttachProcess(ptr)
@@ -584,6 +598,7 @@
 @ stdcall KeEnterGuardedRegion() _KeEnterGuardedRegion
 @ stdcall KeEnterKernelDebugger()
 ;@ stdcall -arch=x86_64 KeExpandKernelStackAndCallout(ptr ptr double)
+@ stdcall -version=0x600+ KeExpandKernelStackAndCallout(ptr ptr long)
 @ stdcall KeFindConfigurationEntry(ptr long long ptr)
 @ stdcall KeFindConfigurationNextEntry(ptr long long ptr ptr)
 @ stdcall KeFlushEntireTb(long long)
@@ -640,7 +655,7 @@
 @ stdcall KeProfileInterruptWithSource(ptr long)
 @ stdcall KePulseEvent(ptr long long)
 @ stdcall -version=0x600+ KeQueryActiveProcessorCount(long)
-@ stdcall -stub -version=0x601+ KeQueryActiveProcessorCountEx(long)
+@ stdcall -stub -version=0x600+ KeQueryActiveProcessorCountEx(long)
 @ stdcall KeQueryActiveProcessors()
 @ stdcall -arch=i386,arm KeQueryInterruptTime()
 ;@ cdecl -arch=x86_64 KeQueryMultiThreadProcessorSet
@@ -687,7 +702,7 @@
 @ stdcall KeRevertToUserAffinityThread()
 @ stdcall KeRundownQueue(ptr)
 @ stdcall -arch=i386 KeSaveFloatingPointState(ptr)
-@ stdcall -arch=x86_64 KeSaveFloatingPointState(ptr) KxSaveFloatingPointState
+;@ stdcall -arch=x86_64 KeSaveFloatingPointState(ptr) KxSaveFloatingPointState
 @ cdecl KeSaveStateForHibernate(ptr)
 @ extern KeServiceDescriptorTable
 @ stub -version=0x600+ KeSetActualBasePriorityThread
@@ -711,6 +726,7 @@
 @ stdcall KeStackAttachProcess(ptr ptr)
 @ stdcall KeSynchronizeExecution(ptr ptr ptr)
 @ stdcall KeTerminateThread(long)
+@ stdcall -version=0x600+ KeTestAlertThread(ptr)
 @ fastcall KeTestSpinLock(ptr)
 @ extern -arch=i386,arm KeTickCount
 @ fastcall KeTryToAcquireGuardedMutex(ptr)
@@ -746,9 +762,12 @@
 @ stdcall LdrEnumResources(ptr ptr long ptr ptr)
 @ stdcall LdrFindResourceDirectory_U(ptr ptr long ptr)
 @ stdcall LdrFindResource_U(ptr ptr long ptr)
+@ stdcall -stub -version=0x600+ LdrResFindResource()
+@ stdcall -stub -version=0x600+ LdrResFindResourceDirectory()
 @ extern LpcPortObjectType
 @ stdcall LpcRequestPort(ptr ptr)
 @ stdcall LpcRequestWaitReplyPort(ptr ptr ptr)
+@ stdcall -version=0x600+ LpcRequestWaitReplyPortEx(ptr ptr ptr)
 @ stdcall LsaCallAuthenticationPackage(long long ptr long ptr ptr ptr)
 @ stdcall LsaDeregisterLogonProcess(long)
 @ stdcall LsaFreeReturnBuffer(ptr)
@@ -848,11 +867,25 @@
 @ stdcall NtAllocateLocallyUniqueId(ptr)
 @ stdcall NtAllocateUuids(ptr ptr ptr ptr)
 @ stdcall NtAllocateVirtualMemory(ptr ptr long ptr long long)
+@ stdcall -version=0x600+ NtAlpcCancelMessage(ptr long ptr)
+@ stdcall -version=0x600+ NtAlpcConnectPort(ptr wstr ptr ptr long ptr ptr long ptr ptr ptr)
+@ stdcall -version=0x600+ NtAlpcCreatePortSection(ptr long ptr long ptr long)
+@ stdcall -version=0x600+ NtAlpcCreateResourceReserve(ptr long long ptr)
+@ stdcall -version=0x600+ NtAlpcCreateSectionView(ptr long ptr)
+@ stdcall -version=0x600+ NtAlpcCreateSecurityContext(ptr long ptr)
+@ stdcall -version=0x600+ NtAlpcDeletePortSection(ptr long ptr)
+@ stdcall -version=0x600+ NtAlpcDeleteSectionView(ptr long ptr)
+@ stdcall -version=0x600+ NtAlpcDeleteSecurityContext(ptr long ptr)
+@ stdcall -version=0x600+ NtAlpcDisconnectPort(ptr long)
+@ stdcall -version=0x600+ NtAlpcQueryInformation(ptr ptr ptr long long)
+@ stdcall -version=0x600+ NtAlpcSendWaitReceivePort(ptr long ptr ptr ptr long ptr ptr)
+@ stdcall -version=0x600+ NtAlpcSetInformation(ptr ptr ptr long)
 @ extern NtBuildNumber
 @ stdcall NtClose(ptr)
 @ stdcall NtConnectPort(ptr ptr ptr ptr ptr ptr ptr ptr)
 @ stdcall NtCreateEvent(ptr long ptr long long)
 @ stdcall NtCreateFile(ptr long ptr ptr ptr long long long long ptr long)
+@ stdcall -version=0x600+ NtCreateIoCompletion(ptr long ptr long)
 @ stdcall NtCreateSection(ptr long ptr ptr long long ptr)
 @ stdcall NtDeleteAtom(ptr)
 @ stdcall NtDeleteFile(ptr)
@@ -863,6 +896,7 @@
 @ stdcall NtFreeVirtualMemory(ptr ptr ptr long)
 @ stdcall NtFsControlFile(ptr ptr ptr ptr ptr long ptr long ptr long)
 @ extern NtGlobalFlag
+@ stdcall -version=0x600+ NtImpersonateAnonymousToken(ptr)
 @ stdcall NtLockFile(ptr ptr ptr ptr ptr ptr ptr long long long)
 @ stdcall NtMakePermanentObject(ptr)
 @ stdcall NtMapViewOfSection(ptr ptr ptr long long ptr ptr long long long)
@@ -881,11 +915,13 @@
 @ stdcall NtQueryInformationProcess(ptr long ptr long ptr)
 @ stdcall NtQueryInformationThread(ptr long ptr long ptr)
 @ stdcall NtQueryInformationToken(ptr long ptr long ptr)
+@ stdcall -version=0x600+ NtQueryLicenseValue(ptr ptr ptr long ptr)
 @ stdcall NtQueryQuotaInformationFile(ptr ptr ptr long long ptr long ptr long)
 @ stdcall NtQuerySecurityObject(ptr long ptr long ptr)
 @ stdcall NtQuerySystemInformation(long ptr long ptr)
 @ stdcall NtQueryVolumeInformationFile(ptr ptr ptr long long)
 @ stdcall NtReadFile(ptr ptr ptr ptr ptr ptr long ptr ptr)
+@ stdcall -version=0x600+ NtRemoveIoCompletionEx(ptr ptr long ptr ptr long)
 @ stdcall NtRequestPort(ptr ptr)
 @ stdcall NtRequestWaitReplyPort(ptr ptr ptr)
 @ stdcall NtSetEaFile(ptr ptr ptr long)
@@ -913,11 +949,13 @@
 @ stdcall ObDereferenceSecurityDescriptor(ptr long)
 @ stdcall ObFindHandleForObject(ptr ptr ptr ptr ptr)
 @ stdcall ObGetObjectSecurity(ptr ptr ptr)
+@ stdcall -version=0x601+ ObGetObjectType(ptr)
 @ stdcall ObInsertObject(ptr ptr long long ptr ptr)
 @ stdcall ObLogSecurityDescriptor(ptr ptr long)
 @ stdcall ObMakeTemporaryObject(ptr)
 @ stdcall ObOpenObjectByName(ptr ptr long ptr long ptr ptr)
 @ stdcall ObOpenObjectByPointer(ptr long ptr long ptr long ptr)
+@ stdcall -version=0x601+ ObQueryNameInfo(ptr)
 @ stdcall ObQueryNameString(ptr ptr long ptr)
 @ stdcall ObQueryObjectAuditingByHandle(ptr ptr)
 @ stdcall ObReferenceObjectByHandle(ptr long ptr long ptr ptr)
@@ -936,7 +974,9 @@
 @ stdcall PfxRemovePrefix(ptr ptr)
 @ stdcall PoCallDriver(ptr ptr)
 @ stdcall PoCancelDeviceNotify(ptr)
+@ stdcall -stub -version=0x600+ PoDisableSleepStates()
 @ stdcall PoQueueShutdownWorkItem(ptr)
+@ stdcall -stub -version=0x600+ PoReenableSleepStates()
 @ stdcall PoRegisterDeviceForIdleDetection(ptr long long long)
 @ stdcall PoRegisterDeviceNotify(ptr long long long ptr ptr)
 @ stdcall PoRegisterSystemState(ptr long)
@@ -948,8 +988,10 @@
 @ stdcall PoShutdownBugCheck(long long ptr ptr ptr ptr)
 @ stdcall PoStartNextPowerIrp(ptr)
 @ stdcall PoUnregisterSystemState(ptr)
+@ stdcall -stub -version=0x600+ PoUserShutdownInitiated()
 @ stdcall ProbeForRead(ptr long long)
 @ stdcall ProbeForWrite(ptr long long)
+@ stdcall -version=0x600+ PsAcquireProcessExitSynchronization(ptr)
 @ stdcall PsAssignImpersonationToken(ptr ptr)
 @ stdcall PsChargePoolQuota(ptr long long)
 @ stdcall PsChargeProcessNonPagedPoolQuota(ptr long)
@@ -960,6 +1002,7 @@
 @ stdcall PsDereferenceImpersonationToken(ptr) PsDereferencePrimaryToken
 @ stdcall PsDereferencePrimaryToken(ptr)
 @ stdcall PsDisableImpersonation(ptr ptr)
+@ stdcall -version=0x600+ PsEnterPriorityRegion()
 @ stdcall PsEstablishWin32Callouts(ptr)
 @ stdcall PsGetContextThread(ptr ptr long)
 @ stdcall PsGetCurrentProcess() IoGetCurrentProcess
@@ -1010,17 +1053,20 @@
 @ stdcall PsImpersonateClient(ptr ptr long long long)
 @ extern PsInitialSystemProcess
 @ stdcall PsIsProcessBeingDebugged(ptr)
+@ stdcall -version=0x600+ PsIsProtectedProcess(ptr)
 @ stdcall PsIsSystemProcess(ptr)
 @ stdcall PsIsSystemThread(ptr)
 @ stdcall PsIsThreadImpersonating(ptr)
 @ stdcall PsIsThreadTerminating(ptr)
 @ extern PsJobType
+@ stdcall -version=0x600+ PsLeavePriorityRegion()
 @ stdcall PsLookupProcessByProcessId(ptr ptr)
 @ stdcall PsLookupProcessThreadByCid(ptr ptr ptr)
 @ stdcall PsLookupThreadByThreadId(ptr ptr)
 @ extern PsProcessType
 @ stdcall PsReferenceImpersonationToken(ptr ptr ptr ptr)
 @ stdcall PsReferencePrimaryToken(ptr)
+@ stdcall -version=0x600+ PsReleaseProcessExitSynchronization(ptr)
 @ stdcall PsRemoveCreateThreadNotifyRoutine(ptr)
 @ stdcall PsRemoveLoadImageNotifyRoutine(ptr)
 @ stdcall PsRestoreImpersonation(ptr ptr)
@@ -1167,11 +1213,13 @@
 @ stdcall RtlGetElementGenericTableAvl(ptr long)
 @ stdcall RtlGetFirstRange(ptr ptr ptr)
 @ stdcall RtlGetGroupSecurityDescriptor(ptr ptr ptr)
+@ stdcall -version=0x600+ RtlGetIntegerAtom(wstr long)
 @ stdcall RtlGetNextRange(ptr ptr long)
 @ stdcall RtlGetNtGlobalFlags()
 @ stdcall RtlGetOwnerSecurityDescriptor(ptr ptr ptr)
 @ stdcall RtlGetSaclSecurityDescriptor(ptr ptr ptr ptr)
 @ stdcall RtlGetSetBootStatusData(ptr long long ptr long long)
+@ stdcall -stub -version=0x600+ RtlGetThreadLangIdByIndex()
 @ stdcall RtlGetVersion(ptr)
 @ stdcall RtlHashUnicodeString(ptr long long ptr)
 @ stdcall RtlImageDirectoryEntryToData(ptr long long ptr)
@@ -1258,7 +1306,8 @@
 @ fastcall RtlPrefetchMemoryNonTemporal(ptr long)
 @ stdcall RtlPrefixString(ptr ptr long)
 @ stdcall RtlPrefixUnicodeString(ptr ptr long)
-@ stdcall RtlQueryAtomInAtomTable(ptr long ptr ptr ptr ptr)
+@ stdcall RtlQueryAtomInAtomTable(ptr ptr ptr ptr ptr ptr)
+@ stdcall -version=0x600+ RtlQueryElevationFlags(long)
 @ stdcall RtlQueryRegistryValues(long wstr ptr ptr ptr)
 @ stdcall RtlQueryTimeZoneInformation(ptr)
 @ stdcall RtlRaiseException(ptr)
@@ -1424,6 +1473,19 @@
 @ stdcall ZwAlertThread(ptr)
 @ stdcall -version=0x600+ ZwAllocateLocallyUniqueId(ptr)
 @ stdcall ZwAllocateVirtualMemory(ptr ptr long ptr long long)
+@ stdcall -version=0x600+ ZwAlpcCancelMessage(ptr long ptr) NtAlpcCancelMessage
+@ stdcall -version=0x600+ ZwAlpcConnectPort(ptr wstr ptr ptr long ptr ptr long ptr ptr ptr) NtAlpcConnectPort
+@ stdcall -version=0x600+ ZwAlpcCreatePortSection(ptr long ptr long ptr long) NtAlpcCreatePortSection
+@ stdcall -version=0x600+ ZwAlpcCreateResourceReserve(ptr long long ptr) NtAlpcCreateResourceReserve
+@ stdcall -version=0x600+ ZwAlpcCreateSectionView(ptr long ptr) NtAlpcCreateSectionView
+@ stdcall -version=0x600+ ZwAlpcCreateSecurityContext(ptr long ptr) NtAlpcCreateSecurityContext
+@ stdcall -version=0x600+ ZwAlpcDeletePortSection(ptr long ptr) NtAlpcDeletePortSection
+@ stdcall -version=0x600+ ZwAlpcDeleteSectionView(ptr long ptr) NtAlpcDeleteSectionView
+@ stdcall -version=0x600+ ZwAlpcDeleteSecurityContext(ptr long ptr) NtAlpcDeleteSecurityContext
+@ stdcall -version=0x600+ ZwAlpcDisconnectPort(ptr long) NtAlpcDisconnectPort
+@ stdcall -version=0x600+ ZwAlpcQueryInformation(ptr ptr ptr long long) NtAlpcQueryInformation
+@ stdcall -version=0x600+ ZwAlpcSendWaitReceivePort(ptr long ptr ptr ptr long ptr ptr) NtAlpcSendWaitReceivePort
+@ stdcall -version=0x600+ ZwAlpcSetInformation(ptr ptr ptr long) NtAlpcSetInformation
 @ stdcall ZwAssignProcessToJobObject(ptr ptr)
 @ stdcall ZwCancelIoFile(ptr ptr)
 @ stdcall ZwCancelTimer(ptr ptr)
@@ -1434,6 +1496,7 @@
 @ stdcall ZwCreateDirectoryObject(ptr long ptr)
 @ stdcall ZwCreateEvent(ptr long ptr long long)
 @ stdcall ZwCreateFile(ptr long ptr ptr ptr long long long long ptr long)
+@ stdcall -version=0x600+ ZwCreateIoCompletion(ptr long ptr long) NtCreateIoCompletion
 @ stdcall ZwCreateJobObject(ptr long ptr)
 @ stdcall ZwCreateKey(ptr long ptr long ptr long ptr)
 @ stdcall ZwCreateSection(ptr long ptr ptr long long ptr)
@@ -1457,6 +1520,7 @@
 @ stdcall ZwFlushVirtualMemory(ptr ptr ptr ptr)
 @ stdcall ZwFreeVirtualMemory(ptr ptr ptr long)
 @ stdcall ZwFsControlFile(ptr ptr ptr ptr ptr long ptr long ptr long)
+@ stdcall -version=0x600+ ZwImpersonateAnonymousToken(ptr) NtImpersonateAnonymousToken
 @ stdcall ZwInitiatePowerAction(long long long long)
 @ stdcall ZwIsProcessInJob(ptr ptr)
 @ stdcall ZwLoadDriver(ptr)
@@ -1498,6 +1562,7 @@
 @ stdcall ZwQueryInformationToken(ptr long long long ptr)
 @ stdcall ZwQueryInstallUILanguage(ptr)
 @ stdcall ZwQueryKey(ptr long ptr long ptr)
+@ stdcall -version=0x600+ ZwQueryLicenseValue(ptr ptr ptr long ptr) NtQueryLicenseValue
 @ stdcall ZwQueryObject(ptr long ptr long ptr)
 @ stdcall ZwQuerySection(ptr long ptr long ptr)
 @ stdcall ZwQuerySecurityObject(ptr long ptr long ptr)
@@ -1507,6 +1572,7 @@
 @ stdcall -version=0x600+ ZwQueryVirtualMemory(long ptr long ptr long ptr)
 @ stdcall ZwQueryVolumeInformationFile(ptr ptr ptr long long)
 @ stdcall ZwReadFile(ptr ptr ptr ptr ptr ptr long ptr ptr)
+@ stdcall -version=0x600+ ZwRemoveIoCompletionEx(ptr ptr long ptr ptr long) NtRemoveIoCompletionEx
 @ stdcall ZwReplaceKey(ptr ptr ptr)
 @ stdcall ZwRequestWaitReplyPort(ptr ptr ptr)
 @ stdcall ZwResetEvent(ptr ptr)
@@ -1581,8 +1647,10 @@
 @ cdecl _strrev()
 @ cdecl _strset()
 @ cdecl _strupr()
+@ stub swprintf_s
 @ cdecl _vsnprintf()
 @ cdecl _vsnwprintf()
+;@ cdecl -stub -version=0x600+ _vswprintf(ptr wstr ptr)
 @ cdecl _wcsicmp()
 @ cdecl _wcslwr()
 @ cdecl _wcsnicmp()
@@ -1621,6 +1689,7 @@
 @ cdecl strspn()
 @ cdecl strstr()
 @ cdecl swprintf()
+;@ varargs -version=0x601+ swprintf_s(ptr long wstr)
 @ cdecl tolower()
 @ cdecl toupper()
 @ cdecl towlower()
@@ -1628,15 +1697,20 @@
 @ stdcall vDbgPrintEx(long long str ptr)
 @ stdcall vDbgPrintExWithPrefix(str long long str ptr)
 @ cdecl vsprintf(ptr str ptr)
+;@ stub -version=0x601+ vsprintf_s
+;@ stub -version=0x600+ vswprintf_s
 @ cdecl wcscat()
+@ cdecl -version=0x601+ wcscat_s(wstr long wstr)
 @ cdecl wcschr()
 @ cdecl wcscmp()
 @ cdecl wcscpy()
+@ cdecl -version=0x601+ wcscpy_s(ptr long wstr)
 @ cdecl wcscspn()
 @ cdecl wcslen()
 @ cdecl wcsncat()
 @ cdecl wcsncmp()
 @ cdecl wcsncpy()
+@ cdecl -version=0x601+ wcsncpy_s(ptr long wstr long)
 @ cdecl wcsrchr()
 @ cdecl wcsspn()
 @ cdecl wcsstr()

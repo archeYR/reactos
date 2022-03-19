@@ -19,6 +19,7 @@ list(APPEND SOURCE
     client/atom.c
     client/compname.c
     client/debugger.c
+    client/dep.c
     client/dosdev.c
     client/dllmain.c
     client/environ.c
@@ -73,6 +74,8 @@ list(APPEND SOURCE
     client/file/rw.c
     client/file/tape.c
     client/file/volume.c
+    client/reg/hkcr.c
+    client/reg/reg.c
     wine/actctx.c
     wine/comm.c
     wine/lzexpand.c

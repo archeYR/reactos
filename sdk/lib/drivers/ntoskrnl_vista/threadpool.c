@@ -46,7 +46,7 @@ WINE_DEFAULT_DEBUG_CHANNEL(threadpool);
 #define NDEBUG
 #include <debug.h>
 
-#include <wine\list.h>
+#include <wine/list.h>
 
 /* GLOBALS *******************************************************************/
 
@@ -475,7 +475,7 @@ static void CALLBACK timerqueue_thread_proc( void *param )
             if (new_timeout < timeout_upper)
                 timeout_upper = new_timeout;
         }
-
+        
         /* Wait for timer update events or until the next timer expires. */
         if (timerqueue.objcount)
         {

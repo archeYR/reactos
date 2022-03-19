@@ -25,6 +25,7 @@
 @ stdcall -stub -version=0x600+ AlpcMaxAllowedMessageLength()
 @ stdcall -stub -version=0x600+ AlpcRegisterCompletionList(ptr ptr long long long)
 @ stdcall -stub -version=0x600+ AlpcRegisterCompletionListWorkerThread(ptr)
+@ stdcall -stub -version=0x600+ AlpcRundownCompletionList(ptr)
 @ stdcall -stub -version=0x600+ AlpcUnregisterCompletionList(ptr)
 @ stdcall -stub -version=0x600+ AlpcUnregisterCompletionListWorkerThread(ptr)
 @ stdcall CsrAllocateCaptureBuffer(long long)
@@ -68,24 +69,25 @@
 @ stdcall -version=0x502 EtwEnableTrace(long long long ptr double)
 @ stub -version=0x600+ EtwEnumerateProcessRegGuids
 @ stdcall -stub -version=0x502 EtwEnumerateTraceGuids(ptr long ptr)
-@ stub -version=0x600+ EtwEventActivityIdControl
-@ stub -version=0x600+ EtwEventEnabled
-@ stub -version=0x600+ EtwEventProviderEnabled
-@ stub -version=0x600+ EtwEventRegister
-@ stub -version=0x600+ EtwEventUnregister
-@ stub -version=0x600+ EtwEventWrite
-@ stub -version=0x600+ EtwEventWriteEndScenario
-@ stub -version=0x600+ EtwEventWriteFull
-@ stub -version=0x600+ EtwEventWriteStartScenario
-@ stub -version=0x600+ EtwEventWriteString
-@ stub -version=0x600+ EtwEventWriteTransfer
+@ stdcall -version=0x600+ EtwEventActivityIdControl(long ptr)
+@ stdcall -version=0x600+ EtwEventEnabled(int64 ptr)
+@ stdcall -version=0x600+ EtwEventProviderEnabled(int64 long int64)
+@ stdcall -version=0x600+ EtwEventRegister(ptr ptr ptr ptr)
+@ stdcall -version=0x600+ EtwEventUnregister(int64)
+@ stdcall -version=0x600+ EtwEventWrite(int64 ptr long ptr)
+@ stdcall -stub -version=0x600+ EtwEventWriteEndScenario()
+@ stdcall -stub -version=0x600+ EtwEventWriteFull()
+@ stdcall -stub -version=0x601+ EtwEventWriteNoRegistration(ptr ptr long ptr)
+@ stdcall -stub -version=0x600+ EtwEventWriteStartScenario()
+@ stdcall -version=0x600+ EtwEventWriteString(int64 long int64 ptr)
+@ stdcall -version=0x600+ EtwEventWriteTransfer(int64 ptr ptr ptr long ptr)
 @ stdcall -version=0x502 EtwFlushTraceA(double str ptr)
 @ stdcall -version=0x502 EtwFlushTraceW(double wstr ptr)
 @ stdcall EtwGetTraceEnableFlags(double)
 @ stdcall EtwGetTraceEnableLevel(double)
 @ stdcall EtwGetTraceLoggerHandle(ptr)
-@ stub -version=0x600+ EtwLogTraceEvent
-@ stub -version=0x600+ EtwNotificationRegister
+@ stdcall -stub -version=0x600+ EtwLogTraceEvent()
+@ stdcall -version=0x600+ EtwNotificationRegister(ptr long ptr ptr int64)
 @ stdcall -stub -version=0x502 EtwNotificationRegistrationA(ptr long ptr long long)
 @ stdcall -stub -version=0x502 EtwNotificationRegistrationW(ptr long ptr long long)
 @ stub -version=0x600+ EtwNotificationUnregister
@@ -149,6 +151,8 @@
 @ stdcall LdrFindResource_U(long ptr long ptr)
 @ stdcall LdrFlushAlternateResourceModules()
 @ stdcall LdrGetDllHandle(wstr long ptr ptr)
+@ stdcall -stub -version=0x600+ LdrGetDllHandleByMapping(ptr ptr)
+@ stdcall -stub -version=0x600+ LdrGetDllHandleByName(wstr wstr ptr)
 @ stdcall LdrGetDllHandleEx(long wstr long ptr ptr)
 @ stub -version=0x600+ LdrGetFailureData
 @ stdcall -stub -version=0x600+ LdrGetFileNameFromLoadAsDataTable(ptr ptr)
@@ -217,30 +221,31 @@
 @ stdcall NtAlertResumeThread(long ptr)
 @ stdcall NtAlertThread(long)
 @ stdcall NtAllocateLocallyUniqueId(ptr)
+@ stdcall -stub -version=0x600+ NtAllocateReserveObject(ptr ptr ptr)
 @ stdcall NtAllocateUserPhysicalPages(ptr ptr ptr)
 @ stdcall NtAllocateUuids(ptr ptr ptr ptr)
 @ stdcall NtAllocateVirtualMemory(long ptr ptr ptr long long)
-@ stub -version=0x600+ NtAlpcAcceptConnectPort
-@ stub -version=0x600+ NtAlpcCancelMessage
-@ stub -version=0x600+ NtAlpcConnectPort
-@ stub -version=0x600+ NtAlpcCreatePort
-@ stub -version=0x600+ NtAlpcCreatePortSection
-@ stub -version=0x600+ NtAlpcCreateResourceReserve
-@ stub -version=0x600+ NtAlpcCreateSectionView
-@ stub -version=0x600+ NtAlpcCreateSecurityContext
-@ stub -version=0x600+ NtAlpcDeletePortSection
-@ stub -version=0x600+ NtAlpcDeleteResourceReserve
-@ stub -version=0x600+ NtAlpcDeleteSectionView
-@ stub -version=0x600+ NtAlpcDeleteSecurityContext
-@ stub -version=0x600+ NtAlpcDisconnectPort
-@ stub -version=0x600+ NtAlpcImpersonateClientOfPort
-@ stub -version=0x600+ NtAlpcOpenSenderProcess
-@ stub -version=0x600+ NtAlpcOpenSenderThread
-@ stub -version=0x600+ NtAlpcQueryInformation
-@ stub -version=0x600+ NtAlpcQueryInformationMessage
-@ stub -version=0x600+ NtAlpcRevokeSecurityContext
-@ stub -version=0x600+ NtAlpcSendWaitReceivePort
-@ stub -version=0x600+ NtAlpcSetInformation
+@ stdcall -stub -version=0x600+ NtAlpcAcceptConnectPort()
+@ stdcall -stub -version=0x600+ NtAlpcCancelMessage(ptr long ptr)
+@ stdcall -stub -version=0x600+ NtAlpcConnectPort(ptr wstr ptr ptr long ptr ptr long ptr ptr ptr)
+@ stdcall -stub -version=0x600+ NtAlpcCreatePort()
+@ stdcall -stub -version=0x600+ NtAlpcCreatePortSection(ptr long ptr long ptr long)
+@ stdcall -stub -version=0x600+ NtAlpcCreateResourceReserve(ptr long long ptr)
+@ stdcall -stub -version=0x600+ NtAlpcCreateSectionView()
+@ stdcall -stub -version=0x600+ NtAlpcCreateSecurityContext(ptr long ptr)
+@ stdcall -stub -version=0x600+ NtAlpcDeletePortSection()
+@ stdcall -stub -version=0x600+ NtAlpcDeleteResourceReserve()
+@ stdcall -stub -version=0x600+ NtAlpcDeleteSectionView()
+@ stdcall -stub -version=0x600+ NtAlpcDeleteSecurityContext(ptr long ptr)
+@ stdcall -stub -version=0x600+ NtAlpcDisconnectPort()
+@ stdcall -stub -version=0x600+ NtAlpcImpersonateClientOfPort()
+@ stdcall -stub -version=0x600+ NtAlpcOpenSenderProcess()
+@ stdcall -stub -version=0x600+ NtAlpcOpenSenderThread()
+@ stdcall -stub -version=0x600+ NtAlpcQueryInformation(ptr ptr ptr long long)
+@ stdcall -stub -version=0x600+ NtAlpcQueryInformationMessage()
+@ stdcall -stub -version=0x600+ NtAlpcRevokeSecurityContext()
+@ stdcall -stub -version=0x600+ NtAlpcSendWaitReceivePort(ptr long ptr ptr ptr long ptr ptr)
+@ stdcall -stub -version=0x600+ NtAlpcSetInformation()
 @ stdcall NtApphelpCacheControl(long ptr)
 @ stdcall NtAreMappedFilesTheSame(ptr ptr)
 @ stdcall NtAssignProcessToJobObject(long long)
@@ -325,7 +330,7 @@
 @ stub -version=0x600+ NtFlushInstallUILanguage
 @ stdcall NtFlushInstructionCache(long ptr long)
 @ stdcall NtFlushKey(long)
-@ stub -version=0x600+ NtFlushProcessWriteBuffers
+@ stdcall -version=0x600+ NtFlushProcessWriteBuffers()
 @ stdcall NtFlushVirtualMemory(long ptr ptr long)
 @ stdcall NtFlushWriteBuffer()
 @ stdcall NtFreeUserPhysicalPages(ptr ptr ptr)
@@ -441,7 +446,7 @@
 @ stdcall NtQueryIntervalProfile(long ptr)
 @ stdcall NtQueryIoCompletion(long long ptr long ptr)
 @ stdcall NtQueryKey (long long ptr long ptr)
-@ stub -version=0x600+ NtQueryLicenseValue
+@ stdcall -stub -version=0x600+ NtQueryLicenseValue(wstr long ptr long long)
 @ stdcall NtQueryMultipleValueKey(long ptr long ptr long ptr)
 @ stdcall NtQueryMutant(long long ptr long ptr)
 @ stdcall NtQueryObject(long long long long long)
@@ -457,6 +462,7 @@
 @ stdcall NtQuerySystemEnvironmentValue(ptr ptr long ptr)
 @ stdcall NtQuerySystemEnvironmentValueEx(ptr ptr ptr ptr ptr)
 @ stdcall NtQuerySystemInformation(long long long long)
+@ stdcall -stub -version=0x600+ NtQuerySystemInformationEx(ptr ptr long ptr long long)
 @ stdcall NtQuerySystemTime(ptr)
 @ stdcall NtQueryTimer(ptr long ptr long ptr)
 @ stdcall NtQueryTimerResolution(long long long)
@@ -464,6 +470,7 @@
 @ stdcall NtQueryVirtualMemory(long ptr long ptr long ptr)
 @ stdcall NtQueryVolumeInformationFile(long ptr ptr long long)
 @ stdcall NtQueueApcThread(long ptr long long long)
+@ stdcall -stub -version=0x600+ NtQueueApcThreadEx(ptr ptr ptr long long long)
 @ stdcall NtRaiseException(ptr ptr long)
 @ stdcall NtRaiseHardError(long long long ptr long ptr)
 @ stdcall NtReadFile(long long ptr ptr ptr ptr long ptr ptr)
@@ -482,7 +489,7 @@
 @ stdcall NtReleaseSemaphore(long long ptr)
 @ stub -version=0x600+ NtReleaseWorkerFactoryWorker
 @ stdcall NtRemoveIoCompletion(ptr ptr ptr ptr ptr)
-@ stub -version=0x600+ NtRemoveIoCompletionEx
+@ stdcall -stub -version=0x600+ NtRemoveIoCompletionEx(ptr ptr long ptr ptr long)
 @ stdcall NtRemoveProcessDebug(ptr ptr)
 @ stdcall NtRenameKey(ptr ptr)
 @ stub -version=0x600+ NtRenameTransactionManager
@@ -537,6 +544,7 @@
 @ stub -version=0x600+ NtSetInformationWorkerFactory
 @ stdcall NtSetIntervalProfile(long long)
 @ stdcall NtSetIoCompletion(ptr long ptr long long)
+@ stdcall -stub -version=0x600+ NtSetIoCompletionEx(ptr ptr long ptr long long)
 @ stdcall NtSetLdtEntries(long int64 long int64)
 @ stdcall NtSetLowEventPair(ptr)
 @ stdcall NtSetLowWaitHighEventPair(ptr)
@@ -549,6 +557,7 @@
 @ stdcall NtSetSystemTime(ptr ptr)
 @ stdcall NtSetThreadExecutionState(long ptr)
 @ stdcall NtSetTimer(long ptr ptr ptr long long ptr)
+@ stdcall -stub -version=0x600+ NtSetTimerEx(ptr ptr ptr long)
 @ stdcall NtSetTimerResolution(long long ptr)
 @ stdcall NtSetUuidSeed(ptr)
 @ stdcall NtSetValueKey(long long long long long long)
@@ -607,8 +616,8 @@
 @ stdcall RtlAcquirePrivilege(ptr long long ptr)
 @ stdcall RtlAcquireResourceExclusive(ptr long)
 @ stdcall RtlAcquireResourceShared(ptr long)
-@ stdcall -version=0x600+ RtlAcquireSRWLockExclusive(ptr)
-@ stdcall -version=0x600+ RtlAcquireSRWLockShared(ptr)
+@ stdcall -version=0x600+ RtlAcquireSRWLockExclusive(ptr) ntdll_vista.RtlAcquireSRWLockExclusive
+@ stdcall -version=0x600+ RtlAcquireSRWLockShared(ptr) ntdll_vista.RtlAcquireSRWLockShared
 @ stdcall RtlActivateActivationContext(long ptr ptr)
 @ stdcall RtlActivateActivationContextEx(long ptr ptr ptr)
 @ stdcall -arch=x86_64,arm RtlActivateActivationContextUnsafeFast(ptr ptr)
@@ -627,7 +636,7 @@
 @ stdcall RtlAddAuditAccessObjectAce(ptr long long long ptr ptr ptr long long)
 @ stdcall -stub RtlAddCompoundAce(ptr long long long ptr ptr)
 @ stdcall -arch=x86_64 RtlAddFunctionTable(ptr long long)
-@ stub -version=0x600+ RtlAddMandatoryAce
+@ stdcall -version=0x600+ RtlAddMandatoryAce(ptr long long long long ptr)
 @ stdcall RtlAddRefActivationContext(ptr)
 @ stdcall RtlAddRefMemoryStream(ptr)
 @ stub -version=0x600+ RtlAddSIDToBoundaryDescriptor
@@ -681,9 +690,9 @@
 @ stdcall RtlCompareMemory(ptr ptr long)
 @ stdcall RtlCompareMemoryUlong(ptr long long)
 @ stdcall RtlCompareString(ptr ptr long)
-@ stdcall RtlCompareUnicodeString (ptr ptr long)
-@ stub -version=0x600+ RtlCompareUnicodeStrings
-@ stub -version=0x600+ -arch=x86_64 RtlCompleteProcessCloning
+@ stdcall RtlCompareUnicodeString(ptr ptr long)
+@ stdcall -version=0x600+ RtlCompareUnicodeStrings(ptr long ptr long long) ntdll_vista.RtlCompareUnicodeStrings
+@ stdcall -stub -version=0x600+ -arch=x86_64 RtlCompleteProcessCloning()
 @ stdcall RtlCompressBuffer(long ptr long ptr long long ptr ptr)
 @ stdcall RtlComputeCrc32(long ptr long)
 @ stdcall RtlComputeImportTableHash(ptr ptr long)
@@ -873,13 +882,15 @@
 @ stdcall RtlGetCurrentDirectory_U(long ptr)
 @ stdcall RtlGetCurrentPeb()
 @ stdcall RtlGetCurrentProcessorNumber() ; 5.2 SP1 and higher
-@ stub -version=0x600+ RtlGetCurrentTransaction
+@ stdcall -version=0x600+ RtlGetCurrentProcessorNumberEx(ptr)
+@ stdcall -stub -version=0x600+ RtlGetCurrentTransaction()
 @ stdcall RtlGetDaclSecurityDescriptor(ptr ptr ptr ptr)
 @ stdcall RtlGetElementGenericTable(ptr long)
 @ stdcall RtlGetElementGenericTableAvl(ptr long)
 @ stub -version=0x600+ RtlGetFileMUIPath
 @ stdcall RtlGetFrame()
 @ stdcall RtlGetFullPathName_U(wstr long ptr ptr)
+@ stdcall -version=0x600 RtlGetFullPathName_UEx(wstr long wstr wstr ptr)
 @ stdcall RtlGetFullPathName_UstrEx(ptr ptr ptr ptr ptr ptr ptr ptr)
 @ stub -version=0x600+ -arch=x86_64 RtlGetFunctionTableListHead
 @ stdcall RtlGetGroupSecurityDescriptor(ptr ptr ptr)
@@ -889,6 +900,7 @@
 @ stdcall RtlGetLengthWithoutLastFullDosOrNtPathElement(long ptr ptr)
 ; Yes, Microsoft really misspelled this one!
 @ stdcall RtlGetLengthWithoutTrailingPathSeperators(long ptr ptr) RtlGetLengthWithoutTrailingPathSeparators
+@ stdcall -version=0x601+ RtlGetLocaleFileMappingAddress(ptr ptr long)
 @ stdcall RtlGetLongestNtPathLength()
 @ stdcall RtlGetNativeSystemInformation(long long long long) NtQuerySystemInformation
 @ stdcall RtlGetNtGlobalFlags()
@@ -897,7 +909,7 @@
 @ stdcall RtlGetOwnerSecurityDescriptor(ptr ptr ptr)
 @ stub -version=0x600+ RtlGetParentLocaleName
 @ stdcall RtlGetProcessHeaps(long ptr)
-@ stub -version=0x600+ RtlGetProductInfo
+@ stdcall -stub -version=0x600+ RtlGetProcessPreferredUILanguages()
 @ stdcall RtlGetSaclSecurityDescriptor(ptr ptr ptr ptr)
 @ stdcall RtlGetSecurityDescriptorRMControl(ptr ptr)
 @ stdcall RtlGetSetBootStatusData(ptr long long ptr long long)
@@ -911,6 +923,7 @@
 @ stdcall RtlGetUserInfoHeap(ptr long ptr ptr ptr)
 @ stub -version=0x600+ RtlGetUserPreferredUILanguages
 @ stdcall RtlGetVersion(ptr)
+@ stdcall -stub -version=0x600+ RtlGetProductInfo(long long long long ptr)
 @ stdcall RtlHashUnicodeString(ptr long long ptr)
 @ stub -version=0x600+ RtlHeapTrkInitialize
 @ stdcall RtlIdentifierAuthoritySid(ptr)
@@ -936,7 +949,7 @@
 @ stdcall RtlInitUnicodeStringEx(ptr wstr)
 @ stdcall -stub RtlInitializeAtomPackage(ptr)
 @ stdcall RtlInitializeBitMap(ptr long long)
-@ stdcall -version=0x600+ RtlInitializeConditionVariable(ptr)
+@ stdcall -version=0x600+ RtlInitializeConditionVariable(ptr) ntdll_vista.RtlInitializeConditionVariable
 @ stdcall RtlInitializeContext(ptr ptr ptr ptr ptr)
 @ stdcall RtlInitializeCriticalSection(ptr)
 @ stdcall RtlInitializeCriticalSectionAndSpinCount(ptr long)
@@ -949,7 +962,7 @@
 @ stdcall RtlInitializeRXact(ptr long ptr)
 @ stdcall RtlInitializeResource(ptr)
 @ stdcall RtlInitializeSListHead(ptr)
-@ stdcall -version=0x600+ RtlInitializeSRWLock(ptr)
+@ stdcall -version=0x600+ RtlInitializeSRWLock(ptr) ntdll_vista.RtlInitializeSRWLock
 @ stdcall RtlInitializeSid(ptr ptr long)
 @ stdcall RtlInsertElementGenericTable(ptr ptr long ptr)
 @ stdcall RtlInsertElementGenericTableAvl(ptr ptr long ptr)
@@ -1010,6 +1023,7 @@
 @ stdcall RtlLengthRequiredSid(long)
 @ stdcall RtlLengthSecurityDescriptor(ptr)
 @ stdcall RtlLengthSid(ptr)
+@ stdcall -stub -version=0x601+ RtlLoadString()
 @ stdcall RtlLocalTimeToSystemTime(ptr ptr)
 @ stub -version=0x600+ RtlLocaleNameToLcid
 @ stdcall RtlLockBootStatusData(ptr)
@@ -1071,7 +1085,7 @@
 @ stub -version=0x600+ RtlQueryCriticalSectionOwner
 @ stdcall RtlQueryDepthSList(ptr)
 @ stub -version=0x600+ RtlQueryDynamicTimeZoneInformation
-@ stub -version=0x600+ RtlQueryElevationFlags
+;@ stub -version=0x600+ RtlQueryElevationFlags
 @ stub -version=0x600+ RtlQueryEnvironmentVariable
 @ stdcall RtlQueryEnvironmentVariable_U(ptr ptr ptr)
 @ stdcall RtlQueryHeapInformation(long long ptr long ptr)
@@ -1079,7 +1093,8 @@
 @ stdcall RtlQueryInformationActivationContext(long long ptr long ptr long ptr)
 @ stdcall RtlQueryInformationActiveActivationContext(long ptr long ptr)
 @ stdcall RtlQueryInterfaceMemoryStream(ptr ptr ptr)
-@ stub -version=0x600+ RtlQueryModuleInformation
+@ stdcall -stub -version=0x600+ RtlQueryModuleInformation()
+@ stdcall -version=0x600+ RtlQueryPerformanceCounter(ptr) ntdll_vista.RtlQueryPerformanceCounter
 @ stdcall -stub RtlQueryProcessBackTraceInformation(ptr)
 @ stdcall RtlQueryProcessDebugInformation(long long ptr)
 @ stdcall RtlQueryProcessHeapInformation(ptr)
@@ -1108,15 +1123,16 @@
 @ stdcall RtlReleasePrivilege(ptr)
 @ stdcall RtlReleaseRelativeName(ptr)
 @ stdcall RtlReleaseResource(ptr)
-@ stdcall -version=0x600+ RtlReleaseSRWLockExclusive(ptr)
-@ stdcall -version=0x600+ RtlReleaseSRWLockShared(ptr)
+@ stdcall -version=0x600+ RtlReleaseSRWLockExclusive(ptr) ntdll_vista.RtlReleaseSRWLockExclusive
+@ stdcall -version=0x600+ RtlReleaseSRWLockShared(ptr) ntdll_vista.RtlReleaseSRWLockShared
 @ stdcall RtlRemoteCall(ptr ptr ptr long ptr long long)
 @ stub -version=0x600+ RtlRemovePrivileges
 @ stdcall RtlRemoveVectoredContinueHandler(ptr)
 @ stdcall RtlRemoveVectoredExceptionHandler(ptr)
-@ stub -version=0x600+ RtlReportException
-@ stub -version=0x600+ RtlResetMemoryBlockLookaside
-@ stub -version=0x600+ RtlResetMemoryZone
+@ stdcall -stub -version=0x600+ RtlReportException()
+@ stdcall -stub -version=0x600+ RtlReportSilentProcessExit()
+@ stdcall -stub -version=0x600+ RtlResetMemoryBlockLookaside()
+@ stdcall -stub -version=0x600+ RtlResetMemoryZone()
 @ stdcall RtlResetRtlTranslations(ptr)
 @ stdcall -arch=x86_64 RtlRestoreContext(ptr ptr)
 @ stdcall RtlRestoreLastWin32Error(long) RtlSetLastWin32Error
@@ -1124,10 +1140,10 @@
 @ stdcall RtlRevertMemoryStream(ptr)
 @ stdcall RtlRunDecodeUnicodeString(long ptr)
 @ stdcall RtlRunEncodeUnicodeString(long ptr)
-@ stdcall -version=0x600+ RtlRunOnceBeginInitialize(ptr long ptr)
-@ stdcall -version=0x600+ RtlRunOnceComplete(ptr long ptr)
-@ stdcall -version=0x600+ RtlRunOnceExecuteOnce(ptr ptr ptr ptr)
-@ stdcall -version=0x600+ RtlRunOnceInitialize(ptr)
+@ stdcall -version=0x600+ RtlRunOnceBeginInitialize(ptr long ptr) ntdll_vista.RtlRunOnceBeginInitialize
+@ stdcall -version=0x600+ RtlRunOnceComplete(ptr long ptr) ntdll_vista.RtlRunOnceComplete
+@ stdcall -version=0x600+ RtlRunOnceExecuteOnce(ptr ptr ptr ptr) ntdll_vista.RtlRunOnceExecuteOnce
+@ stdcall -version=0x600+ RtlRunOnceInitialize(ptr) ntdll_vista.RtlRunOnceInitialize
 @ stdcall RtlSecondsSince1970ToTime(long ptr)
 @ stdcall RtlSecondsSince1980ToTime(long ptr)
 @ stdcall RtlSeekMemoryStream(ptr int64 long ptr)
@@ -1193,7 +1209,7 @@
 @ stdcall RtlTimeToElapsedTimeFields(long long)
 @ stdcall RtlTimeToSecondsSince1970(ptr ptr)
 @ stdcall RtlTimeToSecondsSince1980(ptr ptr)
-@ stdcall RtlTimeToTimeFields (long long)
+@ stdcall RtlTimeToTimeFields(long long)
 @ stdcall RtlTraceDatabaseAdd(ptr long ptr ptr)
 @ stdcall RtlTraceDatabaseCreate(long ptr long long ptr)
 @ stdcall RtlTraceDatabaseDestroy(ptr)
@@ -1216,6 +1232,7 @@
 @ stdcall RtlUnicodeToMultiByteN(ptr long ptr ptr long)
 @ stdcall RtlUnicodeToMultiByteSize(ptr ptr long)
 @ stdcall RtlUnicodeToOemN(ptr long ptr ptr long)
+@ stdcall -stub -version=0x600+ RtlUnicodeToUTF8N(str long long ptr long)
 @ stdcall RtlUniform(ptr)
 @ stdcall RtlUnlockBootStatusData(ptr)
 @ stub -version=0x600+ RtlUnlockCurrentThread
@@ -1240,7 +1257,8 @@
 @ stdcall RtlUpperChar(long)
 @ stdcall RtlUpperString(ptr ptr)
 @ stdcall -version=0x502 RtlUsageHeap(ptr long ptr)
-@ stub -version=0x600+ RtlUserThreadStart
+@ stdcall -stub -version=0x600+ RtlUserThreadStart()
+@ stdcall -stub -version=0x600+ RtlUTF8ToUnicodeN(wstr long long ptr long)
 @ stdcall RtlValidAcl(ptr)
 @ stdcall RtlValidRelativeSecurityDescriptor(ptr long long)
 @ stdcall RtlValidSecurityDescriptor(ptr)
@@ -1306,61 +1324,74 @@
 @ stdcall RtlxOemStringToUnicodeSize(ptr)
 @ stdcall RtlxUnicodeStringToAnsiSize(ptr)
 @ stdcall RtlxUnicodeStringToOemSize(ptr)
+@ stdcall -stub -version=0x600+ SbSelectProcedure(long long ptr long)
 @ stdcall -stub -version=0x600+ ShipAssert()
 @ stdcall -stub -version=0x600+ ShipAssertGetBufferInfo()
 @ stdcall -stub -version=0x600+ ShipAssertMsgA()
 @ stdcall -stub -version=0x600+ ShipAssertMsgW()
 @ stdcall -stub -version=0x600+ TpAllocAlpcCompletion()
-@ stdcall -stub -version=0x600+ TpAllocCleanupGroup()
+@ stdcall -stub -version=0x600+ TpAllocAlpcCompletionEx()
+@ stdcall -stub -version=0x600+ TpAllocCleanupGroup(ptr) 
 @ stdcall -stub -version=0x600+ TpAllocIoCompletion()
-@ stdcall -stub -version=0x600+ TpAllocPool()
-@ stdcall -stub -version=0x600+ TpAllocTimer()
-@ stdcall -stub -version=0x600+ TpAllocWait()
-@ stdcall -stub -version=0x600+ TpAllocWork()
-@ stdcall -stub -version=0x600+ TpCallbackLeaveCriticalSectionOnCompletion()
-@ stdcall -stub -version=0x600+ TpCallbackMayRunLong()
-@ stdcall -stub -version=0x600+ TpCallbackReleaseMutexOnCompletion()
-@ stdcall -stub -version=0x600+ TpCallbackReleaseSemaphoreOnCompletion()
-@ stdcall -stub -version=0x600+ TpCallbackSetEventOnCompletion()
-@ stdcall -stub -version=0x600+ TpCallbackUnloadDllOnCompletion()
+@ stdcall -stub -version=0x600+ TpAllocPool(ptr ptr)
+@ stdcall -stub -version=0x600+ TpAllocTimer(ptr ptr ptr ptr)
+@ stdcall -stub -version=0x600+ TpAllocWait(ptr ptr ptr ptr) 
+@ stdcall -stub -version=0x600+ TpAllocWork(ptr ptr ptr ptr) 
+@ stdcall -stub -version=0x600+ TpAlpcRegisterCompletionList()
+@ stdcall -stub -version=0x600+ TpAlpcUnregisterCompletionList()
+@ stdcall -stub -version=0x600+ TpCallbackIndependent()
+@ stdcall -stub -version=0x600+ TpCallbackLeaveCriticalSectionOnCompletion(ptr ptr) 
+@ stdcall -stub -version=0x600+ TpCallbackMayRunLong(ptr)
+@ stdcall -stub -version=0x600+ TpCallbackReleaseMutexOnCompletion(ptr ptr) 
+@ stdcall -stub -version=0x600+ TpCallbackReleaseSemaphoreOnCompletion(ptr ptr long)
+@ stdcall -stub -version=0x600+ TpCallbackSetEventOnCompletion(ptr ptr) 
+@ stdcall -stub -version=0x600+ TpCallbackUnloadDllOnCompletion(ptr ptr)
 @ stdcall -stub -version=0x600+ TpCancelAsyncIoOperation()
 @ stdcall -stub -version=0x600+ TpCaptureCaller()
 @ stdcall -stub -version=0x600+ TpCheckTerminateWorker()
 @ stdcall -stub -version=0x600+ TpDbgDumpHeapUsage()
 @ stdcall -stub -version=0x600+ TpDbgSetLogRoutine()
-@ stdcall -stub -version=0x600+ TpDisassociateCallback()
-@ stdcall -stub -version=0x600+ TpIsTimerSet()
-@ stdcall -stub -version=0x600+ TpPostWork()
+@ stdcall -stub -version=0x600+ TpDisablePoolCallbackChecks()
+@ stdcall -stub -version=0x600+ TpDisassociateCallback(ptr)
+@ stdcall -stub -version=0x600+ TpIsTimerSet(ptr) ntdll_vista.TpIsTimerSet
+@ stdcall -stub -version=0x600+ TpPostWork(ptr) ntdll_vista.TpPostWork
+@ stdcall -stub -version=0x600+ TpQueryPoolStackInformation(ptr ptr)
 @ stdcall -stub -version=0x600+ TpReleaseAlpcCompletion()
-@ stdcall -stub -version=0x600+ TpReleaseCleanupGroup()
-@ stdcall -stub -version=0x600+ TpReleaseCleanupGroupMembers()
+@ stdcall -stub -version=0x600+ TpReleaseCleanupGroup(ptr) 
+@ stdcall -stub -version=0x600+ TpReleaseCleanupGroupMembers(ptr long ptr) 
 @ stdcall -stub -version=0x600+ TpReleaseIoCompletion()
-@ stdcall -stub -version=0x600+ TpReleasePool()
-@ stdcall -stub -version=0x600+ TpReleaseTimer()
-@ stdcall -stub -version=0x600+ TpReleaseWait()
-@ stdcall -stub -version=0x600+ TpReleaseWork()
-@ stdcall -stub -version=0x600+ TpSetPoolMaxThreads()
-@ stdcall -stub -version=0x600+ TpSetPoolMinThreads()
-@ stdcall -stub -version=0x600+ TpSetTimer()
-@ stdcall -stub -version=0x600+ TpSetWait()
-@ stdcall -stub -version=0x600+ TpSimpleTryPost()
+@ stdcall -stub -version=0x600+ TpReleasePool(ptr) 
+@ stdcall -stub -version=0x600+ TpReleaseTimer(ptr)
+@ stdcall -stub -version=0x600+ TpReleaseWait(ptr) 
+@ stdcall -stub -version=0x600+ TpReleaseWork(ptr) 
+@ stdcall -stub -version=0x600+ TpSetDefaultPoolStackInformation()
+@ stdcall -stub -version=0x600+ TpSetPoolMaxThreads(ptr long) 
+@ stdcall -stub -version=0x600+ TpSetPoolMinThreads(ptr long) 
+@ stdcall -stub -version=0x600+ TpSetPoolStackInformation(ptr ptr)
+@ stdcall -stub -version=0x600+ TpSetTimer(ptr ptr long long) 
+@ stdcall -stub -version=0x600+ TpSetWait(ptr long ptr) 
+@ stdcall -stub -version=0x600+ TpSimpleTryPost(ptr ptr ptr) 
 @ stdcall -stub -version=0x600+ TpStartAsyncIoOperation()
 @ stdcall -stub -version=0x600+ TpWaitForAlpcCompletion()
 @ stdcall -stub -version=0x600+ TpWaitForIoCompletion()
-@ stdcall -stub -version=0x600+ TpWaitForTimer()
-@ stdcall -stub -version=0x600+ TpWaitForWait()
-@ stdcall -stub -version=0x600+ TpWaitForWork()
+@ stdcall -stub -version=0x600+ TpWaitForTimer(ptr long)
+@ stdcall -stub -version=0x600+ TpWaitForWait(ptr long) 
+@ stdcall -stub -version=0x600+ TpWaitForWork(ptr long) 
 @ stdcall -ret64 VerSetConditionMask(double long long)
-@ stub -version=0x600+ WerCheckEventEscalation
-@ stub -version=0x600+ WerReportSQMEvent
-@ stub -version=0x600+ WerReportWatsonEvent
-@ stub -version=0x600+ WinSqmAddToStream
-@ stub -version=0x600+ WinSqmEndSession
-@ stub -version=0x600+ WinSqmEventEnabled
-@ stub -version=0x600+ WinSqmEventWrite
-@ stub -version=0x600+ WinSqmIsOptedIn
-@ stub -version=0x600+ WinSqmSetString
-@ stub -version=0x600+ WinSqmStartSession
+@ stdcall -stub -version=0x600+ WerCheckEventEscalation()
+@ stdcall -stub -version=0x600+ WerReportSQMEvent()
+@ stdcall -stub -version=0x600+ WerReportWatsonEvent()
+@ stdcall -stub -version=0x600+ WinSqmAddToStream()
+@ stdcall -stub -version=0x600+ WinSqmAddToStreamEx()
+@ stdcall -version=0x600+ WinSqmEndSession(ptr)
+@ stdcall -stub -version=0x600+ WinSqmEventEnabled()
+@ stdcall -stub -version=0x600+ WinSqmEventWrite()
+@ stdcall -version=0x600+ WinSqmIncrementDWORD(long long long)
+@ stdcall -version=0x600+ WinSqmIsOptedIn()
+@ stdcall -stub -version=0x600+ WinSqmSetIfMaxDWORD()
+@ stdcall -version=0x600+ WinSqmSetDWORD(ptr long long)
+@ stdcall -version=0x600+ WinSqmSetString()
+@ stdcall -version=0x600+ WinSqmStartSession(ptr long long)
 @ stdcall ZwAcceptConnectPort(ptr long ptr long long ptr)
 @ stdcall ZwAccessCheck(ptr long long ptr ptr ptr ptr ptr)
 @ stdcall ZwAccessCheckAndAuditAlarm(ptr long ptr ptr ptr long ptr long ptr ptr ptr)
@@ -1381,27 +1412,27 @@
 @ stdcall ZwAllocateUserPhysicalPages(ptr ptr ptr)
 @ stdcall ZwAllocateUuids(ptr ptr ptr ptr)
 @ stdcall ZwAllocateVirtualMemory(long ptr ptr ptr long long)
-@ stub -version=0x600+ ZwAlpcAcceptConnectPort
-@ stub -version=0x600+ ZwAlpcCancelMessage
-@ stub -version=0x600+ ZwAlpcConnectPort
-@ stub -version=0x600+ ZwAlpcCreatePort
-@ stub -version=0x600+ ZwAlpcCreatePortSection
-@ stub -version=0x600+ ZwAlpcCreateResourceReserve
-@ stub -version=0x600+ ZwAlpcCreateSectionView
-@ stub -version=0x600+ ZwAlpcCreateSecurityContext
-@ stub -version=0x600+ ZwAlpcDeletePortSection
-@ stub -version=0x600+ ZwAlpcDeleteResourceReserve
-@ stub -version=0x600+ ZwAlpcDeleteSectionView
-@ stub -version=0x600+ ZwAlpcDeleteSecurityContext
-@ stub -version=0x600+ ZwAlpcDisconnectPort
-@ stub -version=0x600+ ZwAlpcImpersonateClientOfPort
-@ stub -version=0x600+ ZwAlpcOpenSenderProcess
-@ stub -version=0x600+ ZwAlpcOpenSenderThread
-@ stub -version=0x600+ ZwAlpcQueryInformation
-@ stub -version=0x600+ ZwAlpcQueryInformationMessage
-@ stub -version=0x600+ ZwAlpcRevokeSecurityContext
-@ stub -version=0x600+ ZwAlpcSendWaitReceivePort
-@ stub -version=0x600+ ZwAlpcSetInformation
+@ stdcall -stub -version=0x600+ ZwAlpcAcceptConnectPort()
+@ stdcall -stub -version=0x600+ ZwAlpcCancelMessage(ptr long ptr)
+@ stdcall -stub -version=0x600+ ZwAlpcConnectPort(ptr wstr ptr ptr long ptr ptr long ptr ptr ptr)
+@ stdcall -stub -version=0x600+ ZwAlpcCreatePort()
+@ stdcall -stub -version=0x600+ ZwAlpcCreatePortSection(ptr long ptr long ptr long)
+@ stdcall -stub -version=0x600+ ZwAlpcCreateResourceReserve(ptr long long ptr)
+@ stdcall -stub -version=0x600+ ZwAlpcCreateSectionView()
+@ stdcall -stub -version=0x600+ ZwAlpcCreateSecurityContext(ptr long ptr)
+@ stdcall -stub -version=0x600+ ZwAlpcDeletePortSection()
+@ stdcall -stub -version=0x600+ ZwAlpcDeleteResourceReserve()
+@ stdcall -stub -version=0x600+ ZwAlpcDeleteSectionView()
+@ stdcall -stub -version=0x600+ ZwAlpcDeleteSecurityContext(ptr long ptr)
+@ stdcall -stub -version=0x600+ ZwAlpcDisconnectPort()
+@ stdcall -stub -version=0x600+ ZwAlpcImpersonateClientOfPort()
+@ stdcall -stub -version=0x600+ ZwAlpcOpenSenderProcess()
+@ stdcall -stub -version=0x600+ ZwAlpcOpenSenderThread()
+@ stdcall -stub -version=0x600+ ZwAlpcQueryInformation(ptr ptr ptr long long)
+@ stdcall -stub -version=0x600+ ZwAlpcQueryInformationMessage()
+@ stdcall -stub -version=0x600+ ZwAlpcRevokeSecurityContext()
+@ stdcall -stub -version=0x600+ ZwAlpcSendWaitReceivePort(ptr long ptr ptr ptr long ptr ptr)
+@ stdcall -stub -version=0x600+ ZwAlpcSetInformation()
 @ stdcall ZwApphelpCacheControl(long ptr)
 @ stdcall ZwAreMappedFilesTheSame(ptr ptr)
 @ stdcall ZwAssignProcessToJobObject(long long)
@@ -1599,7 +1630,7 @@
 @ stdcall ZwQueryIntervalProfile(long ptr)
 @ stdcall ZwQueryIoCompletion(long long ptr long ptr)
 @ stdcall ZwQueryKey(long long ptr long ptr)
-@ stub -version=0x600+ ZwQueryLicenseValue
+@ stdcall -stub -version=0x600+ ZwQueryLicenseValue(wstr long ptr long long)
 @ stdcall ZwQueryMultipleValueKey(long ptr long ptr long ptr)
 @ stdcall ZwQueryMutant(long long ptr long ptr)
 @ stdcall ZwQueryObject(long long long long long)
@@ -1619,11 +1650,7 @@
 @ stdcall ZwQueryTimer(ptr long ptr long ptr)
 @ stdcall ZwQueryTimerResolution(long long long)
 @ stdcall ZwQueryValueKey(long ptr long ptr long ptr)
-@ stdcall ZwQueryVirtualMemory(long ptr long ptr long ptr)
-@ stdcall ZwQueryVolumeInformationFile(long ptr ptr long long)
-@ stdcall ZwQueueApcThread(long ptr long long long)
 @ stdcall ZwRaiseException(ptr ptr long)
-@ stdcall ZwRaiseHardError(long long long ptr long ptr)
 @ stdcall ZwReadFile(long long ptr ptr ptr ptr long ptr ptr)
 @ stdcall ZwReadFileScatter(long long ptr ptr ptr ptr long ptr ptr)
 @ stub -version=0x600+ ZwReadOnlyEnlistment
@@ -1640,7 +1667,7 @@
 @ stdcall ZwReleaseSemaphore(long long ptr)
 @ stub -version=0x600+ ZwReleaseWorkerFactoryWorker
 @ stdcall ZwRemoveIoCompletion(ptr ptr ptr ptr ptr)
-@ stub -version=0x600+ ZwRemoveIoCompletionEx
+@ stdcall -stub -version=0x600+ ZwRemoveIoCompletionEx(ptr ptr long ptr ptr long)
 @ stdcall ZwRemoveProcessDebug(ptr ptr)
 @ stdcall ZwRenameKey(ptr ptr)
 @ stub -version=0x600+ ZwRenameTransactionManager
@@ -1794,7 +1821,9 @@
 @ cdecl -arch=x86_64,arm _setjmp(ptr ptr)
 @ cdecl -arch=x86_64,arm _setjmpex(ptr ptr)
 @ varargs _snprintf(ptr long str)
+@ varargs -stub -version=0x600+ _snprintf_s(ptr long long str)
 @ varargs _snwprintf(ptr long wstr)
+@ varargs -stub -version=0x600+ _snwprintf_s(ptr long long wstr)
 @ cdecl _splitpath(str ptr ptr ptr ptr)
 @ cdecl _strcmpi(str str) _stricmp
 @ cdecl _stricmp(str str)
@@ -1853,6 +1882,7 @@
 @ cdecl memchr(ptr long long)
 @ cdecl memcmp(ptr ptr long)
 @ cdecl memcpy(ptr ptr long) memmove
+@ cdecl -stub -version=0x600+ memcpy_s(ptr long ptr long)
 @ cdecl memmove(ptr ptr long)
 @ cdecl memset(ptr long long)
 @ cdecl -arch=i386,x86_64,arm pow(double double)
@@ -1861,15 +1891,19 @@
 @ varargs sprintf(ptr str)
 @ cdecl -arch=i386,x86_64 sqrt(double)
 @ varargs sscanf(str str)
+@ varargs -stub -version=0x600+ sscanf_s(str str)
 @ cdecl strcat(str str)
+@ stub  -version=0x600+ strcat_s
 @ cdecl strchr(str long)
 @ cdecl strcmp(str str)
 @ cdecl strcpy(ptr str)
+@ stub -version=0x600+ strcpy_s
 @ cdecl strcspn(str str)
 @ cdecl strlen(str)
 @ cdecl strncat(str str long)
 @ cdecl strncmp(str str long)
 @ cdecl strncpy(ptr str long)
+@ cdecl -stub -version=0x600+ strncpy_s(ptr long str long)
 @ cdecl strpbrk(str str)
 @ cdecl strrchr(str long)
 @ cdecl strspn(str str)
@@ -1877,6 +1911,7 @@
 @ cdecl strtol(str ptr long)
 @ cdecl strtoul(str ptr long)
 @ varargs swprintf(ptr wstr)
+@ varargs -stub -version=0x600+ swprintf_s(ptr long wstr)
 @ cdecl -arch=i386,x86_64 tan(double)
 @ cdecl tolower(long)
 @ cdecl toupper(long)
@@ -1886,14 +1921,19 @@
 @ stdcall vDbgPrintExWithPrefix(str long long str ptr)
 @ cdecl vsprintf(ptr str ptr)
 @ cdecl wcscat(wstr wstr)
+@ cdecl -version=0x600+ wcscat_s(wstr long wstr)
 @ cdecl wcschr(wstr long)
 @ cdecl wcscmp(wstr wstr)
 @ cdecl wcscpy(ptr wstr)
+@ cdecl -version=0x600+ wcscpy_s(wstr long wstr)
 @ cdecl wcscspn(wstr wstr)
 @ cdecl wcslen(wstr)
 @ cdecl wcsncat(wstr wstr long)
+@ cdecl -version=0x600+ wcsncat_s(wstr long wstr long)
 @ cdecl wcsncmp(wstr wstr long)
 @ cdecl wcsncpy(ptr wstr long)
+@ cdecl -version=0x600+ wcsncpy_s(ptr long wstr long)
+@ cdecl -version=0x600+ wcsnlen(wstr long)
 @ cdecl wcspbrk(wstr wstr)
 @ cdecl wcsrchr(wstr long)
 @ cdecl wcsspn(wstr wstr)

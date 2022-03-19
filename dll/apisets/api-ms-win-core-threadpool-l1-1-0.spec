@@ -4,19 +4,19 @@
 @ stdcall -version=0x600+ CallbackMayRunLong() kernel32.CallbackMayRunLong
 @ stdcall -version=0x600+ CancelThreadpoolIo() kernel32.CancelThreadpoolIo
 @ stdcall ChangeTimerQueueTimer() kernel32.ChangeTimerQueueTimer
-@ stdcall -version=0x600+ CloseThreadpool() kernel32.CloseThreadpool
-@ stdcall -version=0x600+ CloseThreadpoolCleanupGroup() kernel32.CloseThreadpoolCleanupGroup
+@ stdcall -stub -version=0x600+ CloseThreadpool()
+@ stdcall -stub -version=0x600+ CloseThreadpoolCleanupGroup() 
 @ stdcall -version=0x600+ CloseThreadpoolCleanupGroupMembers() kernel32.CloseThreadpoolCleanupGroupMembers
-@ stdcall -version=0x600+ CloseThreadpoolIo() kernel32.CloseThreadpoolIo
-@ stdcall -version=0x600+ CloseThreadpoolTimer() kernel32.CloseThreadpoolTimer
-@ stdcall -version=0x600+ CloseThreadpoolWait() kernel32.CloseThreadpoolWait
-@ stdcall -version=0x600+ CloseThreadpoolWork() kernel32.CloseThreadpoolWork
-@ stdcall -version=0x600+ CreateThreadpool() kernel32.CreateThreadpool
-@ stdcall -version=0x600+ CreateThreadpoolCleanupGroup() kernel32.CreateThreadpoolCleanupGroup
-@ stdcall -version=0x600+ CreateThreadpoolIo() kernel32.CreateThreadpoolIo
-@ stdcall -version=0x600+ CreateThreadpoolTimer() kernel32.CreateThreadpoolTimer
-@ stdcall -version=0x600+ CreateThreadpoolWait() kernel32.CreateThreadpoolWait
-@ stdcall -version=0x600+ CreateThreadpoolWork() kernel32.CreateThreadpoolWork
+@ stdcall -stub -version=0x600+ CloseThreadpoolIo() 
+@ stdcall -stub -version=0x600+ CloseThreadpoolTimer()
+@ stdcall -stub -version=0x600+ CloseThreadpoolWait() 
+@ stdcall -stub -version=0x600+ CloseThreadpoolWork() 
+@ stdcall -stub -version=0x600+ CreateThreadpool()
+@ stdcall -stub -version=0x600+ CreateThreadpoolCleanupGroup()
+@ stdcall -stub -version=0x600+ CreateThreadpoolIo() 
+@ stdcall -stub -version=0x600+ CreateThreadpoolTimer() 
+@ stdcall -stub -version=0x600+ CreateThreadpoolWait() 
+@ stdcall -stub -version=0x600+ CreateThreadpoolWork() 
 @ stdcall CreateTimerQueue() kernel32.CreateTimerQueue
 @ stdcall CreateTimerQueueTimer() kernel32.CreateTimerQueueTimer
 @ stdcall DeleteTimerQueueEx() kernel32.DeleteTimerQueueEx
@@ -37,7 +37,7 @@
 @ stdcall -version=0x600+ SetThreadpoolWait() kernel32.SetThreadpoolWait
 @ stdcall -version=0x600+ StartThreadpoolIo() kernel32.StartThreadpoolIo
 @ stdcall -version=0x600+ SubmitThreadpoolWork() kernel32.SubmitThreadpoolWork
-@ stdcall -version=0x600+ TrySubmitThreadpoolCallback() kernel32.TrySubmitThreadpoolCallback
+@ stdcall -stub -version=0x600+ TrySubmitThreadpoolCallback() 
 @ stdcall UnregisterWaitEx() kernel32.UnregisterWaitEx
 @ stdcall -version=0x600+ WaitForThreadpoolIoCallbacks() kernel32.WaitForThreadpoolIoCallbacks
 @ stdcall -version=0x600+ WaitForThreadpoolTimerCallbacks() kernel32.WaitForThreadpoolTimerCallbacks
