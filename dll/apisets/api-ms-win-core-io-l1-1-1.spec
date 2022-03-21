@@ -9,5 +9,5 @@
 @ stdcall GetOverlappedResult() kernel32.GetOverlappedResult
 @ stub GetOverlappedResultEx
 @ stdcall GetQueuedCompletionStatus() kernel32.GetQueuedCompletionStatus
-@ stdcall -version=0x600+ GetQueuedCompletionStatusEx() kernel32.GetQueuedCompletionStatusEx
+@ stdcall -version=0x600+ GetQueuedCompletionStatusEx() kernel32_vista.GetQueuedCompletionStatusEx
 @ stdcall PostQueuedCompletionStatus() kernel32.PostQueuedCompletionStatus

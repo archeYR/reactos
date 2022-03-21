@@ -11,7 +11,9 @@ list(APPEND SOURCE
     GetTickCount64.c
     InitOnceExecuteOnce.c
     sync.c
-    vista.c)
+    vista.c
+    ${CMAKE_CURRENT_BINARY_DIR}/kernel32_vista_stubs.c
+    ${CMAKE_CURRENT_BINARY_DIR}/kernel32_vista.def)
 
 add_library(kernel32_vista_static ${SOURCE})
 add_dependencies(kernel32_vista_static psdk)

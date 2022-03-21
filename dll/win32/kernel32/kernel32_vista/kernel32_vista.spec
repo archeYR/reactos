@@ -31,7 +31,7 @@
 @ stdcall GetSystemPreferredUILanguages(long ptr wstr ptr)
 @ stdcall GetThreadPreferredUILanguages(long ptr wstr ptr)
 @ stdcall GetThreadUILanguage()
-@ stdcall GetQueuedCompletionStatusEx(ptr ptr long ptr long long)
+@ stdcall -stub GetQueuedCompletionStatusEx(ptr ptr long ptr long long)
 @ stdcall GetUILanguageInfo(long wstr wstr ptr ptr)
 @ stdcall GetUserPreferredUILanguages(long ptr wstr ptr)
 @ stdcall OpenFileById(ptr ptr long long ptr long)

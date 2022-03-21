@@ -201,7 +201,7 @@
 @ stub -version=0x600+ _CrtDbgBreak
 @ stub -version=0x600+ _CrtDbgReport
 @ stub -version=0x600+ _CrtDbgReportV
-@ stub -version=0x600+ _CrtDbgReportW
+@ stub -version=0x502+ _CrtDbgReportW
 @ stub -version=0x600+ _CrtDbgReportWV
 @ stub -version=0x600+ _CrtDoForAllClientObjects
 @ stub -version=0x600+ _CrtDumpMemoryLeaks
@@ -241,7 +241,7 @@
 @ cdecl -arch=i386 -norelay __CxxFrameHandler2(ptr ptr ptr ptr) __CxxFrameHandler
 @ cdecl -version=0x600+ -arch=x86_64 -norelay __CxxFrameHandler2(ptr ptr ptr ptr) __CxxFrameHandler
 @ cdecl -arch=arm -norelay __CxxFrameHandler3(ptr ptr ptr ptr) __CxxFrameHandler
-@ cdecl -version=0x600+ -arch=i386,x86_64 -norelay __CxxFrameHandler3(ptr ptr ptr ptr) __CxxFrameHandler
+@ cdecl -version=0x502+ -arch=i386,x86_64 -norelay __CxxFrameHandler3(ptr ptr ptr ptr) __CxxFrameHandler ;This thing... because of the way we use this, This must be ! HACKY!
 @ stdcall -arch=i386 __CxxLongjmpUnwind(ptr)
 @ cdecl -arch=i386 __CxxQueryExceptionSize()
 @ cdecl -arch=i386 __CxxRegisterExceptionObject()
@@ -533,9 +533,9 @@
 @ cdecl _ftime64(ptr)
 @ cdecl -version=0x600+ _ftime64_s(ptr)
 @ cdecl -arch=i386 -ret64 _ftol()
-@ cdecl -version=0x600+ -arch=i386 _ftol2(long)
-@ cdecl -version=0x600+ -arch=i386 _ftol2_sse(long)
-@ stub -version=0x600+ -arch=i386 _ftol2_sse_excpt
+@ cdecl -version=0x502+ -arch=i386 _ftol2(long);This thing... because of the way we use this, This must be ! HACKY!
+@ cdecl -version=0x502+ -arch=i386 _ftol2_sse(long) ;This thing... because of the way we use this, This must be ! HACKY!
+@ stub -version=0x502+ -arch=i386 _ftol2_sse_excpt ; this too..
 @ cdecl _fullpath(ptr str long)
 @ stub -version=0x600+ _fullpath_dbg
 @ cdecl _futime(long ptr)
