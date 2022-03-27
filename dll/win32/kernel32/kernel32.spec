@@ -209,7 +209,7 @@
 @ stdcall DeleteVolumeMountPointW(wstr) ;check
 @ stdcall DeviceIoControl(long long ptr long ptr long ptr ptr)
 @ stdcall DisableThreadLibraryCalls(long)
-@ stub -version=0x600+ DisassociateCurrentThreadFromCallback
+@ stdcall -version=0x600+ DisassociateCurrentThreadFromCallback(ptr) ntdll_vista.TpDisassociateCallback
 @ stdcall DisconnectNamedPipe(long)
 @ stdcall DnsHostnameToComputerNameA (str ptr ptr)
 @ stdcall DnsHostnameToComputerNameW (wstr ptr ptr)
@@ -747,7 +747,7 @@
 @ stdcall IsProcessorFeaturePresent(long)
 @ stdcall IsSystemResumeAutomatic()
 @ stdcall -version=0x600+ IsThreadAFiber()
-@ stub -version=0x600+ IsThreadpoolTimerSet
+@ stdcall -version=0x600+ IsThreadpoolTimerSet(ptr) ntdll_vista.TpIsTimerSet
 @ stdcall IsTimeZoneRedirectionEnabled()
 @ stub -version=0x600+ IsValidCalDateTime
 @ stdcall IsValidCodePage(long)
@@ -914,7 +914,7 @@
 @ stdcall -version=0x600+ ReleaseSRWLockExclusive(ptr) ntdll.RtlReleaseSRWLockExclusive
 @ stdcall -version=0x600+ ReleaseSRWLockShared(ptr) ntdll.RtlReleaseSRWLockShared
 @ stdcall ReleaseSemaphore(long long ptr)
-@ stub -version=0x600+ ReleaseSemaphoreWhenCallbackReturns
+@ stdcall -version=0x600+ ReleaseSemaphoreWhenCallbackReturns(ptr ptr) ntdll_vista.TpCallbackReleaseSemaphoreOnCompletion
 @ stdcall RemoveDirectoryA(str)
 @ stub -version=0x600+ RemoveDirectoryTransactedA
 @ stub -version=0x600+ RemoveDirectoryTransactedW
@@ -1017,7 +1017,7 @@
 @ stdcall SetEnvironmentVariableW(wstr wstr)
 @ stdcall SetErrorMode(long)
 @ stdcall SetEvent(long)
-@ stub -version=0x600+ SetEventWhenCallbackReturns
+@ stdcall -version=0x600+ SetEventWhenCallbackReturns(ptr ptr) ntdll_vista.TpCallbackSetEventOnCompletion
 @ stdcall SetFileApisToANSI()
 @ stdcall SetFileApisToOEM()
 @ stdcall SetFileAttributesA(str long)
@@ -1079,10 +1079,10 @@
 @ stdcall SetThreadPriorityBoost(long long)
 @ stdcall SetThreadStackGuarantee(ptr)
 @ stdcall SetThreadUILanguage(long)
-@ stub -version=0x600+ SetThreadpoolThreadMaximum
-@ stub -version=0x600+ SetThreadpoolThreadMinimum
-@ stub -version=0x600+ SetThreadpoolTimer
-@ stub -version=0x600+ SetThreadpoolWait
+@ stdcall -version=0x600+ SetThreadpoolThreadMaximum(ptr long) ntdll_vista.TpSetPoolMaxThreads
+@ stdcall -version=0x600+ SetThreadpoolThreadMinimum(ptr long) ntdll_vista.TpSetPoolMinThreads
+@ stdcall -version=0x600+ SetThreadpoolTimer(ptr ptr long long)
+@ stdcall -version=0x600+ SetThreadpoolWait(ptr ptr ptr)
 @ stdcall SetTimeZoneInformation(ptr)
 @ stdcall SetTimerQueueTimer(long ptr ptr long long long)
 @ stdcall SetUnhandledExceptionFilter(ptr)

@@ -8,7 +8,8 @@ list(APPEND SOURCE
     fsrtl.c
     io.c
     po.c
-    ke.c)
+    ke.c
+    threadpool.c)
 
 add_library(ntoskrnl_vista ${SOURCE})
 target_link_libraries(ntoskrnl_vista PRIVATE rtl_vista)

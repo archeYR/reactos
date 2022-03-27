@@ -12,6 +12,7 @@ list(APPEND SOURCE
     InitOnceExecuteOnce.c
     sync.c
     vista.c
+    thread.c
     ${CMAKE_CURRENT_BINARY_DIR}/kernel32_vista_stubs.c
     ${CMAKE_CURRENT_BINARY_DIR}/kernel32_vista.def)
 
