@@ -663,6 +663,15 @@ DisplayBootBitmap(
                       AL_HORIZONTAL_LEFT,
                       AL_VERTICAL_BOTTOM,
                       22, 0, 0, 20);
+#if defined(_M_AMD64) || defined(_M_ARM64)
+        /* Load and draw 64-bit bitmap */
+        BootCopy = InbvGetResourceAddress(IDB_LOGO_ITANIUM);
+        BitBltAligned(BootCopy,
+                      TRUE,
+                      AL_HORIZONTAL_RIGHT,
+                      AL_VERTICAL_TOP,
+                      0, 151, 57, 0);
+#endif
 
 #ifdef REACTOS_SKUS
         /* Draw the SKU text if it exits */
