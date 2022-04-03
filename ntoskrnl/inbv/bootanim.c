@@ -21,6 +21,11 @@
 /* GLOBALS *******************************************************************/
 
 /*
+ * Enable this define for pre-NT 5 like boot screen.
+ */
+ #define NT_BOOT_SCREEN
+
+/*
  * ReactOS uses the same boot screen for all the products.
  *
  * Enable this define when ReactOS will have different SKUs
@@ -471,7 +476,11 @@ NTAPI
 DisplayBootBitmap(
     _In_ BOOLEAN TextMode)
 {
-    PVOID BootCopy = NULL, BootProgress = NULL, BootLogo = NULL, Header = NULL, Footer = NULL;
+    PVOID BootCopy = NULL, BootProgress = NULL, BootLogo = NULL;
+
+#ifndef NT_BOOT_SCREEN
+    PVOID Header = NULL, Footer = NULL;
+#endif
 
 #ifdef INBV_ROTBAR_IMPLEMENTED
     UCHAR Buffer[24 * 9];
@@ -497,10 +506,14 @@ DisplayBootBitmap(
 #endif
 
     ShowProgressBar = FALSE;
+#ifdef NT_BOOT_SCREEN
+    TextMode = TRUE;
+#endif
 
     /* Check if this is text mode */
     if (TextMode)
     {
+#ifndef NT_BOOT_SCREEN
         /*
          * Make the kernel resource section temporarily writable,
          * as we are going to change the bitmaps' palette in place.
@@ -553,6 +566,18 @@ DisplayBootBitmap(
 
         /* Restore the kernel resource section protection to be read-only */
         MmChangeKernelResourceSectionProtection(MM_READONLY);
+#else
+        /* Enable displaying strings */
+        InbvEnableDisplayString(TRUE);
+        
+        /* Set NT 4 boot screen colors */
+        InbvSetTextColor(BV_COLOR_WHITE);
+        InbvSolidColorFill(0, 0, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, BV_COLOR_RED);
+        
+        /* Set the scrolling region (NT 4 metrics maybe) */
+        InbvSetScrollRegion(VID_SCROLL_AREA_LEFT-32, VID_SCROLL_AREA_TOP-80,
+                            VID_SCROLL_AREA_RIGHT, VID_SCROLL_AREA_BOTTOM+60);
+#endif
     }
     else
     {
@@ -753,6 +778,7 @@ VOID
 NTAPI
 FinalizeBootLogo(VOID)
 {
+#ifndef NT_BOOT_SCREEN
     /* Acquire lock and check the display state */
     InbvAcquireLock();
     if (InbvGetDisplayState() == INBV_DISPLAY_STATE_OWNED)
@@ -767,4 +793,7 @@ FinalizeBootLogo(VOID)
     RotBarThreadActive = FALSE;
 #endif
     InbvReleaseLock();
+#else
+    /* Do nothing */
+#endif
 }
