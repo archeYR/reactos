@@ -555,6 +555,7 @@
 @   stdcall -stub -version=0x600+ SHGetLocalizedName(wstr wstr long long)
 @   stdcall -version=0x600+ SHGetNameFromIDList(ptr ptr wstr)
 @   stdcall -version=0x600+ SHGetPropertyStoreFromParsingName(wstr ptr ptr ptr ptr)
+@   stub -version=0x600+ SHGetPropertyStoreForWindow
 @   stdcall -stub -version=0x600+ SHGetTemporaryPropertyForItem(ptr ptr ptr)
 @   stdcall -version=0x600+ SHOpenWithDialog(ptr ptr)
 @   stdcall -version=0x600+ SHQueryUserNotificationState(ptr)

@@ -693,6 +693,7 @@
 647 stdcall SetWinEventHook(long long long ptr long long long)
 @   stdcall -version=0x601+ SetWindowCompositionAttribute(ptr ptr)
 648 stdcall SetWindowContextHelpId(long long)
+@   stdcall -stub -version=0x600+ SetWindowDisplayAffinity(ptr long)
 649 stdcall SetWindowLongA(long long long)
 @ stdcall -arch=x86_64 SetWindowLongPtrA(ptr long ptr)
 @ stdcall -arch=x86_64 SetWindowLongPtrW(ptr long ptr)

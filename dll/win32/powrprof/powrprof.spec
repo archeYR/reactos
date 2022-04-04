@@ -19,6 +19,7 @@
 @ stdcall -stub -version=0x600+ PowerCreateSetting(ptr ptr ptr)
 @ stdcall -stub -version=0x600+ PowerDeleteScheme(ptr ptr)
 @ stdcall -stub -version=0x600+ PowerDeterminePlatformRole()
+@ stdcall -stub -version=0x600+ PowerDeterminePlatformRoleEx()
 @ stdcall -stub -version=0x600+ PowerDuplicateScheme(ptr ptr ptr)
 @ stdcall -stub -version=0x600+ PowerEnumerate(ptr ptr ptr ptr long str long)
 @ stdcall -stub -version=0x600+ PowerImportPowerScheme(ptr wstr ptr)
