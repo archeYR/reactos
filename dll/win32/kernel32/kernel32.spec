@@ -74,10 +74,10 @@
 @ stdcall CloseHandle(long)
 @ stdcall -stub -version=0x600+ ClosePrivateNamespace(ptr long)
 @ stdcall CloseProfileUserMapping()
-;@ stdcall -version=0x600+ CloseThreadpool(ptr)
+@ stdcall -stub -version=0x600+ CloseThreadpool(ptr)
 @ stdcall -stub -version=0x600+ CloseThreadpoolCleanupGroup(ptr)
 @ stdcall -stub -version=0x600+ CloseThreadpoolCleanupGroupMembers(ptr long ptr)
-;@ stdcall -version=0x600+ CloseThreadpoolIo(ptr)
+@ stdcall -stub -version=0x600+ CloseThreadpoolIo(ptr)
 @ stdcall -stub -version=0x600+ CloseThreadpoolTimer(ptr)
 @ stdcall -stub -version=0x600+ CloseThreadpoolWait(ptr)
 @ stdcall -stub -version=0x600+ CloseThreadpoolWork(ptr)
@@ -567,7 +567,7 @@
 @ stdcall GetProcessVersion(long)
 @ stdcall GetProcessWorkingSetSize(long ptr ptr)
 @ stdcall GetProcessWorkingSetSizeEx(long ptr ptr long)
-@ stub -version=0x600+ GetProductInfo
+@ stdcall -version=0x600+ GetProductInfo() ntdll.RtlGetProductInfo
 @ stdcall GetProfileIntA(str str long)
 @ stdcall GetProfileIntW(wstr wstr long)
 @ stdcall GetProfileSectionA(str ptr long)
@@ -703,15 +703,15 @@
 @ stub -version=0x600+ IdnToNameprepUnicode
 @ stub -version=0x600+ IdnToUnicode
 @ stdcall InitAtomTable(long)
-@ stub -version=0x600+ InitOnceBeginInitialize
-@ stub -version=0x600+ InitOnceComplete
-@ stdcall -version=0x600+ InitOnceExecuteOnce(ptr ptr ptr ptr)
-@ stub -version=0x600+ InitOnceInitialize
+@ stdcall -version=0x600+ InitOnceBeginInitialize(ptr long ptr ptr) kernel32_vista.InitOnceBeginInitialize
+@ stdcall -version=0x600+ InitOnceComplete(ptr long ptr) kernel32_vista.InitOnceComplete
+@ stdcall -version=0x600+ InitOnceExecuteOnce(ptr ptr ptr ptr) kernel32_vista.InitOnceExecuteOnce
+@ stdcall -stub -version=0x600+ InitOnceInitialize(ptr)
 @ stdcall -version=0x600+ InitializeConditionVariable(ptr) ntdll.RtlInitializeConditionVariable
 @ stdcall InitializeCriticalSection(ptr)
 @ stdcall InitializeCriticalSectionAndSpinCount(ptr long)
 @ stdcall -version=0x600+ InitializeCriticalSectionEx(ptr long long)
-@ stub -version=0x600+ InitializeProcThreadAttributeList
+@ stdcall -stub -version=0x600+ InitializeProcThreadAttributeList(ptr long long ptr)
 @ stdcall InitializeSListHead(ptr) ntdll.RtlInitializeSListHead
 @ stdcall -version=0x600+ InitializeSRWLock(ptr) ntdll.RtlInitializeSRWLock
 @ stdcall -arch=i386 -ret64 InterlockedCompareExchange64(ptr double double) ntdll.RtlInterlockedCompareExchange64
@@ -726,6 +726,8 @@
 @ fastcall -version=0x600+ InterlockedPushListSList(ptr ptr ptr long) ntdll.RtlInterlockedPushListSList
 @ stdcall InvalidateConsoleDIBits(long long)
 @ stdcall IsBadCodePtr(ptr)
+@ stdcall -version=0x600+ TryAcquireSRWLockExclusive(ptr) ntdll_vista.RtlTryAcquireSRWLockExclusive
+@ stdcall -version=0x600+ TryAcquireSRWLockShared(ptr) ntdll_vista.RtlTryAcquireSRWLockShared
 @ stdcall IsBadHugeReadPtr(ptr long)
 @ stdcall IsBadHugeWritePtr(ptr long)
 @ stdcall IsBadReadPtr(ptr long)
@@ -1309,19 +1311,19 @@
 ;@ stdcall -version=0x600+ K32EnumDeviceDrivers(ptr long ptr)
 @ stdcall -stub -version=0x600+ K32EnumPageFilesA(ptr ptr)
 @ stdcall -stub -version=0x600+ K32EnumPageFilesW(ptr ptr)
-;@ stdcall -version=0x600+ K32EnumProcessModules(long ptr long ptr)
-@ stdcall -stub -version=0x600+ K32EnumProcessModulesEx(long ptr long ptr long)
+@ stdcall -version=0x600+ K32EnumProcessModules(long ptr long ptr)
+;@ stdcall -stub -version=0x600+ K32EnumProcessModulesEx(long ptr long ptr long)
 @ stdcall -stub -version=0x600+ K32EnumProcesses(ptr long ptr)
 @ stdcall -stub -version=0x600+ K32GetDeviceDriverBaseNameA(ptr ptr long)
 @ stdcall -stub -version=0x600+ K32GetDeviceDriverBaseNameW(ptr ptr long)
 @ stdcall -stub -version=0x600+ K32GetDeviceDriverFileNameA(ptr ptr long)
 @ stdcall -stub -version=0x600+ K32GetDeviceDriverFileNameW(ptr ptr long)
 @ stdcall -stub -version=0x600+ K32GetMappedFileNameW(long ptr ptr long)
-@ stdcall -stub -version=0x600+ K32GetModuleBaseNameA(long long ptr long)
-@ stdcall -stub -version=0x600+ K32GetModuleBaseNameW(long long ptr long)
-@ stdcall -stub -version=0x600+ K32GetModuleFileNameExA(long long ptr long)
-@ stdcall -stub -version=0x600+ K32GetModuleFileNameExW(long long ptr long)
-@ stdcall -stub -version=0x600+ K32GetModuleInformation(long long ptr long)
+@ stdcall -version=0x600+ K32GetModuleBaseNameA(long long ptr long)
+@ stdcall -version=0x600+ K32GetModuleBaseNameW(long long ptr long)
+@ stdcall -version=0x600+ K32GetModuleFileNameExA(long long ptr long)
+@ stdcall -version=0x600+ K32GetModuleFileNameExW(long long ptr long)
+@ stdcall -version=0x600+ K32GetModuleInformation(long long ptr long)
 @ stdcall -stub -version=0x601+ K32GetPerformanceInfo(ptr long)
 @ stdcall -stub -version=0x601+ K32GetProcessImageFileNameW(ptr wstr long)
 @ stdcall -stub -version=0x600+ K32GetProcessMemoryInfo(ptr ptr long)

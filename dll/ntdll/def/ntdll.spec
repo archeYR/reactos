@@ -1133,6 +1133,8 @@
 @ stdcall -stub -version=0x600+ RtlReportSilentProcessExit()
 @ stdcall -stub -version=0x600+ RtlResetMemoryBlockLookaside()
 @ stdcall -stub -version=0x600+ RtlResetMemoryZone()
+@ stdcall -version=0x600+ RtlTryAcquireSRWLockExclusive(ptr) ntdll_vista.RtlTryAcquireSRWLockExclusive
+@ stdcall -version=0x600+ RtlTryAcquireSRWLockShared(ptr) ntdll_vista.RtlTryAcquireSRWLockShared
 @ stdcall RtlResetRtlTranslations(ptr)
 @ stdcall -arch=x86_64 RtlRestoreContext(ptr ptr)
 @ stdcall RtlRestoreLastWin32Error(long) RtlSetLastWin32Error
