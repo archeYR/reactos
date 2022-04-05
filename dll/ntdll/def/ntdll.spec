@@ -894,7 +894,7 @@
 @ stdcall RtlGetFullPathName_UstrEx(ptr ptr ptr ptr ptr ptr ptr ptr)
 @ stub -version=0x600+ -arch=x86_64 RtlGetFunctionTableListHead
 @ stdcall RtlGetGroupSecurityDescriptor(ptr ptr ptr)
-@ stub -version=0x600+ RtlGetIntegerAtom
+@ stdcall -version=0x600+ RtlGetIntegerAtom(wstr ptr)
 @ stdcall RtlGetLastNtStatus()
 @ stdcall RtlGetLastWin32Error()
 @ stdcall RtlGetLengthWithoutLastFullDosOrNtPathElement(long ptr ptr)
@@ -1895,11 +1895,11 @@
 @ varargs sscanf(str str)
 @ varargs -stub -version=0x600+ sscanf_s(str str)
 @ cdecl strcat(str str)
-@ stub  -version=0x600+ strcat_s
+@ cdecl -version=0x600+ strcat_s(str long str)
 @ cdecl strchr(str long)
 @ cdecl strcmp(str str)
 @ cdecl strcpy(ptr str)
-@ stub -version=0x600+ strcpy_s
+@ cdecl -version=0x600+ strcpy_s(ptr long str)
 @ cdecl strcspn(str str)
 @ cdecl strlen(str)
 @ cdecl strncat(str str long)
@@ -2086,8 +2086,8 @@
 @ stub -version=0x602+ ZwWaitForAlertByThreadId	
 @ stub -version=0x602+ ZwWaitForWnfNotifications	
 @ stub -version=0x602+ ZwWow64AllocateVirtualMemory64
-@ stdcall -version=0x602+ _ftol2()
-@ stdcall -version=0x602+ _ftol2_sse()
+@ cdecl -arch=i386 -version=0x602+ _ftol2(long)
+@ cdecl -arch=i386 -version=0x602+ _ftol2_sse(long)
 ;@ stdcall -stub -version=0x602+ _local_unwind4()
 ;@ stdcall -stub -version=0x602+ _strlwr_s()
 ;@ stdcall -stub -version=0x602+ _strupr_s()
