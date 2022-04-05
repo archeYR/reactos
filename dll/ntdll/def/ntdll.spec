@@ -923,7 +923,7 @@
 @ stdcall RtlGetUserInfoHeap(ptr long ptr ptr ptr)
 @ stub -version=0x600+ RtlGetUserPreferredUILanguages
 @ stdcall RtlGetVersion(ptr)
-@ stdcall -stub -version=0x600+ RtlGetProductInfo(long long long long ptr)
+@ stdcall -version=0x600+ RtlGetProductInfo(long long long long ptr)
 @ stdcall RtlHashUnicodeString(ptr long long ptr)
 @ stub -version=0x600+ RtlHeapTrkInitialize
 @ stdcall RtlIdentifierAuthoritySid(ptr)

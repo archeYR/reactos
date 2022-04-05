@@ -4811,4 +4811,108 @@ WinExec(LPCSTR lpCmdLine,
     return 33; /* Something bigger than 31 means success. */
 }
 
+struct proc_thread_attr
+{
+    DWORD_PTR attr;
+    SIZE_T size;
+    void *value;
+};
+
+
+struct _PROC_THREAD_ATTRIBUTE_LIST
+{
+    DWORD mask;  /* bitmask of items in list */
+    DWORD size;  /* max number of items in list */
+    DWORD count; /* number of items in list */
+    DWORD pad;
+    DWORD_PTR unk;
+    struct proc_thread_attr attrs[10];
+};
+
+/***********************************************************************
+ * Process/thread attribute lists
+ ***********************************************************************/
+
+/***********************************************************************
+ *           InitializeProcThreadAttributeList   (kernelbase.@)
+ */
+BOOLEAN
+WINAPI
+DECLSPEC_HOTPATCH InitializeProcThreadAttributeList( struct _PROC_THREAD_ATTRIBUTE_LIST *list,
+                                                                 DWORD count, DWORD flags, SIZE_T *size )
+{
+    SIZE_T needed;
+    BOOL ret = FALSE;
+
+    needed = FIELD_OFFSET( struct _PROC_THREAD_ATTRIBUTE_LIST, attrs[count] );
+    if (list && *size >= needed)
+    {
+        list->mask = 0;
+        list->size = count;
+        list->count = 0;
+        list->unk = 0;
+        ret = TRUE;
+    }
+    else SetLastError( ERROR_INSUFFICIENT_BUFFER );
+
+    *size = needed;
+    return ret;
+}
+
+typedef struct _PROCESS_MEMORY_COUNTERS {
+  DWORD  cb;
+  DWORD  PageFaultCount;
+  SIZE_T PeakWorkingSetSize;
+  SIZE_T WorkingSetSize;
+  SIZE_T QuotaPeakPagedPoolUsage;
+  SIZE_T QuotaPagedPoolUsage;
+  SIZE_T QuotaPeakNonPagedPoolUsage;
+  SIZE_T QuotaNonPagedPoolUsage;
+  SIZE_T PagefileUsage;
+  SIZE_T PeakPagefileUsage;
+} PROCESS_MEMORY_COUNTERS;
+typedef PROCESS_MEMORY_COUNTERS *PPROCESS_MEMORY_COUNTERS;
+
+/***********************************************************************
+ *           K32GetProcessMemoryInfo (KERNEL32.@)
+ *
+ * Retrieve memory usage information for a given process
+ *
+ */
+BOOL WINAPI K32GetProcessMemoryInfo(HANDLE process,
+                                    PPROCESS_MEMORY_COUNTERS pmc, DWORD cb)
+{
+    NTSTATUS status;
+    VM_COUNTERS vmc;
+
+    if (cb < sizeof(PROCESS_MEMORY_COUNTERS))
+    {
+        SetLastError(ERROR_INSUFFICIENT_BUFFER);
+        return FALSE;
+    }
+
+    status = NtQueryInformationProcess(process, ProcessVmCounters,
+                                       &vmc, sizeof(vmc), NULL);
+
+    if (status)
+    {
+        SetLastError(RtlNtStatusToDosError(status));
+        return FALSE;
+    }
+
+    pmc->cb = sizeof(PROCESS_MEMORY_COUNTERS);
+    pmc->PageFaultCount = vmc.PageFaultCount;
+    pmc->PeakWorkingSetSize = vmc.PeakWorkingSetSize;
+    pmc->WorkingSetSize = vmc.WorkingSetSize;
+    pmc->QuotaPeakPagedPoolUsage = vmc.QuotaPeakPagedPoolUsage;
+    pmc->QuotaPagedPoolUsage = vmc.QuotaPagedPoolUsage;
+    pmc->QuotaPeakNonPagedPoolUsage = vmc.QuotaPeakNonPagedPoolUsage;
+    pmc->QuotaNonPagedPoolUsage = vmc.QuotaNonPagedPoolUsage;
+    pmc->PagefileUsage = vmc.PagefileUsage;
+    pmc->PeakPagefileUsage = vmc.PeakPagefileUsage;
+
+    return TRUE;
+}
+
+
 /* EOF */

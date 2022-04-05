@@ -16,6 +16,7 @@ list(APPEND CRT_STDIO_SOURCE
     stdio/wfind.c
     stdio/wfind64.c
     stdio/wfindi64.c
+    stdio/acrt_iob_func.c
     stdio/wpopen.c
     stdio/wstat.c
     stdio/wstat64.c

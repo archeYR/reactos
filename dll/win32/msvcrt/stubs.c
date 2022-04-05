@@ -1,8 +1,27 @@
 
 #include <stubs.h>
-
+#include <debug.h>
 #undef UNIMPLEMENTED
 #define UNIMPLEMENTED __wine_spec_unimplemented_stub("msvcrt.dll", __FUNCTION__)
+
+cdecl _libm_sse2_sqrt_precise(unsigned int* a, unsigned int* b, unsigned int c,unsigned int* d,unsigned int* e,unsigned int f,unsigned int g
+,unsigned int h
+,unsigned int i
+,unsigned int j)
+{
+    DPRINT1("Value of A: %X\n", a);
+    DPRINT1("Value of B: %X\n", b);
+    DPRINT1("Value of C: %X\n", c);
+    DPRINT1("Value of D: %X\n", d);
+    DPRINT1("Value of E: %X\n", e);
+    DPRINT1("Value of F: %X\n", f);
+    DPRINT1("Value of G: %X\n", g);
+     DPRINT1("Value of H: %X\n", h);
+      DPRINT1("Value of I: %X\n", i);
+       DPRINT1("Value of J: %X\n", j);
+    UNIMPLEMENTED;
+    return 0;
+}
 
 int __get_app_type()
 {

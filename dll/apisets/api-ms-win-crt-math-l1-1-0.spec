@@ -112,7 +112,7 @@
 @ stub _libm_sse2_log_precise
 @ stub _libm_sse2_pow_precise
 @ stub _libm_sse2_sin_precise
-@ stub _libm_sse2_sqrt_precise
+@ stdcall _libm_sse2_sqrt_precise() msvcrt._libm_sse2_sqrt_precise
 @ stub _libm_sse2_tan_precise
 @ stdcall _logb() msvcrt._logb
 @ stub _logbf

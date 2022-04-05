@@ -258,7 +258,7 @@
 @ cdecl ___mb_cur_max_func()
 @ cdecl ___setlc_active_func()
 @ cdecl ___unguarded_readlc_active_add_func()
-@ cdecl -stub -version=0x600+ __acrt_iob_func(long)
+@ cdecl  -version=0x600+ __acrt_iob_func(long)
 @ extern __argc
 @ extern __argv
 @ extern __badioinfo __badioinfo
@@ -752,6 +752,7 @@
 @ cdecl -version=0x600+ _ltoa_s(long str long long)
 @ cdecl _ltow(long ptr long)
 @ cdecl -version=0x600+ _ltow_s(long ptr long long)
+@ cdecl -version=0x600+ _libm_sse2_sqrt_precise(ptr ptr long ptr ptr ptr ptr long long long)
 @ cdecl _makepath(ptr str str str str)
 @ stub -version=0x600+ _makepath_s
 @ cdecl -version=0x600+ _malloc_base(long)

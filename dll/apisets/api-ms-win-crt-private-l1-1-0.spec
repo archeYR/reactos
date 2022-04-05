@@ -467,7 +467,7 @@
 @ stub _o__libm_sse2_log_precise
 @ stub _o__libm_sse2_pow_precise
 @ stub _o__libm_sse2_sin_precise
-@ stub _o__libm_sse2_sqrt_precise
+@ stdcall _o__libm_sse2_sqrt_precise() msvcrt._libm_sse2_sqrt_precise
 @ stub _o__libm_sse2_tan_precise
 @ stub _o__loaddll
 @ stub _o__localtime32
