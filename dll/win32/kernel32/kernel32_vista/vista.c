@@ -732,6 +732,96 @@ OpenFileById(IN HANDLE hFile,
 }
 
 
+/*
+ * @implemented
+ */
+BOOL
+WINAPI
+GetLogicalProcessorInformationEx(IN LOGICAL_PROCESSOR_RELATIONSHIP RelationshipType,
+                                 OUT PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX  Buffer,
+                                 IN OUT PDWORD ReturnLength)
+{
+    NTSTATUS Status;
+
+    if (!ReturnLength)
+    {
+        SetLastError( ERROR_INVALID_PARAMETER );
+        return FALSE;
+    }
+    Status = NtQuerySystemInformationEx(SystemLogicalProcessorInformationEx,
+                                        &RelationshipType,
+                                        sizeof(RelationshipType),
+                                        Buffer,
+                                        *ReturnLength,
+                                        ReturnLength);
+
+    /* Normalize the error to what Win32 expects */
+    if (Status == STATUS_INFO_LENGTH_MISMATCH) Status = STATUS_BUFFER_TOO_SMALL;
+    if (!NT_SUCCESS(Status))
+    {
+        BaseSetLastNTError(Status);
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+/*
+ * @unimplemented
+ */
+BOOL
+WINAPI
+GetProcessGroupAffinity(IN HANDLE hProcess,
+                        IN OUT PUSHORT GroupCount,
+                        OUT PUSHORT GroupArray)
+{
+    UNIMPLEMENTED;
+    SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
+    return FALSE;
+}
+
+/*
+ * @implemented
+ */
+BOOL
+WINAPI
+GetThreadGroupAffinity(IN HANDLE hThread,
+                       OUT PGROUP_AFFINITY GroupAffinity)
+{
+    if (GroupAffinity)
+    {
+        SetLastError( ERROR_INVALID_PARAMETER );
+        return FALSE;
+    }
+    Status = NtQueryInformationThread(hThread,
+                                      ThreadGroupInformation,
+                                      GroupAffinity,
+                                      sizeof(*GroupAffinity),
+                                      NULL);
+    
+    return Status;
+}
+
+/*
+ * @implemented
+ */
+BOOL
+WINAPI
+SetThreadGroupAffinity(IN HANDLE hThread,
+                       IN const GROUP_AFFINITY *GroupAffinity,
+                       OUT PGROUP_AFFINITY PreviousGroupAffinity)
+{
+    if (&PreviousGroupAffinity &&
+        !GetThreadGroupAffinity(hThread, &PreviousGroupAffinity))
+        return FALSE;
+
+    Status = NtSetInformationThread(hThread,
+                                    ThreadGroupInformation,
+                                    GroupAffinity
+                                    sizeof(*GroupAffinity);
+
+    return Status;
+}
 
 /*
   Vista+ MUI support functions

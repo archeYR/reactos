@@ -3001,6 +3001,126 @@ NtQuerySystemInformation(
     return Status;
 }
 
+/*
+ * @implemented
+ */
+__kernel_entry
+NTSTATUS
+NTAPI
+NtQuerySystemInformationEx(SYSTEM_INFORMATION_CLASS SystemInformationClass,
+                           PVOID InputBuffer, 
+                           ULONG InputBufferLength, 
+                           PVOID SystemInformation, 
+                           ULONG SystemInformationLength, 
+                           ULONG *ReturnLength)
+{
+    ULONG CapturedResultLength = 0;
+    NTSTATUS Status = STATUS_NOT_IMPLEMENTED;
+
+
+    switch (SystemInformationClass)
+    {
+    case SystemLogicalProcessorInformationEx:
+    {
+        SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *Buffer;
+
+        if (!&InputBuffer || InputBufferLength < sizeof(DWORD))
+        {
+            Status = STATUS_INVALID_PARAMETER;
+            break;
+        }
+
+        CapturedResultLength = 3 * sizeof(*Buffer);
+        if (!(Buffer = malloc(CapturedResultLength)))
+        {
+            CapturedResultLength = STATUS_NO_MEMORY;
+            break;
+        }
+        ret = create_logical_proc_info(NULL, &buf, &len, *(DWORD *)query);
+        if (!ret)
+        {
+            if (size >= len)
+            {
+                if (!info) ret = STATUS_ACCESS_VIOLATION;
+                else memcpy(info, buf, len);
+            }
+            else ret = STATUS_INFO_LENGTH_MISMATCH;
+        }
+        free( buf );
+        break;
+    }
+
+    case SystemCpuSetInformation:
+    {
+        unsigned int cpu_count = peb->NumberOfProcessors;
+        PROCESS_BASIC_INFORMATION pbi;
+        HANDLE process;
+
+        if (!query || query_len < sizeof(HANDLE))
+            return STATUS_INVALID_PARAMETER;
+
+        process = *(HANDLE *)query;
+        if (process && (ret = NtQueryInformationProcess(process, ProcessBasicInformation, &pbi, sizeof(pbi), NULL)))
+            return ret;
+
+        if (size < (len = cpu_count * sizeof(SYSTEM_CPU_SET_INFORMATION)))
+        {
+            ret = STATUS_BUFFER_TOO_SMALL;
+            break;
+        }
+        if (!info)
+            return STATUS_ACCESS_VIOLATION;
+
+        if ((ret = create_cpuset_info(info)))
+            return ret;
+        break;
+    }
+
+    case SystemSupportedProcessorArchitectures:
+    {
+        HANDLE process;
+        ULONG i;
+        USHORT machine = 0;
+
+        if (!query || query_len < sizeof(HANDLE)) return STATUS_INVALID_PARAMETER;
+        process = *(HANDLE *)query;
+        if (process)
+        {
+            SERVER_START_REQ( get_process_info )
+            {
+                req->handle = wine_server_obj_handle( process );
+                if (!(ret = wine_server_call( req ))) machine = reply->machine;
+            }
+            SERVER_END_REQ;
+            if (ret) return ret;
+        }
+
+        len = (supported_machines_count + 1) * sizeof(ULONG);
+        if (size < len)
+        {
+            ret = STATUS_BUFFER_TOO_SMALL;
+            break;
+        }
+        for (i = 0; i < supported_machines_count; i++)
+        {
+            USHORT flags = 2;  /* supported (?) */
+            if (!i) flags |= 5;  /* native machine (?) */
+            if (supported_machines[i] == machine) flags |= 8;  /* current machine */
+            ((DWORD *)info)[i] = MAKELONG( supported_machines[i], flags );
+        }
+        ((DWORD *)info)[i] = 0;
+        ret = STATUS_SUCCESS;
+        break;
+    }
+
+    default:
+        FIXME( "(0x%08x,%p,%u,%p,%u,%p) stub\n", class, query, query_len, info, size, ret_size );
+        break;
+    }
+    if (ret_size) *ret_size = len;
+    return ret;
+}
+
 __kernel_entry
 NTSTATUS
 NTAPI
