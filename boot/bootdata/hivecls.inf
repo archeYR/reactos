@@ -575,6 +575,11 @@ HKCR,"CLSID\{42071713-76d4-11d1-8b24-00a0c9068ff3}","",0x00000000,"Display Monit
 HKCR,"CLSID\{42071713-76d4-11d1-8b24-00a0c9068ff3}\InProcServer32","",0x00020000,"%SystemRoot%\system32\deskmon.dll"
 HKCR,"CLSID\{42071713-76d4-11d1-8b24-00a0c9068ff3}\InProcServer32","ThreadingModel",0x00000000,"Apartment"
 
+; deskperf.dll shell extension
+HKCR,"CLSID\{f92e8c40-3d33-11d2-b1aa-080036a75b03}","",0x00000000,"Display TroubleShoot CPL Extension"
+HKCR,"CLSID\{f92e8c40-3d33-11d2-b1aa-080036a75b03}\InProcServer32","",0x00020000,"%SystemRoot%\system32\deskperf.dll"
+HKCR,"CLSID\{f92e8c40-3d33-11d2-b1aa-080036a75b03}\InProcServer32","ThreadingModel",0x00000000,"Apartment"
+
 ; For the TCP/IP Protocol property page
 HKCR,"CLSID\{A907657F-6FDF-11D0-8EFB-00C04FD912B2}","",0x00000000,"TCP/IP Configuration Notify Object"
 HKCR,"CLSID\{A907657F-6FDF-11D0-8EFB-00C04FD912B2}\InProcServer32","",0x00000000,"netcfgx.dll"
