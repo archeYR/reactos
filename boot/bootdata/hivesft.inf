@@ -1812,6 +1812,12 @@ HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\Device\shellex\P
 ; deskmon.dll shell extension
 HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\Device\shellex\PropertySheetHandlers\Display Monitor CPL Extension","",0x00000000,"{42071713-76d4-11d1-8b24-00a0c9068ff3}"
 
+; deskperf.dll shell extension
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\Device\shellex\PropertySheetHandlers\Display TroubleShoot CPL Extension","",0x00000000,"{f92e8c40-3d33-11d2-b1aa-080036a75b03}"
+
+; Display CPL preferences
+HKLM,"SOFTWARE\Microsoft\Windows\CurrentVersion\Controls Folder\Display","DynaSettingsChange",0x00000000,"3"
+
 HKLM,"SOFTWARE\Microsoft\Ole","EnableDCOM",0x00000000,"Y"
 HKLM,"SOFTWARE\Microsoft\Ole","EnableRemoteConnect",0x00000000,"N"
 
