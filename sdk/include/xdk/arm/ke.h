@@ -78,62 +78,6 @@ KfRaiseIrql(
     _In_ KIRQL NewIrql);
 #define KeRaiseIrql(a,b) *(b) = KfRaiseIrql(a)
 
-_IRQL_requires_max_(DISPATCH_LEVEL)
-_IRQL_saves_
-_IRQL_raises_(DISPATCH_LEVEL)
-NTHALAPI
-KIRQL
-NTAPI
-KeRaiseIrqlToDpcLevel(VOID);
-
-NTHALAPI
-KIRQL
-NTAPI
-KeRaiseIrqlToSynchLevel(VOID);
-
-_Requires_lock_not_held_(*SpinLock)
-_Acquires_lock_(*SpinLock)
-_IRQL_requires_max_(DISPATCH_LEVEL)
-_IRQL_saves_
-_IRQL_raises_(DISPATCH_LEVEL)
-NTHALAPI
-KIRQL
-FASTCALL
-KfAcquireSpinLock(
-  _Inout_ PKSPIN_LOCK SpinLock);
-#define KeAcquireSpinLock(a,b) *(b) = KfAcquireSpinLock(a)
-
-_Requires_lock_held_(*SpinLock)
-_Releases_lock_(*SpinLock)
-_IRQL_requires_(DISPATCH_LEVEL)
-NTHALAPI
-VOID
-FASTCALL
-KfReleaseSpinLock(
-  _Inout_ PKSPIN_LOCK SpinLock,
-  _In_ _IRQL_restores_ KIRQL NewIrql);
-#define KeReleaseSpinLock(a,b) KfReleaseSpinLock(a,b)
-
-_Requires_lock_not_held_(*SpinLock)
-_Acquires_lock_(*SpinLock)
-_IRQL_requires_min_(DISPATCH_LEVEL)
-NTKERNELAPI
-VOID
-FASTCALL
-KefAcquireSpinLockAtDpcLevel(
-  _Inout_ PKSPIN_LOCK SpinLock);
-#define KeAcquireSpinLockAtDpcLevel(SpinLock) KefAcquireSpinLockAtDpcLevel(SpinLock)
-
-_Requires_lock_held_(*SpinLock)
-_Releases_lock_(*SpinLock)
-_IRQL_requires_min_(DISPATCH_LEVEL)
-NTKERNELAPI
-VOID
-FASTCALL
-KefReleaseSpinLockFromDpcLevel(
-  _Inout_ PKSPIN_LOCK SpinLock);
-#define KeReleaseSpinLockFromDpcLevel(SpinLock) KefReleaseSpinLockFromDpcLevel(SpinLock)
-
 NTSYSAPI
 PKTHREAD
 NTAPI
