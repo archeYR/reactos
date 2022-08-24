@@ -1,0 +1,11 @@
+LANGUAGE LANG_POLISH, SUBLANG_DEFAULT
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    IDS_AC97CPL                                         "Kodek AC97"
+    IDS_AC97CPLINFO                                     "Wyświetla funkcje kodeku ac97"
+    IDS_AC97_WARNING_MUST_INSTALL_DRIVER                "Należy zainstalować sterownik ac97."
+    IDS_AC97_WARNING_PROPERTYPAGE_DLL_COULD_NOT_LOAD    "Nie można załadować biblioteki DLL strony właściwości ac97."
+    IDS_AC97_WARNING_PROPERTYPAGEPROVIDER_FAILURE       "Wykonanie procedury AC97PropPageProvider nie powiodło się."
+    IDS_AC97_WARNING_REINSTALL_DRIVER                   "Zainstaluj ponownie sterownik ac97."
+END

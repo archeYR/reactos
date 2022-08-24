@@ -1,0 +1,21 @@
+/********************************************************************************
+**    Copyright (c) 1999-2000 Microsoft Corporation. All Rights Reserved.
+********************************************************************************/
+
+#include <windows.h>
+#include <winres.h>
+#include "resource.h"
+#include "version.h"
+
+
+#include <reactos/manifest_hosted.rc>
+
+/* UTF-8 */
+#pragma code_page(65001)
+
+#ifdef LANGUAGE_EN_US
+    #include "lang/en-US.rc"
+#endif
+#ifdef LANGUAGE_PL_PL
+    #include "lang/pl-PL.rc"
+#endif

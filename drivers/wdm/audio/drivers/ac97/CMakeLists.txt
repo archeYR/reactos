@@ -1,4 +1,7 @@
 
+add_subdirectory(cpl)
+add_subdirectory(proppage)
+
 list(APPEND SOURCE
     adapter.cpp
     common.cpp
