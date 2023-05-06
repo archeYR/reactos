@@ -36,7 +36,7 @@ function(setup_host_tools)
         set(VCVARSALL_ARCH x86)
     elseif(lowercase_CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL x86_64 OR lowercase_CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL amd64)
         set(HOST_ARCH amd64)
-        set(VCVARSALL_ARCH amd64_x86) # x64 host-tools are not happy compiling for x86...
+        set(VCVARSALL_ARCH amd64)
     elseif(lowercase_CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL arm)
         set(HOST_ARCH arm)
         set(VCVARSALL_ARCH arm)
@@ -72,6 +72,8 @@ function(setup_host_tools)
             message(FATAL "Unable to figure out vcvarsall path")
         endif()
     else()
+        # CMAKE_HOST_SYSTEM_PROCESSOR is unreliable on non-Windows, so we need to do this to not break builds on Unix
+        set(HOST_ARCH ARCH)
         set(HOST_TOOLS_CMAKE_COMMAND "${CMAKE_COMMAND}")
         message("Cross-compiling on non-msvc, no special host-tools cmake command")
     endif()
@@ -98,7 +100,7 @@ function(setup_host_tools)
         CMAKE_COMMAND ${HOST_TOOLS_CMAKE_COMMAND}
         CMAKE_ARGS
             -UCMAKE_TOOLCHAIN_FILE
-            -DARCH:STRING=${ARCH}
+            -DARCH:STRING=${HOST_ARCH}
             -DCMAKE_INSTALL_PREFIX=${REACTOS_BINARY_DIR}/host-tools
             -DTOOLS_FOLDER=${REACTOS_BINARY_DIR}/host-tools/bin
             -DTARGET_COMPILER_ID=${CMAKE_C_COMPILER_ID}
