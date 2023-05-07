@@ -27,10 +27,18 @@ extern "C" {
     #include <pshpack2.h>
 
 #else
-    #if defined(_M_IA64) || defined(_M_AMD64) || defined(_WIN64)
-        #define __RPC_WIN64__
+    #if defined(_M_IA64) || defined(_M_AMD64) || defined(_M_ARM64) || defined(_WIN64)
+        #ifndef MISMATCHED_BITNESS
+            #define __RPC_WIN64__
+        #else
+            #define __RPC_WIN32__
+        #endif
     #else
-        #define __RPC_WIN32__
+        #ifdef MISMATCHED_BITNESS
+            #define __RPC_WIN64__
+        #else
+            #define __RPC_WIN32__
+        #endif
     #endif
 #endif
 
