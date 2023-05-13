@@ -255,6 +255,17 @@ macro(dir_to_num dir var)
         set(${var} 80)
     elseif(${dir} STREQUAL reactos/winsxs/arm64_microsoft.windows.gdiplus_6595b64144ccf1df_1.0.14393.0_none_deadbeef)
         set(${var} 81)
+        
+    elseif(${dir} STREQUAL reactos/winsxs/ia64_microsoft.windows.common-controls_6595b64144ccf1df_5.82.2600.2982_none_deadbeef)
+        set(${var} 82)
+    elseif(${dir} STREQUAL reactos/winsxs/ia64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.2600.2982_none_deadbeef)
+        set(${var} 83)
+    elseif(${dir} STREQUAL reactos/winsxs/ia64_microsoft.windows.gdiplus_6595b64144ccf1df_1.1.7601.23038_none_deadbeef)
+        set(${var} 84)
+    elseif(${dir} STREQUAL reactos/winsxs/ia64_reactos.apisets_6595b64144ccf1df_1.0.0.0_none_deadbeef)
+        set(${var} 85)
+    elseif(${dir} STREQUAL reactos/winsxs/ia64_microsoft.windows.gdiplus_6595b64144ccf1df_1.0.14393.0_none_deadbeef)
+        set(${var} 86)
 
 
     else()

@@ -51,6 +51,7 @@ if defined ROS_ARCH (
     cl 2>&1 | find "x64" > NUL && set ARCH=amd64
     cl 2>&1 | find "ARM" > NUL && set ARCH=arm
     cl 2>&1 | find "ARM64" > NUL && set ARCH=arm64
+    cl 2>&1 | find "Itanium" > NUL && set ARCH=ia64
     cl 2>&1 | find "16.00." > NUL && set VS_VERSION=10
     cl 2>&1 | find "17.00." > NUL && set VS_VERSION=11
     cl 2>&1 | find "18.00." > NUL && set VS_VERSION=12

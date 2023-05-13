@@ -54,18 +54,18 @@ function(setup_host_tools)
     elseif(MSVC)
         message("Compiling on ${HOST_ARCH} for ${ARCH} (MSVC)")
         set(HOST_TOOLS_CMAKE_COMMAND "${REACTOS_BINARY_DIR}/host-tools/cmake_shim.cmd")
-        if(MSVC_VERSION EQUAL 1900)
-            file(WRITE ${HOST_TOOLS_CMAKE_COMMAND}
-                "set VSCMD_SKIP_SENDTELEMETRY=1\n"
-                "@call \"$ENV{VCINSTALLDIR}\\vcvarsall.bat\" ${VCVARSALL_ARCH}\n"
-                "\"${CMAKE_COMMAND}\" %*"
-            )
-        elseif(MSVC_VERSION GREATER_EQUAL 1910)
+        if(MSVC_VERSION GREATER_EQUAL 1910)
             # 2017 and 2019 use the same folder structure
             file(WRITE ${HOST_TOOLS_CMAKE_COMMAND}
                 "@set VSCMD_ARG_no_logo=1\n"
                 "@call \"$ENV{VCINSTALLDIR}\\Auxiliary\\Build\\vcvarsall.bat\" /clean_env\n"
                 "@call \"$ENV{VCINSTALLDIR}\\Auxiliary\\Build\\vcvarsall.bat\" ${VCVARSALL_ARCH}\n"
+                "\"${CMAKE_COMMAND}\" %*"
+            )
+        elseif(MSVC_VERSION GREATER_EQUAL 1600)
+            file(WRITE ${HOST_TOOLS_CMAKE_COMMAND}
+                "set VSCMD_SKIP_SENDTELEMETRY=1\n"
+                "@call \"$ENV{VCINSTALLDIR}\\vcvarsall.bat\" ${VCVARSALL_ARCH}\n"
                 "\"${CMAKE_COMMAND}\" %*"
             )
         else()

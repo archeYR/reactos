@@ -259,6 +259,8 @@ elseif(ARCH STREQUAL "arm")
     list(APPEND ATAN2_ASM_SOURCE math/arm/atan2.s)
 elseif(ARCH STREQUAL "arm64")
     list(APPEND ATAN2_ASM_SOURCE math/arm64/atan2.s)
+elseif(ARCH STREQUAL "ia64")
+    list(APPEND ATAN2_ASM_SOURCE math/ia64/atan2.s)
 endif()
 
 add_asm_files(atan2_asm ${ATAN2_ASM_SOURCE})
