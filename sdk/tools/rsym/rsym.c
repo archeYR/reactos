@@ -564,6 +564,7 @@ DbgHelpAddLineNumber(PSRCCODEINFO LineInfo, void *UserContext)
     struct DbgHelpStringTab *tab = (struct DbgHelpStringTab *)UserContext;
     DWORD64 disp;
     int fileId, functionId;
+    FILE *f;
     PSYMBOL_INFO pSymbol = malloc(FIELD_OFFSET(SYMBOL_INFO, Name[MAX_SYM_NAME]));
     if (!pSymbol) return FALSE;
     memset(pSymbol, 0, FIELD_OFFSET(SYMBOL_INFO, Name[MAX_SYM_NAME]));
@@ -590,7 +591,7 @@ DbgHelpAddLineNumber(PSRCCODEINFO LineInfo, void *UserContext)
                     strcpy(synthname, tab->SourcePath);
                     strcat(synthname, "/");
                     strcat(synthname, LineInfo->FileName + i + 1);
-                    FILE *f = fopen(synthname, "r");
+                    f = fopen(synthname, "r");
                     free(synthname);
                     if (f)
                     {

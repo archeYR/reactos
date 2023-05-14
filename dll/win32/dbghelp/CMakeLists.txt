@@ -22,6 +22,12 @@ if(NOT CMAKE_CROSSCOMPILING)
         list(APPEND SOURCE cpu_i386.c)
     endif()
 
+    if(MSVC_VERSION LESS 1900)
+        add_definitions(
+            -Dsnprintf=_snprintf
+            -Dstrtoull=_strtoui64)
+    endif()
+
     add_library(dbghelphost ${SOURCE})
     target_link_libraries(dbghelphost PRIVATE host_includes)
 else()
