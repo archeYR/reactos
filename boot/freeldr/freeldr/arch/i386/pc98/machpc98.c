@@ -112,6 +112,8 @@ Pc98ArchTest(VOID)
     return RegsOut.w.ax != 0x1000;
 }
 
+VOID NTAPI HalpInitBusHandlers(VOID);
+
 VOID
 MachInit(const char *CmdLine)
 {
@@ -160,6 +162,12 @@ MachInit(const char *CmdLine)
 
     HiResoMachine = *(PUCHAR)MEM_BIOS_FLAG1 & HIGH_RESOLUTION_FLAG;
 
+    /* Setup busy waiting */
     HalpCalibrateStallExecution();
+
+    /* Initialize bus handlers */
+    HalpInitBusHandlers();
+
+    /* Initialize video */
     Pc98VideoInit();
 }

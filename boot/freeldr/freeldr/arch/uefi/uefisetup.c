@@ -19,6 +19,8 @@ extern EFI_HANDLE GlobalImageHandle;
 
 /* FUNCTIONS ******************************************************************/
 
+VOID NTAPI HalpInitBusHandlers(VOID);
+
 VOID
 MachInit(const char *CmdLine)
 {
@@ -52,6 +54,9 @@ MachInit(const char *CmdLine)
     MachVtbl.InitializeBootDevices = UefiInitializeBootDevices;
     MachVtbl.HwDetect = UefiHwDetect;
     MachVtbl.HwIdle = UefiHwIdle;
+
+    /* Initialize bus handlers */
+    HalpInitBusHandlers();
 
     /* Setup GOP */
     if (UefiInitializeVideo() != EFI_SUCCESS)
