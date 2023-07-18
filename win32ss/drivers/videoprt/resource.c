@@ -995,7 +995,10 @@ VideoPortVerifyAccessRanges(
     ExFreePoolWithTag(ResourceList, TAG_VIDEO_PORT);
 
     if (!NT_SUCCESS(Status) || ConflictDetected)
+    {
+        DPRINT1("status is %d\n", Status); //return ERROR_INVALID_PARAMETER;
         return ERROR_INVALID_PARAMETER;
+    }
     else
         return NO_ERROR;
 }

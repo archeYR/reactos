@@ -14,6 +14,7 @@ flpydisk.inf
 hal.inf
 hdc.inf
 input.inf
+iaAHCI.inf
 keyboard.inf
 legcydrv.inf
 machine.inf
