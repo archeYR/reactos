@@ -1,0 +1,27 @@
+#include <windef.h>
+#include <winuser.h>
+#include <commctrl.h>
+#include <scrnsave.h>
+
+#include "resource.h"
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+
+IDI_ICON  ICON  DISCARDABLE  "res/icon_glgears.ico"
+
+#define REACTOS_VERSION_DLL
+#define REACTOS_STR_FILE_DESCRIPTION  "OpenGL Gears ScreenSaver"
+#define REACTOS_STR_INTERNAL_NAME     "glgears"
+#define REACTOS_STR_ORIGINAL_FILENAME "glgears.scr"
+#include <reactos/version.rc>
+
+#include <reactos/manifest_exe.rc>
+
+/* UTF-8 */
+#pragma code_page(65001)
+
+#ifdef LANGUAGE_EN_US
+    #include "lang/en-US.rc"
+#endif
+
+
