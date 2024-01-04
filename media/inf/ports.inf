@@ -60,6 +60,9 @@ LoadOrderGroup = Extended base
 CopyFiles = ComPort_CopyFiles.NT
 AddReg = ComPort_AddReg.NT
 
+[ComPort_Inst.NT.HW]
+AddReg = ComPort_AddReg.NT.HW
+
 [ComPort_CopyFiles.NT]
 serial.sys
 serenum.sys
@@ -67,6 +70,8 @@ serenum.sys
 [ComPort_AddReg.NT]
 HKR, , "EnumPropPages32", 0, "msports.dll,SerialPortPropPageProvider"
 HKR, , "PortSubClass", 1, 01
+
+[ComPort_AddReg.NT.HW]
 HKR, , "UpperFilters", 0x00010000, "serenum"
 
 [ComPort_Inst.NT.Services]
