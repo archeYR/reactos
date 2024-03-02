@@ -8,6 +8,7 @@
  */
 
 #include "precomp.h"
+#include <ntstrsafe.h>
 
 #define NDEBUG
 #include <debug.h>
@@ -30,8 +31,8 @@ Chkdsk(
     UNICODE_STRING usDriveRoot;
     NTSTATUS Status;
     BOOLEAN Success = FALSE;
-    WCHAR VolumeName[MAX_PATH];
-    //CURDIR CurDir;
+    WCHAR DriveName[50];
+    WCHAR VolumeName[50];
 
     Provider = GetProvider(Format);
     if (!Provider)
@@ -41,20 +42,37 @@ Chkdsk(
         return;
     }
 
-#if 1
-    DPRINT1("Warning: use GetVolumeNameForVolumeMountPointW() instead!\n");
-    swprintf(VolumeName, L"\\??\\%c:", towupper(DriveRoot[0]));
-    RtlCreateUnicodeString(&usDriveRoot, VolumeName);
-    /* Code disabled as long as our storage stack doesn't understand IOCTL_MOUNTDEV_QUERY_DEVICE_NAME */
-#else
-    if (!GetVolumeNameForVolumeMountPointW(DriveRoot, VolumeName, RTL_NUMBER_OF(VolumeName)) ||
-        !RtlDosPathNameToNtPathName_U(VolumeName, &usDriveRoot, NULL, &CurDir))
+    if (!NT_SUCCESS(RtlStringCchCopyW(DriveName, ARRAYSIZE(DriveName), DriveRoot)))
     {
-        /* Report an error */
         Callback(DONE, 0, &Success);
         return;
     }
-#endif
+
+    if (DriveName[wcslen(DriveName) - 1] != L'\\')
+    {
+        /* Append the trailing backslash for GetVolumeNameForVolumeMountPointW */
+        if (!NT_SUCCESS(RtlStringCchCatW(DriveName, ARRAYSIZE(DriveName), L"\\")))
+        {
+            Callback(DONE, 0, &Success);
+            return;
+        }
+    }
+
+    if (!GetVolumeNameForVolumeMountPointW(DriveName, VolumeName, ARRAYSIZE(VolumeName)))
+    {
+        /* Couldn't get a volume GUID path, try checking using a parameter provided path */
+        DPRINT1("Couldn't get a volume GUID path for drive %S\n", DriveName);
+        wcscpy(VolumeName, DriveName);
+    }
+
+    if (!RtlDosPathNameToNtPathName_U(VolumeName, &usDriveRoot, NULL, NULL))
+    {
+        Callback(DONE, 0, &Success);
+        return;
+    }
+
+    /* Trim the trailing backslash since we will work with a device object */
+    usDriveRoot.Length -= sizeof(WCHAR);
 
     DPRINT("Chkdsk() - %S\n", Format);
     Status = STATUS_SUCCESS;
