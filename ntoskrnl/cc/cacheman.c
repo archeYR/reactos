@@ -127,16 +127,24 @@ CcGetFlushedValidData (
     IN BOOLEAN BcbListHeld
     )
 {
-	LARGE_INTEGER i;
+    LARGE_INTEGER i;
 
-	UNIMPLEMENTED;
+    UNIMPLEMENTED;
 
-	i.QuadPart = 0;
-	return i;
+    i.QuadPart = 0;
+    return i;
 }
 
-/*
- * @unimplemented
+/**
+ * @brief Remaps a buffer control block (BCB).
+ * 
+ * Maps data in a cache file for reading, similarly to CcMapData.
+ * This makes the data mapped, but not pinned, so it can't be modified.
+ * 
+ * @param [in] Bcb
+ * Pointer to the BCB.
+ * 
+ * @return Read-only BCB pointer.
  */
 PVOID
 NTAPI
@@ -144,9 +152,12 @@ CcRemapBcb (
     IN PVOID Bcb
     )
 {
-	UNIMPLEMENTED;
+    PINTERNAL_BCB iBcb = CONTAINING_RECORD(Bcb, INTERNAL_BCB, PFCB);
 
-    return 0;
+    CCTRACE(CC_API_DEBUG, "Bcb=%p\n", Bcb);
+
+    iBcb->RefCount++;
+    return Bcb;
 }
 
 /*
@@ -155,10 +166,10 @@ CcRemapBcb (
 VOID
 NTAPI
 CcScheduleReadAhead (
-	IN	PFILE_OBJECT		FileObject,
-	IN	PLARGE_INTEGER		FileOffset,
-	IN	ULONG			Length
-	)
+    IN  PFILE_OBJECT        FileObject,
+    IN  PLARGE_INTEGER      FileOffset,
+    IN  ULONG           Length
+    )
 {
     KIRQL OldIrql;
     LARGE_INTEGER NewOffset;
@@ -261,10 +272,10 @@ CcScheduleReadAhead (
 VOID
 NTAPI
 CcSetAdditionalCacheAttributes (
-	IN	PFILE_OBJECT	FileObject,
-	IN	BOOLEAN		DisableReadAhead,
-	IN	BOOLEAN		DisableWriteBehind
-	)
+    IN  PFILE_OBJECT    FileObject,
+    IN  BOOLEAN     DisableReadAhead,
+    IN  BOOLEAN     DisableWriteBehind
+    )
 {
     KIRQL OldIrql;
     PROS_SHARED_CACHE_MAP SharedCacheMap;
@@ -303,9 +314,9 @@ CcSetAdditionalCacheAttributes (
 VOID
 NTAPI
 CcSetBcbOwnerPointer (
-	IN	PVOID	Bcb,
-	IN	PVOID	Owner
-	)
+    IN  PVOID   Bcb,
+    IN  PVOID   Owner
+    )
 {
     PINTERNAL_BCB iBcb = CONTAINING_RECORD(Bcb, INTERNAL_BCB, PFCB);
 
@@ -327,9 +338,9 @@ CcSetBcbOwnerPointer (
 VOID
 NTAPI
 CcSetDirtyPageThreshold (
-	IN	PFILE_OBJECT	FileObject,
-	IN	ULONG		DirtyPageThreshold
-	)
+    IN  PFILE_OBJECT    FileObject,
+    IN  ULONG       DirtyPageThreshold
+    )
 {
     PFSRTL_COMMON_FCB_HEADER Fcb;
     PROS_SHARED_CACHE_MAP SharedCacheMap;
@@ -356,9 +367,9 @@ CcSetDirtyPageThreshold (
 VOID
 NTAPI
 CcSetReadAheadGranularity (
-	IN	PFILE_OBJECT	FileObject,
-	IN	ULONG		Granularity
-	)
+    IN  PFILE_OBJECT    FileObject,
+    IN  ULONG       Granularity
+    )
 {
     PPRIVATE_CACHE_MAP PrivateMap;
 

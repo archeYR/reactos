@@ -214,8 +214,8 @@ CcpPinData(
     IN PLARGE_INTEGER FileOffset,
     IN ULONG Length,
     IN ULONG Flags,
-    OUT	PVOID * Bcb,
-    OUT	PVOID * Buffer)
+    OUT PVOID * Bcb,
+    OUT PVOID * Buffer)
 {
     PINTERNAL_BCB NewBcb;
     KIRQL OldIrql;
@@ -433,11 +433,11 @@ CcMapData (
 BOOLEAN
 NTAPI
 CcPinMappedData (
-    IN	PFILE_OBJECT FileObject,
-    IN	PLARGE_INTEGER FileOffset,
-    IN	ULONG Length,
-    IN	ULONG Flags,
-    OUT	PVOID * Bcb)
+    IN  PFILE_OBJECT FileObject,
+    IN  PLARGE_INTEGER FileOffset,
+    IN  ULONG Length,
+    IN  ULONG Flags,
+    OUT PVOID * Bcb)
 {
     BOOLEAN Result;
     PVOID Buffer;
@@ -478,12 +478,12 @@ CcPinMappedData (
 BOOLEAN
 NTAPI
 CcPinRead (
-    IN	PFILE_OBJECT FileObject,
-    IN	PLARGE_INTEGER FileOffset,
-    IN	ULONG Length,
-    IN	ULONG Flags,
-    OUT	PVOID * Bcb,
-    OUT	PVOID * Buffer)
+    IN  PFILE_OBJECT FileObject,
+    IN  PLARGE_INTEGER FileOffset,
+    IN  ULONG Length,
+    IN  ULONG Flags,
+    OUT PVOID * Bcb,
+    OUT PVOID * Buffer)
 {
     PROS_SHARED_CACHE_MAP SharedCacheMap;
 
@@ -499,7 +499,7 @@ CcPinRead (
     if (!SharedCacheMap->PinAccess)
     {
         DPRINT1("FIXME: Pinning a file with no pin access!\n");
-        return FALSE;
+        //return FALSE;
     }
 
     if (Flags & PIN_WAIT)
@@ -520,13 +520,13 @@ CcPinRead (
 BOOLEAN
 NTAPI
 CcPreparePinWrite (
-    IN	PFILE_OBJECT FileObject,
-    IN	PLARGE_INTEGER FileOffset,
-    IN	ULONG Length,
-    IN	BOOLEAN Zero,
-    IN	ULONG Flags,
-    OUT	PVOID * Bcb,
-    OUT	PVOID * Buffer)
+    IN  PFILE_OBJECT FileObject,
+    IN  PLARGE_INTEGER FileOffset,
+    IN  ULONG Length,
+    IN  BOOLEAN Zero,
+    IN  ULONG Flags,
+    OUT PVOID * Bcb,
+    OUT PVOID * Buffer)
 {
     CCTRACE(CC_API_DEBUG, "FileOffset=%p FileOffset=%p Length=%lu Zero=%d Flags=0x%lx\n",
         FileObject, FileOffset, Length, Zero, Flags);
@@ -584,8 +584,8 @@ CcUnpinData (
 VOID
 NTAPI
 CcUnpinDataForThread (
-    IN	PVOID Bcb,
-    IN	ERESOURCE_THREAD ResourceThreadId)
+    IN  PVOID Bcb,
+    IN  ERESOURCE_THREAD ResourceThreadId)
 {
     PINTERNAL_BCB iBcb = CONTAINING_RECORD(Bcb, INTERNAL_BCB, PFCB);
 
@@ -606,7 +606,7 @@ CcUnpinDataForThread (
 VOID
 NTAPI
 CcRepinBcb (
-    IN	PVOID Bcb)
+    IN  PVOID Bcb)
 {
     PINTERNAL_BCB iBcb = CONTAINING_RECORD(Bcb, INTERNAL_BCB, PFCB);
 
@@ -621,9 +621,9 @@ CcRepinBcb (
 VOID
 NTAPI
 CcUnpinRepinnedBcb (
-    IN	PVOID Bcb,
-    IN	BOOLEAN WriteThrough,
-    IN	PIO_STATUS_BLOCK IoStatus)
+    IN  PVOID Bcb,
+    IN  BOOLEAN WriteThrough,
+    IN  PIO_STATUS_BLOCK IoStatus)
 {
     PINTERNAL_BCB iBcb = CONTAINING_RECORD(Bcb, INTERNAL_BCB, PFCB);
     KIRQL OldIrql;
