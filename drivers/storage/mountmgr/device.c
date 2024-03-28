@@ -106,7 +106,6 @@ MountMgrSetAutoMount(IN PDEVICE_EXTENSION DeviceExtension,
 {
     PIO_STACK_LOCATION Stack;
     PMOUNTMGR_SET_AUTO_MOUNT SetState;
-
     Stack = IoGetCurrentIrpStackLocation(Irp);
 
     if (Stack->Parameters.DeviceIoControl.InputBufferLength < sizeof(MOUNTMGR_SET_AUTO_MOUNT))
@@ -1852,7 +1851,6 @@ MountMgrDeletePoints(IN PDEVICE_EXTENSION DeviceExtension,
     PMOUNTMGR_MOUNT_POINT MountPoint;
     PMOUNTMGR_MOUNT_POINTS MountPoints;
     UNICODE_STRING SymbolicName, DeviceName;
-
     Stack = IoGetCurrentIrpStackLocation(Irp);
 
     /* Validate input */
@@ -2042,8 +2040,9 @@ MountMgrVolumeMountPointChanged(IN PDEVICE_EXTENSION DeviceExtension,
 
     VolumeMountPoint = (PMOUNTMGR_VOLUME_MOUNT_POINT)Irp->AssociatedIrp.SystemBuffer;
 
-    if (((ULONG)VolumeMountPoint->SourceVolumeNameLength + VolumeMountPoint->TargetVolumeNameLength) <
-        Stack->Parameters.DeviceIoControl.InputBufferLength)
+    if (((ULONG)VolumeMountPoint->SourceVolumeNameLength +
+        VolumeMountPoint->TargetVolumeNameLength) +
+        sizeof(MOUNTMGR_VOLUME_MOUNT_POINT) < Stack->Parameters.DeviceIoControl.InputBufferLength)
     {
         return STATUS_INVALID_PARAMETER;
     }
@@ -2086,11 +2085,13 @@ MountMgrVolumeMountPointChanged(IN PDEVICE_EXTENSION DeviceExtension,
 
     if (FsDeviceInfo.DeviceType != FILE_DEVICE_DISK && FsDeviceInfo.DeviceType != FILE_DEVICE_VIRTUAL_DISK)
     {
+        Status = STATUS_INVALID_PARAMETER;
         goto Cleanup;
     }
 
-    if (FsDeviceInfo.Characteristics != (FILE_REMOTE_DEVICE | FILE_REMOVABLE_MEDIA))
+    if (FsDeviceInfo.Characteristics & (FILE_REMOTE_DEVICE | FILE_REMOVABLE_MEDIA))
     {
+        Status = STATUS_INVALID_PARAMETER;
         goto Cleanup;
     }
 

@@ -13,6 +13,15 @@
 #define NDEBUG
 #include <debug.h>
 
+#define IS_VOLUME_NAME(s, l)                       \
+  ((l == 96 || (l == 98 && s[48] == '\\')) &&      \
+   s[0] == '\\'&& (s[1] == '?' || s[1] == '\\') && \
+   s[2] == '?' && s[3] == '\\' && s[4] == 'V' &&   \
+   s[5] == 'o' && s[6] == 'l' && s[7] == 'u' &&    \
+   s[8] == 'm' && s[9] == 'e' && s[10] == '{' &&   \
+   s[19] == '-' && s[24] == '-' && s[29] == '-' && \
+   s[34] == '-' && s[47] == '}')
+
 /* FMIFS.6 */
 VOID NTAPI
 Format(
@@ -55,7 +64,7 @@ FormatEx(
 //
 // TODO: Convert filesystem Format into ULIB format string.
 //
-
+    __debugbreak();
     Provider = GetProvider(Format);
     if (!Provider)
     {
@@ -64,16 +73,30 @@ FormatEx(
         return;
     }
 
-    if (!GetVolumeNameForVolumeMountPointW(DriveRoot, VolumeName, RTL_NUMBER_OF(VolumeName)) ||
-        !RtlDosPathNameToNtPathName_U(VolumeName, &usDriveRoot, NULL, NULL))
+    if (IS_VOLUME_NAME(DriveRoot, wcslen(DriveRoot) * sizeof(WCHAR)))
+    {
+        /* We already got a volume GUID path, no need for conversion */
+        wcscpy(VolumeName, DriveRoot);
+    }
+    else if (!GetVolumeNameForVolumeMountPointW(DriveRoot, VolumeName, RTL_NUMBER_OF(VolumeName)))
     {
         /* Report an error */
         Callback(DONE, 0, &Success);
         return;
     }
 
-    /* Trim the trailing backslash since we will work with a device object */
-    usDriveRoot.Length -= sizeof(WCHAR);
+    if (!RtlDosPathNameToNtPathName_U(VolumeName, &usDriveRoot, NULL, NULL))
+    {
+        /* Report an error */
+        Callback(DONE, 0, &Success);
+        return;
+    }
+
+    if (usDriveRoot.Buffer[usDriveRoot.Length / sizeof(WCHAR) - 1] == L'\\')
+    {
+        /* Trim the trailing backslash since we will work with a device object */
+        usDriveRoot.Length -= sizeof(WCHAR);
+    }
 
     RtlInitUnicodeString(&usLabel, Label);
 

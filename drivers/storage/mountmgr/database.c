@@ -255,8 +255,8 @@ DeleteRemoteDatabaseEntry(IN HANDLE Database,
         return STATUS_INVALID_PARAMETER;
     }
 
-    /* Validate parameters: ensure we won't get negative size */
-    if (Entry->EntrySize + StartingOffset > DatabaseSize)
+    /* Validate parameters: ensure we won't get zero or negative size */
+    if (Entry->EntrySize + StartingOffset >= DatabaseSize)
     {
         /* If we get invalid parameters, truncate the whole database
          * starting the wrong entry. We can't rely on the rest
@@ -1892,8 +1892,8 @@ OpenRemoteDatabase(IN PDEVICE_INFORMATION DeviceInformation,
         DPRINT1("Attempt to exploit CVE-2015-1769. See CORE-10216\n");
     }
 
-    /* If base it to be migrated and was opened successfully, go ahead */
-    if (MigrateDatabase && NT_SUCCESS(Status))
+    /* If there was no database and we're to migrate one, go ahead */
+    if (MigrateDatabase && !NT_SUCCESS(Status))
     {
         CreateRemoteDatabase(DeviceInformation, &Database);
     }

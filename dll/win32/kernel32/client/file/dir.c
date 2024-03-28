@@ -909,17 +909,7 @@ RemoveDirectoryW(IN LPCWSTR lpPathName)
 
     /* Prepare to delete mount point */
     RtlInitUnicodeString(&PathName, lpPathName);
-    PathName.Buffer = RtlAllocateHeap(RtlGetProcessHeap(), 0, PathName.Length + 2 * sizeof(WCHAR));
-    if (!PathName.Buffer)
-    {
-        RtlReleaseRelativeName(&RelativeName);
-        RtlFreeHeap(RtlGetProcessHeap(), 0, ReparseDataBuffer);
-        NtClose(DirectoryHandle);
-        SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-        return FALSE;
-    }
 
-    RtlCopyMemory(&PathName.Buffer, lpPathName, PathName.Length);
     if (PathName.Buffer[PathName.Length / sizeof(WCHAR)] != L'\\')
     {
         PathName.Buffer[PathName.Length / sizeof(WCHAR)] = L'\\';
@@ -928,7 +918,6 @@ RemoveDirectoryW(IN LPCWSTR lpPathName)
 
     /* Delete mount point for that volume */
     DeleteVolumeMountPointW(PathName.Buffer);
-    RtlFreeHeap(RtlGetProcessHeap(), 0, PathName.Buffer);
     RtlFreeHeap(RtlGetProcessHeap(), 0, ReparseDataBuffer);
 
     /* And mark directory for delete */
