@@ -29,20 +29,15 @@ typedef struct _FILE_REPARSE_POINT_INFORMATION {
   ULONG Tag;
 } FILE_REPARSE_POINT_INFORMATION, *PFILE_REPARSE_POINT_INFORMATION;
 
-/*
- * @implemented
- */
 static BOOL
-GetDeleteVolumeRoot(_In_ LPCWSTR lpszRootPath,
-                    _Out_opt_ LPWSTR lpszVolumeName,
-                    _In_opt_ DWORD cchBufferLength,
-                    _In_ BOOL DeleteMountPoint)
+GetVolumeNameForRoot(IN LPCWSTR lpszRootPath,
+                     OUT LPWSTR lpszVolumeName,
+                     IN DWORD cchBufferLength)
 {
     BOOL Ret;
     NTSTATUS Status;
     PWSTR FoundVolume;
     DWORD BytesReturned;
-    WCHAR Buffer[64];
     UNICODE_STRING NtPathName;
     IO_STATUS_BLOCK IoStatusBlock;
     PMOUNTMGR_MOUNT_POINT MountPoint;
@@ -86,62 +81,49 @@ GetDeleteVolumeRoot(_In_ LPCWSTR lpszRootPath,
         }
     }
 
-    if (!DeleteMountPoint)
+    /* Attempt to open the volume */
+    InitializeObjectAttributes(&ObjectAttributes, &NtPathName,
+                               OBJ_CASE_INSENSITIVE, NULL, NULL);
+    Status = NtOpenFile(&VolumeHandle, SYNCHRONIZE | FILE_READ_ATTRIBUTES,
+                        &ObjectAttributes, &IoStatusBlock,
+                        FILE_SHARE_READ | FILE_SHARE_WRITE,
+                        FILE_SYNCHRONOUS_IO_ALERT);
+    if (!NT_SUCCESS(Status))
     {
-        /* Attempt to open the volume */
-        InitializeObjectAttributes(&ObjectAttributes, &NtPathName,
-                                OBJ_CASE_INSENSITIVE, NULL, NULL);
-        Status = NtOpenFile(&VolumeHandle, SYNCHRONIZE | FILE_READ_ATTRIBUTES,
-                            &ObjectAttributes, &IoStatusBlock,
-                            FILE_SHARE_READ | FILE_SHARE_WRITE,
-                            FILE_SYNCHRONOUS_IO_ALERT);
-        if (!NT_SUCCESS(Status))
-        {
-            RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathName.Buffer);
-            BaseSetLastNTError(Status);
-            return FALSE;
-        }
+        RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathName.Buffer);
+        BaseSetLastNTError(Status);
+        return FALSE;
+    }
 
-        /* Query the device name - that's what we'll translate */
-        if (!DeviceIoControl(VolumeHandle, IOCTL_MOUNTDEV_QUERY_DEVICE_NAME, NULL,
-                            0, &MountDevName, sizeof(MountDevName), &BytesReturned,
-                            NULL))
-        {
-            NtClose(VolumeHandle);
-            RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathName.Buffer);
-            return FALSE;
-        }
-
-        /* No longer need the volume */
+    /* Query the device name - that's what we'll translate */
+    if (!DeviceIoControl(VolumeHandle, IOCTL_MOUNTDEV_QUERY_DEVICE_NAME, NULL,
+                         0, &MountDevName, sizeof(MountDevName), &BytesReturned,
+                         NULL))
+    {
         NtClose(VolumeHandle);
         RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathName.Buffer);
-
-        /* We'll keep the device name for later usage */
-        NtPathName.Length = MountDevName.NameLength;
-        NtPathName.MaximumLength = MountDevName.NameLength + sizeof(UNICODE_NULL);
-        NtPathName.Buffer = RtlAllocateHeap(RtlGetProcessHeap(), 0, NtPathName.MaximumLength);
-        if (NtPathName.Buffer == NULL)
-        {
-            SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-            return FALSE;
-        }
-
-        RtlCopyMemory(NtPathName.Buffer, MountDevName.Name, NtPathName.Length);
-        NtPathName.Buffer[NtPathName.Length / sizeof(WCHAR)] = UNICODE_NULL;
+        return FALSE;
     }
-    else
+
+    /* No longer need the volume */
+    NtClose(VolumeHandle);
+    RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathName.Buffer);
+
+    /* We'll keep the device name for later usage */
+    NtPathName.Length = MountDevName.NameLength;
+    NtPathName.MaximumLength = MountDevName.NameLength + sizeof(UNICODE_NULL);
+    NtPathName.Buffer = RtlAllocateHeap(RtlGetProcessHeap(), 0, NtPathName.MaximumLength);
+    if (NtPathName.Buffer == NULL)
     {
-        /* We need a DOS device name for symbolic link too */
-        swprintf(Buffer, L"\\DosDevices\\%c:", towupper(lpszRootPath[0]));
-        RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathName.Buffer);
-        NtPathName.Length = wcslen(Buffer) * sizeof(WCHAR);
-        NtPathName.MaximumLength = NtPathName.Length + sizeof(UNICODE_NULL);
-        NtPathName.Buffer = RtlAllocateHeap(RtlGetProcessHeap(), 0, NtPathName.MaximumLength * sizeof(WCHAR));
-        RtlCopyMemory(NtPathName.Buffer, Buffer, NtPathName.Length);
+        SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+        return FALSE;
     }
+
+    RtlCopyMemory(NtPathName.Buffer, MountDevName.Name, NtPathName.Length);
+    NtPathName.Buffer[NtPathName.Length / sizeof(WCHAR)] = UNICODE_NULL;
 
     /* Allocate the structure for querying the mount mgr */
-    MountPoint = RtlAllocateHeap(RtlGetProcessHeap(), HEAP_ZERO_MEMORY,
+    MountPoint = RtlAllocateHeap(RtlGetProcessHeap(), 0,
                                  NtPathName.Length + sizeof(MOUNTMGR_MOUNT_POINT));
     if (MountPoint == NULL)
     {
@@ -150,18 +132,11 @@ GetDeleteVolumeRoot(_In_ LPCWSTR lpszRootPath,
         return FALSE;
     }
 
-    if (!DeleteMountPoint)
-    {
-        MountPoint->DeviceNameOffset = sizeof(MOUNTMGR_MOUNT_POINT);
-        MountPoint->DeviceNameLength = NtPathName.Length;
-        RtlCopyMemory((PVOID)((ULONG_PTR)MountPoint + sizeof(MOUNTMGR_MOUNT_POINT)), NtPathName.Buffer, NtPathName.Length);
-    }  
-    else
-    {     
-        MountPoint->SymbolicLinkNameOffset = sizeof(MOUNTMGR_MOUNT_POINT);
-        MountPoint->SymbolicLinkNameLength = NtPathName.Length;
-        RtlCopyMemory((PVOID)((ULONG_PTR)MountPoint + sizeof(MOUNTMGR_MOUNT_POINT)), NtPathName.Buffer, NtPathName.Length);
-    }
+    /* 0 everything, we provide a device name */
+    RtlZeroMemory(MountPoint, sizeof(MOUNTMGR_MOUNT_POINT));
+    MountPoint->DeviceNameOffset = sizeof(MOUNTMGR_MOUNT_POINT);
+    MountPoint->DeviceNameLength = NtPathName.Length;
+    RtlCopyMemory((PVOID)((ULONG_PTR)MountPoint + sizeof(MOUNTMGR_MOUNT_POINT)), NtPathName.Buffer, NtPathName.Length);
 
     /* Allocate a dummy output buffer to probe for size */
     MountPoints = RtlAllocateHeap(RtlGetProcessHeap(), 0, sizeof(MOUNTMGR_MOUNT_POINTS));
@@ -174,8 +149,7 @@ GetDeleteVolumeRoot(_In_ LPCWSTR lpszRootPath,
     }
 
     /* Open a handle to the mount manager */
-    MountMgrHandle = CreateFileW(MOUNTMGR_DOS_DEVICE_NAME, 
-                                 DeleteMountPoint ? (GENERIC_READ | GENERIC_WRITE) : 0,
+    MountMgrHandle = CreateFileW(MOUNTMGR_DOS_DEVICE_NAME, 0,
                                  FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
                                  OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
                                  INVALID_HANDLE_VALUE);
@@ -188,9 +162,7 @@ GetDeleteVolumeRoot(_In_ LPCWSTR lpszRootPath,
     }
 
     /* Query the names associated to our device name */
-    Ret = DeviceIoControl(MountMgrHandle,
-                          DeleteMountPoint ? IOCTL_MOUNTMGR_DELETE_POINTS :
-                          IOCTL_MOUNTMGR_QUERY_POINTS,
+    Ret = DeviceIoControl(MountMgrHandle, IOCTL_MOUNTMGR_QUERY_POINTS,
                           MountPoint, NtPathName.Length + sizeof(MOUNTMGR_MOUNT_POINT),
                           MountPoints, sizeof(MOUNTMGR_MOUNT_POINTS), &BytesReturned,
                           NULL);
@@ -214,9 +186,7 @@ GetDeleteVolumeRoot(_In_ LPCWSTR lpszRootPath,
         }
 
         /* Reissue the request, it should work now! */
-        Ret = DeviceIoControl(MountMgrHandle,
-                              DeleteMountPoint ? IOCTL_MOUNTMGR_DELETE_POINTS :
-                              IOCTL_MOUNTMGR_QUERY_POINTS,
+        Ret = DeviceIoControl(MountMgrHandle, IOCTL_MOUNTMGR_QUERY_POINTS,
                               MountPoint, NtPathName.Length + sizeof(MOUNTMGR_MOUNT_POINT),
                               MountPoints, BufferSize, &BytesReturned, NULL);
     }
@@ -233,14 +203,6 @@ GetDeleteVolumeRoot(_In_ LPCWSTR lpszRootPath,
         RtlFreeHeap(RtlGetProcessHeap(), 0, MountPoints);
         SetLastError(ERROR_INVALID_PARAMETER);
         return FALSE;
-    }
-
-    /* If the caller didn't pass output buffer, let's just end here */
-    if (DeleteMountPoint)
-    {
-        RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathName.Buffer);
-        RtlFreeHeap(RtlGetProcessHeap(), 0, MountPoints);
-        return TRUE;
     }
 
     CurrentMntPt = 0;
@@ -304,70 +266,220 @@ GetDeleteVolumeRoot(_In_ LPCWSTR lpszRootPath,
     return TRUE;
 }
 
+/**
+ * @brief
+ * Deletes the drive letter type of mount point. This routine queries the Mount Manager
+ * for deleting the requested drive letter mount point.
+ *
+ * @param[in] lpszRootPath
+ * String which contains a drive letter mount point to be deleted.
+ *
+ * @return
+ * TRUE if the mount point deletion is successful, FALSE otherwise.
+ *
+ * To get extended error information in case of failure, call GetLastError.
+ */
 static BOOL
-SetVolumeNameForRoot(_In_ LPCWSTR lpszRootPath,
-                     _In_ LPCWSTR lpszVolumeName)
+DeleteVolumeRoot(_In_ LPCWSTR lpszRootPath)
+{
+    BOOL Ret;
+    DWORD BytesReturned;
+    UNICODE_STRING DosDevices = RTL_CONSTANT_STRING(L"\\DosDevices\\");
+    UNICODE_STRING RootPath;
+    ULONG PathLength;
+    UNICODE_STRING DosDevicePath;
+    PMOUNTMGR_MOUNT_POINT MountPoint;
+    PMOUNTMGR_MOUNT_POINTS MountPoints;
+    HANDLE MountMgrHandle;
+
+    RtlInitUnicodeString(&RootPath, lpszRootPath);
+
+    /* Drop the trailing backslash */
+    if (RootPath.Buffer[(RootPath.Length / sizeof(WCHAR)) - 1] == L'\\')
+    {
+        RootPath.Length -= sizeof(WCHAR);
+    }
+
+    PathLength = RootPath.Length + DosDevices.Length + sizeof(UNICODE_NULL);
+    DosDevicePath.Length = 0;
+    DosDevicePath.MaximumLength = PathLength;
+    DosDevicePath.Buffer = RtlAllocateHeap(RtlGetProcessHeap(), 0, PathLength);
+
+    if (DosDevicePath.Buffer == NULL)
+    {
+		SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+        return FALSE;
+    }
+
+    RtlCopyUnicodeString(&DosDevicePath, &DosDevices);
+    RtlAppendUnicodeStringToString(&DosDevicePath, &RootPath);
+    DosDevicePath.Buffer[(DosDevicePath.Length / sizeof(WCHAR)) - 2] = towupper(DosDevicePath.Buffer[(DosDevicePath.Length / sizeof(WCHAR)) - 2]);
+    DosDevicePath.Buffer[DosDevicePath.Length] = UNICODE_NULL;
+
+    /* Allocate the structure for querying the mount mgr */
+    MountPoint = RtlAllocateHeap(RtlGetProcessHeap(), HEAP_ZERO_MEMORY,
+                                 DosDevicePath.Length + sizeof(MOUNTMGR_MOUNT_POINT));
+    if (MountPoint == NULL)
+    {
+        SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+        return FALSE;
+    }
+
+    MountPoint->SymbolicLinkNameOffset = sizeof(MOUNTMGR_MOUNT_POINT);
+    MountPoint->SymbolicLinkNameLength = DosDevicePath.Length;
+    RtlCopyMemory((PVOID)((ULONG_PTR)MountPoint + sizeof(MOUNTMGR_MOUNT_POINT)), DosDevicePath.Buffer, DosDevicePath.Length);
+
+    /* Allocate a dummy output buffer to probe for size */
+    MountPoints = RtlAllocateHeap(RtlGetProcessHeap(), 0, sizeof(MOUNTMGR_MOUNT_POINTS));
+    if (MountPoints == NULL)
+    {
+        RtlFreeHeap(RtlGetProcessHeap(), 0, DosDevicePath.Buffer);
+        RtlFreeHeap(RtlGetProcessHeap(), 0, MountPoint);
+        SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+        return FALSE;
+    }
+
+    /* Open a handle to the mount manager */
+    MountMgrHandle = CreateFileW(MOUNTMGR_DOS_DEVICE_NAME, 
+                                 GENERIC_READ | GENERIC_WRITE,
+                                 FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+                                 OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
+                                 INVALID_HANDLE_VALUE);
+    if (MountMgrHandle == INVALID_HANDLE_VALUE)
+    {
+        RtlFreeHeap(RtlGetProcessHeap(), 0, DosDevicePath.Buffer);
+        RtlFreeHeap(RtlGetProcessHeap(), 0, MountPoints);
+        RtlFreeHeap(RtlGetProcessHeap(), 0, MountPoint);
+        return FALSE;
+    }
+
+    /* Query the names associated to our device name */
+    Ret = DeviceIoControl(MountMgrHandle,
+                          IOCTL_MOUNTMGR_DELETE_POINTS,
+                          MountPoint, DosDevicePath.Length + sizeof(MOUNTMGR_MOUNT_POINT),
+                          MountPoints, sizeof(MOUNTMGR_MOUNT_POINTS), &BytesReturned,
+                          NULL);
+    /* As long as the buffer is too small, keep looping */
+    while (!Ret && GetLastError() == ERROR_MORE_DATA)
+    {
+        ULONG BufferSize;
+
+        /* Get the size we've to allocate */
+        BufferSize = MountPoints->Size;
+        /* Reallocate the buffer with enough room */
+        RtlFreeHeap(RtlGetProcessHeap(), 0, MountPoints);
+        MountPoints = RtlAllocateHeap(RtlGetProcessHeap(), 0, BufferSize);
+        if (MountPoints == NULL)
+        {
+            CloseHandle(MountMgrHandle);
+            RtlFreeHeap(RtlGetProcessHeap(), 0, DosDevicePath.Buffer);
+            RtlFreeHeap(RtlGetProcessHeap(), 0, MountPoint);
+            SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+            return FALSE;
+        }
+
+        /* Reissue the request, it should work now! */
+        Ret = DeviceIoControl(MountMgrHandle,
+                              IOCTL_MOUNTMGR_DELETE_POINTS,
+                              MountPoint, DosDevicePath.Length + sizeof(MOUNTMGR_MOUNT_POINT),
+                              MountPoints, BufferSize, &BytesReturned, NULL);
+    }
+
+    /* We're done, no longer need the mount manager */
+    CloseHandle(MountMgrHandle);
+    /* Nor our input buffer */
+    RtlFreeHeap(RtlGetProcessHeap(), 0, MountPoint);
+
+    /* If the mount manager failed, just quit */
+    if (!Ret)
+    {
+        RtlFreeHeap(RtlGetProcessHeap(), 0, DosDevicePath.Buffer);
+        RtlFreeHeap(RtlGetProcessHeap(), 0, MountPoints);
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return FALSE;
+    }
+
+    /* We're done! */
+    RtlFreeHeap(RtlGetProcessHeap(), 0, DosDevicePath.Buffer);
+    RtlFreeHeap(RtlGetProcessHeap(), 0, MountPoints);
+    return TRUE;
+}
+
+/**
+ * @brief
+ * Creates the drive letter type of mount point. This routine queries the Mount Manager
+ * for creating the requested drive letter mount point.
+ *
+ * @param[in] lpszRootPath
+ * String which contains a drive letter mount point to be created.
+ *
+ * @param[in] lpszVolumeName
+ * String which contains a volume GUID path for the volume to be mounted.
+ * 
+ * @return
+ * TRUE if the mount point creation is successful, FALSE otherwise.
+ *
+ * To get extended error information in case of failure, call GetLastError.
+ * 
+ * @remarks
+ * If the lpszRootPath parameter is incorrect, the routine will return ERROR_INVALID_PARAMETER
+ */
+static BOOL
+SetVolumeRoot(_In_ LPCWSTR lpszRootPath,
+              _In_ LPCWSTR lpszVolumeName)
 {
     BOOL Ret;
     NTSTATUS Status;
-    WCHAR Buffer[64];
     DWORD BytesReturned;
-    UNICODE_STRING NtPathName;
+    UNICODE_STRING RootPath;
+    ULONG PathLength;
+    UNICODE_STRING DosDevicePath;
     IO_STATUS_BLOCK IoStatusBlock;
     UNICODE_STRING NtPathVolumeName;
     OBJECT_ATTRIBUTES ObjectAttributes;
     HANDLE VolumeHandle, MountMgrHandle;
     PMOUNTMGR_CREATE_POINT_INPUT MountPoint;
+    UNICODE_STRING DosDevices = RTL_CONSTANT_STRING(L"\\DosDevices\\");
     struct
     {
         MOUNTDEV_NAME;
         WCHAR Buffer[MAX_PATH];
     } MountDevName;
 
-    /* Get the NT path */
-    if (!RtlDosPathNameToNtPathName_U(lpszRootPath, &NtPathName, NULL, NULL))
+    RtlInitUnicodeString(&RootPath, lpszRootPath);
+
+    /* Drop the backslash from root path */
+    if (RootPath.Buffer[(RootPath.Length / sizeof(WCHAR)) - 1] == L'\\')
     {
-        SetLastError(ERROR_PATH_NOT_FOUND);
-        return FALSE;
+        RootPath.Length -= sizeof(WCHAR);
     }
 
-    /* Get the NT path */
+    /* Get the NT path for volume */
     if (!RtlDosPathNameToNtPathName_U(lpszVolumeName, &NtPathVolumeName, NULL, NULL))
     {
-        SetLastError(ERROR_PATH_NOT_FOUND);
+        SetLastError(ERROR_INVALID_PARAMETER);
         return FALSE;
     }
 
-    /* Drop backslash to open volume */
-    if (NtPathName.Buffer[(NtPathName.Length / sizeof(WCHAR)) - 1] == L'\\')
+    /* Now we can safely drop the trailing backslashes */
+    NtPathVolumeName.Buffer[(NtPathVolumeName.Length / sizeof(WCHAR)) - 1] = UNICODE_NULL;
+    NtPathVolumeName.Length -= sizeof(WCHAR);
+
+    PathLength = RootPath.Length + DosDevices.Length + sizeof(UNICODE_NULL);
+    DosDevicePath.Length = 0;
+    DosDevicePath.MaximumLength = PathLength;
+    DosDevicePath.Buffer = RtlAllocateHeap(RtlGetProcessHeap(), 0, PathLength);
+
+    if (DosDevicePath.Buffer == NULL)
     {
-        NtPathName.Buffer[(NtPathName.Length / sizeof(WCHAR)) - 1] = UNICODE_NULL;
-        NtPathName.Length -= sizeof(WCHAR);
+		SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+        return FALSE;
     }
 
-    /* Drop backslash to open volume */
-    if (NtPathVolumeName.Buffer[(NtPathVolumeName.Length / sizeof(WCHAR)) - 1] == L'\\')
-    {
-        NtPathVolumeName.Buffer[(NtPathVolumeName.Length / sizeof(WCHAR)) - 1] = UNICODE_NULL;
-        NtPathVolumeName.Length -= sizeof(WCHAR);
-    }
-
-    /* Upper case the letter on DOS path */
-    if (NtPathName.Length >= 2 * sizeof(WCHAR))
-    {
-        if (NtPathName.Buffer[(NtPathName.Length / sizeof(WCHAR)) - 1] == L':')
-        {
-            NtPathName.Buffer[(NtPathName.Length / sizeof(WCHAR)) - 2] = towupper(NtPathName.Buffer[(NtPathName.Length / sizeof(WCHAR)) - 2]);
-        }
-    }
-
-    /* We need a DOS device name for symbolic link too */
-    swprintf(Buffer, L"\\DosDevices\\%c:", NtPathName.Buffer[(NtPathName.Length / sizeof(WCHAR)) - 2]);
-    RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathName.Buffer);
-    NtPathName.Length = wcslen(Buffer) * sizeof(WCHAR);
-    NtPathName.MaximumLength = NtPathName.Length + sizeof(UNICODE_NULL);
-    NtPathName.Buffer = RtlAllocateHeap(RtlGetProcessHeap(), 0, NtPathName.MaximumLength * sizeof(WCHAR));
-    RtlCopyMemory(NtPathName.Buffer, Buffer, NtPathName.Length);
+    RtlCopyUnicodeString(&DosDevicePath, &DosDevices);
+    RtlAppendUnicodeStringToString(&DosDevicePath, &RootPath);
+    DosDevicePath.Buffer[(DosDevicePath.Length / sizeof(WCHAR)) - 2] = towupper(DosDevicePath.Buffer[(DosDevicePath.Length / sizeof(WCHAR)) - 2]);
+    DosDevicePath.Buffer[DosDevicePath.Length] = UNICODE_NULL;
 
     /* Attempt to open the volume */
     InitializeObjectAttributes(&ObjectAttributes, &NtPathVolumeName,
@@ -378,9 +490,9 @@ SetVolumeNameForRoot(_In_ LPCWSTR lpszRootPath,
                         FILE_SYNCHRONOUS_IO_ALERT);
     if (!NT_SUCCESS(Status))
     {
-        RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathName.Buffer);
+        RtlFreeHeap(RtlGetProcessHeap(), 0, DosDevicePath.Buffer);
         RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathVolumeName.Buffer);
-        BaseSetLastNTError(Status);
+        SetLastError(ERROR_INVALID_PARAMETER);
         return FALSE;
     }
 
@@ -390,7 +502,7 @@ SetVolumeNameForRoot(_In_ LPCWSTR lpszRootPath,
                          NULL))
     {
         NtClose(VolumeHandle);
-        RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathName.Buffer);
+        RtlFreeHeap(RtlGetProcessHeap(), 0, DosDevicePath.Buffer);
         RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathVolumeName.Buffer);
         return FALSE;
     }
@@ -412,15 +524,9 @@ SetVolumeNameForRoot(_In_ LPCWSTR lpszRootPath,
     RtlCopyMemory(NtPathVolumeName.Buffer, MountDevName.Name, NtPathVolumeName.Length);
     NtPathVolumeName.Buffer[NtPathVolumeName.Length / sizeof(WCHAR)] = UNICODE_NULL;
 
-    /* Drop the trailing backslash from both */
-    //NtPathName.Buffer[(NtPathName.Length / sizeof(WCHAR)) - 1] = UNICODE_NULL;
-    //NtPathName.Length -= sizeof(WCHAR);
-    //NtPathVolumeName.Buffer[(NtPathVolumeName.Length / sizeof(WCHAR)) - 1] = UNICODE_NULL;
-    //NtPathVolumeName.Length -= sizeof(WCHAR);
-
     /* Allocate the structure for querying the mount mgr */
-    MountPoint = RtlAllocateHeap(RtlGetProcessHeap(), 0,
-                                 NtPathVolumeName.Length + NtPathName.Length + sizeof(MOUNTMGR_CREATE_POINT_INPUT));
+    MountPoint = RtlAllocateHeap(RtlGetProcessHeap(), HEAP_ZERO_MEMORY,
+                                 NtPathVolumeName.Length + DosDevicePath.Length + sizeof(MOUNTMGR_CREATE_POINT_INPUT));
     if (MountPoint == NULL)
     {
         RtlFreeHeap(RtlGetProcessHeap(), 0, NtPathVolumeName.Buffer);
@@ -428,13 +534,12 @@ SetVolumeNameForRoot(_In_ LPCWSTR lpszRootPath,
         return FALSE;
     }
 
-    /* 0 everything, we provide a device name */
-    RtlZeroMemory(MountPoint, sizeof(MOUNTMGR_CREATE_POINT_INPUT));
+    /* Initialize the mount point data buffer */
     MountPoint->SymbolicLinkNameOffset = sizeof(MOUNTMGR_CREATE_POINT_INPUT);
-    MountPoint->SymbolicLinkNameLength = NtPathName.Length;
+    MountPoint->SymbolicLinkNameLength = DosDevicePath.Length;
     MountPoint->DeviceNameOffset = sizeof(MOUNTMGR_CREATE_POINT_INPUT) + MountPoint->SymbolicLinkNameLength;
     MountPoint->DeviceNameLength = NtPathVolumeName.Length;
-    RtlCopyMemory((PVOID)((ULONG_PTR)MountPoint + sizeof(MOUNTMGR_CREATE_POINT_INPUT)), NtPathName.Buffer, NtPathName.Length);
+    RtlCopyMemory((PVOID)((ULONG_PTR)MountPoint + sizeof(MOUNTMGR_CREATE_POINT_INPUT)), DosDevicePath.Buffer, DosDevicePath.Length);
     RtlCopyMemory((PVOID)((ULONG_PTR)MountPoint + sizeof(MOUNTMGR_CREATE_POINT_INPUT) + MountPoint->SymbolicLinkNameLength), NtPathVolumeName.Buffer, NtPathVolumeName.Length);
 
     /* Free device name buffer */
@@ -455,7 +560,7 @@ SetVolumeNameForRoot(_In_ LPCWSTR lpszRootPath,
     /* Query the names associated to our device name */
     Ret = DeviceIoControl(MountMgrHandle,
                           IOCTL_MOUNTMGR_CREATE_POINT,
-                          MountPoint, NtPathName.Length + NtPathVolumeName.Length + sizeof(MOUNTMGR_CREATE_POINT_INPUT),
+                          MountPoint, DosDevicePath.Length + NtPathVolumeName.Length + sizeof(MOUNTMGR_CREATE_POINT_INPUT),
                           NULL, 0, &BytesReturned,
                           NULL);
 
@@ -470,10 +575,34 @@ SetVolumeNameForRoot(_In_ LPCWSTR lpszRootPath,
         SetLastError(ERROR_INVALID_PARAMETER);
         return FALSE;
     }
-    
+
     return TRUE;
 }
 
+/**
+ * @brief
+ * Sends a notification about mounted folder creation or deletion to the Mount Manager.
+ *
+ * @param[in] lpszMountPoint
+ * String which contains an absolute path to the mounted folder.
+ *
+ * @param[in] lpszVolumeName
+ * String which contains a volume GUID name for the volume mounted via the mounted folder.
+ *
+ * @param[in] MountPointDeleted
+ * Specifies the Mount Manager notification to be sent,
+ * IOCTL_MOUNTMGR_VOLUME_MOUNT_POINT_DELETED if TRUE,
+ * IOCTL_MOUNTMGR_VOLUME_MOUNT_POINT_CREATED if FALSE.
+ * 
+ * @return
+ * TRUE if the mount point creation is successful, FALSE otherwise.
+ *
+ * To get extended error information in case of failure, call GetLastError.
+ * 
+ * @remarks
+ * This routine will fail when lpszMountPoint is a folder on removable media, since Mount Manager
+ * does not write to the database on removable or remote media. 
+ */
 static BOOL
 NotifyMountMgr(_In_ LPCWSTR lpszMountPoint,
                _In_ LPCWSTR lpszVolumeName,
@@ -485,13 +614,6 @@ NotifyMountMgr(_In_ LPCWSTR lpszMountPoint,
     DWORD BytesReturned;
     HANDLE MountMgrHandle;
     BOOL Ret;
-
-    /* It makes no sense on a non-local drive */
-    if (GetDriveTypeW(lpszMountPoint) == DRIVE_REMOTE)
-    {
-        SetLastError(ERROR_PATH_NOT_FOUND);
-        return FALSE;
-    }
 
     /* Get the NT path for mount point */
     if (!RtlDosPathNameToNtPathName_U(lpszMountPoint, &NtPathName, NULL, NULL))
@@ -513,14 +635,8 @@ NotifyMountMgr(_In_ LPCWSTR lpszMountPoint,
     NtPathVolumeName.Buffer[(NtPathVolumeName.Length / sizeof(WCHAR)) - 1] = UNICODE_NULL;
     NtPathVolumeName.Length -= sizeof(WCHAR);
 
-    /* If that's a DOS volume, upper case the letter */
-    if (NtPathName.Length >= 2 * sizeof(WCHAR))
-    {
-        if (NtPathName.Buffer[(NtPathName.Length / sizeof(WCHAR)) - 1] == L':')
-        {
-            NtPathName.Buffer[(NtPathName.Length / sizeof(WCHAR)) - 2] = towupper(NtPathName.Buffer[(NtPathName.Length / sizeof(WCHAR)) - 2]);
-        }
-    }
+	/* Uppercase the DOS drive letter */
+    NtPathName.Buffer[(NtPathName.Length / sizeof(WCHAR)) - 2] = towupper(NtPathName.Buffer[(NtPathName.Length / sizeof(WCHAR)) - 2]);
 
     /* Allocate the structure for querying the mount mgr */
     MountPoint = RtlAllocateHeap(RtlGetProcessHeap(), HEAP_ZERO_MEMORY,
@@ -531,7 +647,7 @@ NotifyMountMgr(_In_ LPCWSTR lpszMountPoint,
         return FALSE;
     }
 
-    /* 0 everything, we provide a device name */
+    /* Initialize the mount point data buffer */
     MountPoint->SourceVolumeNameOffset = sizeof(MOUNTMGR_VOLUME_MOUNT_POINT);
     MountPoint->SourceVolumeNameLength = NtPathName.Length;
     MountPoint->TargetVolumeNameOffset = sizeof(MOUNTMGR_VOLUME_MOUNT_POINT) + NtPathName.Length;
@@ -551,7 +667,7 @@ NotifyMountMgr(_In_ LPCWSTR lpszMountPoint,
         return FALSE;
     }
 
-    /* Query the names associated to our device name */
+    /* Send the notification to mount manager */
     Ret = DeviceIoControl(MountMgrHandle,
                           MountPointDeleted ? IOCTL_MOUNTMGR_VOLUME_MOUNT_POINT_DELETED :
                           IOCTL_MOUNTMGR_VOLUME_MOUNT_POINT_CREATED,
@@ -559,9 +675,8 @@ NotifyMountMgr(_In_ LPCWSTR lpszMountPoint,
                           NULL, 0, &BytesReturned,
                           NULL);
 
-    /* We're done, no longer need the mount manager */
+    /* Clean up */
     CloseHandle(MountMgrHandle);
-    /* Nor our input buffer */
     RtlFreeHeap(RtlGetProcessHeap(), 0, MountPoint);
 
     /* If the mount manager failed, just quit */
@@ -752,7 +867,7 @@ BasepGetVolumeNameForVolumeMountPoint(IN LPCWSTR lpszMountPoint,
     if (MountPoint.Length == 3 * sizeof(WCHAR))
     {
         /* Try to get volume name for root path */
-        Ret = GetDeleteVolumeRoot(lpszMountPoint, lpszVolumeName, cchBufferLength, FALSE);
+        Ret = GetVolumeNameForRoot(lpszMountPoint, lpszVolumeName, cchBufferLength);
         /* It failed? */
         if (!Ret)
         {
@@ -771,7 +886,7 @@ BasepGetVolumeNameForVolumeMountPoint(IN LPCWSTR lpszMountPoint,
     else
     {
         /* Try to get volume name for root path */
-        Ret = GetDeleteVolumeRoot(lpszMountPoint, lpszVolumeName, cchBufferLength, FALSE);
+        Ret = GetVolumeNameForRoot(lpszMountPoint, lpszVolumeName, cchBufferLength);
         /* It failed? */
         if (!Ret)
         {
@@ -899,8 +1014,43 @@ GetVolumeNameForVolumeMountPointA(IN LPCSTR lpszVolumeMountPoint,
     return Ret;
 }
 
-/*
- * @unimplemented
+/**
+ * @brief
+ * Associates a volume with a drive letter or a directory on another volume.
+ *
+ * @param[in] lpszVolumeMountPoint
+ * String which contains the user-mode path to be associated with the volume. 
+ * This may be a drive letter (for example, "X:\") 
+ * or a directory on another volume (for example, "Y:\mounted_folder_for_X\").
+ * The path to the mounted folder may be absolute or relative.
+ * The string must end with a trailing backslash ('\').
+ *
+ * @param[in] lpszVolumeName
+ * String which contains a volume GUID name for the volume
+ * to be mounted via the requested mount point.
+ * The string must end with a trailing backslash ('\').
+ * 
+ * @return
+ * TRUE if the function is succeeds, FALSE otherwise.
+ *
+ * To get extended error information in case of failure, call GetLastError.
+ * 
+ * If the lpszVolumeMountPoint parameter contains a path already used for mount point,
+ * GetLastError returns ERROR_DIR_NOT_EMPTY, even if the directory is empty.
+ * 
+ * If either of parameters do not include the trailing backslash,
+ * GetLastError returns ERROR_INVALID_NAME.
+ * 
+ * If either of parameters contains an incorrect path,
+ * GetLastError returns ERROR_INVALID_PARAMETER or ERROR_INVALID_NAME.
+ * 
+ * If the lpszVolumeMountPoint parameter contains a path to the directory on filesystem which 
+ * does not support reparse points, GetLastError returns ERROR_NOT_SUPPORTED.
+ * 
+ * @remarks
+ * This routine depending on the mount point requested, will either associate the drive letter
+ * with volume by querying the Mount Manager, or if the requested mount point is a path
+ * to the directory, will setup the mount point type of reparse point on supported filesystems.
  */
 BOOL
 WINAPI
@@ -910,35 +1060,38 @@ SetVolumeMountPointW(IN LPCWSTR lpszVolumeMountPoint,
     BOOL Ret;
     PREPARSE_DATA_BUFFER ReparseDataBuffer;
     DWORD BytesReturned;
-    //PWSTR SubstituteName;
     HANDLE VolumeHandle;
     WCHAR VolumeName[64];
     UNICODE_STRING NtPathVolumeName;
     DWORD DataSize;
 
     /* Sanity checks */
-    if (!lpszVolumeMountPoint || !lpszVolumeMountPoint)
+    if (!lpszVolumeMountPoint || !lpszVolumeName || wcslen(lpszVolumeMountPoint) < 1 ||
+        !IS_VOLUME_NAME(lpszVolumeName, wcslen(lpszVolumeName) * sizeof(WCHAR)))
     {
+		SetLastError(ERROR_INVALID_PARAMETER);
         return FALSE;
     }
 
-    /* If this is mount point is already used, we will get a volume */
+	/* Both paths need to have a trailing backslash */
+    if (lpszVolumeMountPoint[wcslen(lpszVolumeMountPoint) - 1] != L'\\' ||
+        lpszVolumeName[wcslen(lpszVolumeName) - 1] != L'\\')
+    {
+		SetLastError(ERROR_INVALID_NAME);
+        return FALSE;
+    }
+
+    /* If this mount point is already used, we will get a volume */
     if (BasepGetVolumeNameForVolumeMountPoint(lpszVolumeMountPoint, VolumeName, ARRAYSIZE(VolumeName), NULL))
     {
         SetLastError(ERROR_DIR_NOT_EMPTY);
         return FALSE;
     }
 
-    /* Make sure we got a proper volume name */
-    if (!IS_VOLUME_NAME(lpszVolumeName, wcslen(lpszVolumeName) * sizeof(WCHAR)))
-    {
-        return FALSE;
-    }
-
     /* Check if this is a request for mounted folder */
-    if (wcslen(lpszVolumeMountPoint) == 3)
+    if (lpszVolumeMountPoint[0] != L'\\' && wcslen(lpszVolumeMountPoint) < 4)
     {
-        return SetVolumeNameForRoot(lpszVolumeMountPoint, lpszVolumeName);
+        return SetVolumeRoot(lpszVolumeMountPoint, lpszVolumeName);
     }
 
     /* Open a handle to the volume */
@@ -950,13 +1103,14 @@ SetVolumeMountPointW(IN LPCWSTR lpszVolumeMountPoint,
                                INVALID_HANDLE_VALUE);
     if (VolumeHandle == INVALID_HANDLE_VALUE)
     {
+		SetLastError(ERROR_INVALID_PARAMETER);
         return FALSE;
     }
 
     /* Get the NT path */
     if (!RtlDosPathNameToNtPathName_U(lpszVolumeName, &NtPathVolumeName, NULL, NULL))
     {
-        SetLastError(ERROR_PATH_NOT_FOUND);
+		SetLastError(ERROR_INVALID_PARAMETER);
         return FALSE;
     }
 
@@ -969,19 +1123,21 @@ SetVolumeMountPointW(IN LPCWSTR lpszVolumeMountPoint,
     if (!ReparseDataBuffer)
     {
         CloseHandle(VolumeHandle);
+        SetLastError(ERROR_NOT_ENOUGH_MEMORY);
         return FALSE;
     }
 
+    /* Initialize reparse data buffer */
     ReparseDataBuffer->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
     ReparseDataBuffer->ReparseDataLength = DataSize - FIELD_OFFSET(REPARSE_DATA_BUFFER, GenericReparseBuffer);
     ReparseDataBuffer->MountPointReparseBuffer.SubstituteNameOffset = 0;
     ReparseDataBuffer->MountPointReparseBuffer.SubstituteNameLength = NtPathVolumeName.Length;
     ReparseDataBuffer->MountPointReparseBuffer.PrintNameOffset = NtPathVolumeName.MaximumLength;
-    ReparseDataBuffer->MountPointReparseBuffer.PrintNameLength = wcslen(lpszVolumeName) * sizeof(WCHAR);
+    ReparseDataBuffer->MountPointReparseBuffer.PrintNameLength = (USHORT)(wcslen(lpszVolumeName) * sizeof(WCHAR));
     RtlCopyMemory(ReparseDataBuffer->MountPointReparseBuffer.PathBuffer, NtPathVolumeName.Buffer, NtPathVolumeName.Length);
     RtlCopyMemory((PVOID)((ULONG_PTR)ReparseDataBuffer->MountPointReparseBuffer.PathBuffer + NtPathVolumeName.MaximumLength), lpszVolumeName, wcslen(lpszVolumeName) * sizeof(WCHAR) + sizeof(UNICODE_NULL));
 
-    /* This reparse point is a mounted folder, remove it then */
+    /* Create the folder mount */
     Ret = DeviceIoControl(VolumeHandle, FSCTL_SET_REPARSE_POINT,
                           ReparseDataBuffer, DataSize,
                           NULL, 0, &BytesReturned,
@@ -1014,6 +1170,13 @@ SetVolumeMountPointA(IN LPCSTR lpszVolumeMountPoint,
     UNICODE_STRING VolumeMountPointU;
     ANSI_STRING VolumeNameA;
     ANSI_STRING VolumeMountPointA;
+
+    /* Sanity checks */
+    if (!lpszVolumeMountPoint || !lpszVolumeName)
+    {
+		SetLastError(ERROR_INVALID_PARAMETER);
+        return FALSE;
+    }
 
     RtlInitAnsiString(&VolumeNameA, lpszVolumeName);
     RtlInitAnsiString(&VolumeMountPointA, lpszVolumeMountPoint);
@@ -1050,11 +1213,21 @@ DeleteVolumeMountPointA(IN LPCSTR lpszVolumeMountPoint)
     ANSI_STRING VolumeMountPointA;
     UNICODE_STRING VolumeMountPointU;
 
+    /* Sanity checks */
+    if (!lpszVolumeMountPoint)
+    {
+		SetLastError(ERROR_INVALID_PARAMETER);
+        return FALSE;
+    }
+
+    RtlInitAnsiString(&VolumeMountPointA, lpszVolumeMountPoint);
+
     /* Convert mount point to unicode */
     Status = RtlAnsiStringToUnicodeString(&VolumeMountPointU, &VolumeMountPointA, TRUE);
 
     if (!NT_SUCCESS(Status))
     {
+		SetLastError(ERROR_INVALID_PARAMETER);
         return FALSE;
     }
 
@@ -1064,8 +1237,36 @@ DeleteVolumeMountPointA(IN LPCSTR lpszVolumeMountPoint)
     RtlFreeUnicodeString(&VolumeMountPointU);
 }
 
-/*
- * @unimplemented
+/**
+ * @brief
+ * Deletes a drive letter or a reparse point.
+ *
+ * @param[in] lpszVolumeMountPoint
+ * String which contains the user-mode path to the volume mount point. 
+ * This may be a drive letter (for example, "X:\") 
+ * or a directory on another volume (for example, "Y:\mounted_folder_for_X\").
+ * The path to the mounted folder may be absolute or relative.
+ * The string must end with a trailing backslash ('\').
+ * 
+ * @return
+ * TRUE if the function is succeeds, FALSE otherwise.
+ *
+ * To get extended error information in case of failure, call GetLastError.
+ * 
+ * If the lpszVolumeMountPoint parameter contains a path to the directory
+ * which is not a mounted folder, GetLastError returns ERROR_NOT_A_REPARSE_POINT
+ * 
+ * If the lpszVolumeMountPoint parameter do not include the trailing backslash,
+ * GetLastError returns ERROR_INVALID_NAME.
+ * 
+ * If either of parameters contains an incorrect path,
+ * GetLastError returns ERROR_INVALID_NAME, ERROR_FILE_NOT_FOUND or ERROR_PATH_NOT_FOUND.
+ * 
+ * @remarks
+ * This routine depending on the mount point requested, will either adelete the drive letter
+ * and unassociate it with volume by querying the Mount Manager, or if the mount point 
+ * requested for removal is a path to the directory, will remove the reparse point. 
+ * Note that this routine will not remove the actual directory under any circumstances.
  */
 BOOL
 WINAPI
@@ -1078,6 +1279,19 @@ DeleteVolumeMountPointW(IN LPCWSTR lpszVolumeMountPoint)
     PWSTR SubstituteName;
     HANDLE VolumeHandle;
     WCHAR VolumeName[64];
+    __debugbreak();
+    /* Sanity checks */
+    if (!lpszVolumeMountPoint)
+    {
+		SetLastError(ERROR_INVALID_PARAMETER);
+        return FALSE;
+    }
+
+    if (wcslen(lpszVolumeMountPoint) < 1)
+    {
+		SetLastError(ERROR_INVALID_NAME);
+        return FALSE;
+    }
 
     /* If this any mount point, we should be able to get a volume name for it */
     if (!BasepGetVolumeNameForVolumeMountPoint(lpszVolumeMountPoint, VolumeName, ARRAYSIZE(VolumeName), NULL))
@@ -1085,13 +1299,14 @@ DeleteVolumeMountPointW(IN LPCWSTR lpszVolumeMountPoint)
         return FALSE;
     }
 
-    /* Check if this is a reparse point */
+    /* Check if this is a reparse point or a relative path */
     FileAttributes = GetFileAttributesW(lpszVolumeMountPoint);
-    if (!(FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) ||
-         (FileAttributes == INVALID_FILE_ATTRIBUTES))
+    if (lpszVolumeMountPoint[0] != L'\\' &&
+		!(FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) ||
+        (FileAttributes == INVALID_FILE_ATTRIBUTES))
     {
-        /* Not a reparse point, let's just delete it now then */
-        return GetDeleteVolumeRoot(lpszVolumeMountPoint, NULL, 0, TRUE);
+        /* None of either, let's just delete it now then */
+        return DeleteVolumeRoot(lpszVolumeMountPoint);
     }
 
     /* Open a handle to the volume */
@@ -1110,6 +1325,7 @@ DeleteVolumeMountPointW(IN LPCWSTR lpszVolumeMountPoint)
 
     if (!ReparseDataBuffer)
     {
+        SetLastError(ERROR_NOT_ENOUGH_MEMORY);
         CloseHandle(VolumeHandle);
         return FALSE;
     }
@@ -1134,7 +1350,7 @@ DeleteVolumeMountPointW(IN LPCWSTR lpszVolumeMountPoint)
         /* Not a volume, do nothing then */
         RtlFreeHeap(RtlGetProcessHeap(), 0, ReparseDataBuffer);
         CloseHandle(VolumeHandle);
-        return FALSE;
+        return TRUE;
     }
 
     ReparseDataBuffer->ReparseDataLength = 0;
@@ -1159,8 +1375,51 @@ DeleteVolumeMountPointW(IN LPCWSTR lpszVolumeMountPoint)
     return FALSE;
 }
 
-/*
- * @unimplemented
+/**
+ * @brief
+ * Retrieves the name of a mounted folder and returns a mounted folder search handle
+ * on the specified volume
+ *
+ * @param[in] lpszRootPathName
+ * String which contains volume GUID path or relative path
+ * for the volume to scan for mounted folders.
+ * The string must end with a trailing backslash ('\').
+ * 
+ * @param[out] lpszVolumeMountPoint
+ * A pointer to a caller allocated buffer that receives the name of
+ * the first mounted folder that is found.
+ * 
+ * @param[in] cchBufferLength
+ * The length of the buffer that receives the path to the mounted folder, in WCHARs.
+ * 
+ * @return
+ * A search handle which can be later used a subsequent call to the
+ * FindNextVolumeMountPoint and FindVolumeMountPointClose functions.
+ *
+ * If the function fails to find a mounted folder on the volume, the return value is the
+ * INVALID_HANDLE_VALUE error code.
+ * 
+ * To get extended error information in case of failure, call GetLastError.
+ * 
+ * If the lpszVolumeMountPoint parameter do not include the trailing backslash,
+ * GetLastError returns ERROR_INVALID_NAME.
+ * 
+ * If either of parameters contains an incorrect path,
+ * GetLastError returns ERROR_INVALID_NAME, ERROR_FILE_NOT_FOUND or ERROR_PATH_NOT_FOUND.
+ * 
+ * @remarks
+ * This routine works in a similar manner as FindFirstVolume or FindFirstFile routines.
+ * The FindFirstVolumeMountPoint function opens a mounted folder search handle and returns
+ * information about the first mounted folder that is found on the specified volume.
+ * After the search handle is established, you can use the FindNextVolumeMountPoint function
+ * to search for other mounted folders. When the search handle is no longer needed,
+ * close it with the FindVolumeMountPointClose function.
+ * The FindFirstVolumeMountPoint and FindNextVolumeMountPoint functions return
+ * names (not full paths) of the mounted folders for a specified volume,
+ * appended with a trailing backslash.
+ * They do not return drive letters or volume GUID paths.
+ * Note that the usage of FindFirstVolumeMountPoint and FindNextVolumeMountPoint routines is
+ * supported only with NTFS volumes.
  */
 HANDLE
 WINAPI
@@ -1169,7 +1428,9 @@ FindFirstVolumeMountPointW(IN LPCWSTR lpszRootPathName,
                            IN DWORD cchBufferLength)
 {
     UNICODE_STRING RootPathName;
-    UNICODE_STRING ReparseIndex = RTL_CONSTANT_STRING(L"\\$Extend\\$Reparse:$R:$INDEX_ALLOCATION");
+    /* FIXME: Figure out if we can somehow fetch a list of reparse points on other filesystems such
+     * as Btrfs or ext. Looks Windows drivers for those don't index the reparse points anywhere? */
+    UNICODE_STRING ReparseIndex = RTL_CONSTANT_STRING(L"$Extend\\$Reparse:$R:$INDEX_ALLOCATION");
     UNICODE_STRING ReparseFile;
     UNICODE_STRING Reference;
     DWORD BytesReturned;
@@ -1182,18 +1443,12 @@ FindFirstVolumeMountPointW(IN LPCWSTR lpszRootPathName,
     IO_STATUS_BLOCK IoStatusBlock;
     PWSTR SubstituteName;
     NTSTATUS Status;
-    NTSTATUS Status2;
     BOOL Ret;
     __debugbreak();
     /* Sanity check */
     if (!lpszRootPathName)
     {
-        return INVALID_HANDLE_VALUE;
-    }
-    WCHAR slashhh = lpszRootPathName[wcslen(lpszRootPathName) - 1];
-    /* We don't accept lack of trailing backslash until now */
-    if (slashhh != L'\\')
-    {
+		SetLastError(ERROR_INVALID_PARAMETER);
         return INVALID_HANDLE_VALUE;
     }
 
@@ -1204,19 +1459,35 @@ FindFirstVolumeMountPointW(IN LPCWSTR lpszRootPathName,
         return INVALID_HANDLE_VALUE;
     }
 
+    /* We don't accept lack of trailing backslash until now */
+    if (lpszRootPathName[wcslen(lpszRootPathName) - 1] != L'\\')
+    {
+		SetLastError(ERROR_INVALID_NAME);
+        return INVALID_HANDLE_VALUE;
+    }
+
+    if (lpszRootPathName[0] != L'\\' && !IS_VOLUME_NAME(lpszRootPathName, wcslen(lpszRootPathName) * sizeof(WCHAR)))
+    {
+        /* Not a volume */
+		SetLastError(ERROR_PATH_NOT_FOUND); /* CHECKME */
+        return FALSE;
+    }
+
     RtlInitUnicodeString(&RootPathName, lpszRootPathName);
     PathLength = RootPathName.Length + ReparseIndex.Length + sizeof(UNICODE_NULL);
+#if 0
     if (PathLength > MAX_NTFS_PATH)
     {
         return INVALID_HANDLE_VALUE;
     }
-
+#endif
     ReparseFile.Length = 0;
     ReparseFile.MaximumLength = PathLength;
     ReparseFile.Buffer = RtlAllocateHeap(RtlGetProcessHeap(), 0, PathLength);
     
     if (ReparseFile.Buffer == NULL)
     {
+		SetLastError(ERROR_NOT_ENOUGH_MEMORY);
         return INVALID_HANDLE_VALUE;
     }
 
@@ -1255,7 +1526,7 @@ FindFirstVolumeMountPointW(IN LPCWSTR lpszRootPathName,
         Reference.Buffer = (PWSTR)&(FileReparseInformation->FileReference);
         InitializeObjectAttributes(&ObjectAttributes, &Reference,
                                 0, VolmeMountPointHandle, NULL);
-        Status2 = NtOpenFile(&VolumeHandle, FILE_GENERIC_READ,
+        NtOpenFile(&VolumeHandle, FILE_GENERIC_READ,
                 &ObjectAttributes, &IoStatusBlock,
                 FILE_SHARE_READ | FILE_SHARE_WRITE,
                 FILE_OPEN_REPARSE_POINT | FILE_OPEN_FOR_BACKUP_INTENT | FILE_OPEN_BY_FILE_ID);
@@ -1293,7 +1564,7 @@ FindFirstVolumeMountPointW(IN LPCWSTR lpszRootPathName,
         }
         RtlFreeHeap(RtlGetProcessHeap(), 0, ReparseDataBuffer);
 
-    } while (Status != STATUS_NO_MORE_FILES);
+    } while (NT_SUCCESS(Status));
 
     if (VolumeHandle == 0)
     {
@@ -1314,6 +1585,14 @@ FindFirstVolumeMountPointW(IN LPCWSTR lpszRootPathName,
 
     if(!NT_SUCCESS(Status))
     {
+		if ((cchBufferLength * sizeof(WCHAR) + sizeof(UNICODE_NULL)) < FileInformation->FileNameLength)
+		{
+			SetLastError(ERROR_BAD_LENGTH);
+		}
+		else
+		{
+			BaseSetLastNTError(Status);
+		}
         CloseHandle(VolumeHandle);
         CloseHandle(VolmeMountPointHandle);
         RtlFreeHeap(RtlGetProcessHeap(), 0, FileInformation);
@@ -1335,14 +1614,19 @@ FindFirstVolumeMountPointA(IN LPCSTR lpszRootPathName,
                            IN LPSTR lpszVolumeMountPoint,
                            IN DWORD cchBufferLength)
 {
+	NTSTATUS Status;
     HANDLE VolmeMountPointHandle;
     ANSI_STRING VolumeMountPoint;
+    ANSI_STRING RootPathNameA;
     UNICODE_STRING VolumeMountPointU;
-    PUNICODE_STRING RootPathNameU;
+    UNICODE_STRING RootPathNameU;
+
+    RtlInitAnsiString(&RootPathNameA, lpszRootPathName);
 
     /* Convert mount point to unicode */
-    RootPathNameU = Basep8BitStringToStaticUnicodeString(lpszRootPathName);
-    if (RootPathNameU == NULL)
+    Status = RtlAnsiStringToUnicodeString(&RootPathNameU, &RootPathNameA, TRUE);
+
+    if (!NT_SUCCESS(Status))
     {
         return INVALID_HANDLE_VALUE;
     }
@@ -1363,7 +1647,7 @@ FindFirstVolumeMountPointA(IN LPCSTR lpszRootPathName,
     }
 
     /* Query -W */
-    VolmeMountPointHandle = FindFirstVolumeMountPointW(RootPathNameU->Buffer, VolumeMountPointU.Buffer, cchBufferLength);
+    VolmeMountPointHandle = FindFirstVolumeMountPointW(RootPathNameU.Buffer, VolumeMountPointU.Buffer, cchBufferLength);
     /* If it succeed, perform -A conversion */
     if (VolmeMountPointHandle != INVALID_HANDLE_VALUE)
     {
@@ -1449,8 +1733,44 @@ FindNextVolumeMountPointA(IN HANDLE hFindVolumeMountPoint,
     return Ret;
 }
 
-/*
- * @unimplemented
+/**
+ * @brief
+ * Continues a mounted folder search started by a call to the FindFirstVolumeMountPoint function.
+ * FindNextVolumeMountPoint finds one mounted folder per call.
+ *
+ * @param[in] hFindVolumeMountPoint 
+ * A mounted folder search handle returned by the FindFirstVolumeMountPoint function.
+ * 
+ * @param[out] lpszVolumeMountPoint
+ * A pointer to a caller allocated buffer that receives the name of
+ * the first mounted folder that is found.
+ * 
+ * @param[in] cchBufferLength
+ * The length of the buffer that receives the path to the mounted folder, in WCHARs.
+ * 
+ * @return
+ * TRUE if another mounted folder was found, FALSE otherwise.
+ * 
+ * To get extended error information in case of failure, call GetLastError.
+ * 
+ * If the lpszVolumeMountPoint parameter do not include the trailing backslash,
+ * GetLastError returns ERROR_INVALID_NAME.
+ * 
+ * If either of parameters contains an incorrect path,
+ * GetLastError returns ERROR_INVALID_NAME, ERROR_FILE_NOT_FOUND or ERROR_PATH_NOT_FOUND.
+ * 
+ * @remarks
+ * This routine works in a similar manner as FindNextVolume or FindNextFile routines.
+ * The FindNextVolumeMountPoint function continues the mounted folder search via the provided 
+ * mounted folder search handle returned by FindFirstVolumeMountPoint function and returns
+ * information about another mounted folder that is found on the specified volume.
+ * When the search handle is no longer needed, close it with the FindVolumeMountPointClose function.
+ * The FindFirstVolumeMountPoint and FindNextVolumeMountPoint functions return
+ * names (not full paths) of the mounted folders for a specified volume,
+ * appended with a trailing backslash.
+ * They do not return drive letters or volume GUID paths.
+ * Note that the usage of FindFirstVolumeMountPoint and FindNextVolumeMountPoint routines is
+ * supported only with NTFS volumes.
  */
 BOOL
 WINAPI
@@ -1468,7 +1788,6 @@ FindNextVolumeMountPointW(IN HANDLE hFindVolumeMountPoint,
     PWSTR SubstituteName;
     DWORD BytesReturned;
     NTSTATUS Status;
-    NTSTATUS Status2;
     BOOL Ret;
     __debugbreak();
     do
@@ -1492,7 +1811,7 @@ FindNextVolumeMountPointW(IN HANDLE hFindVolumeMountPoint,
         Reference.Buffer = (PWSTR)&(FileReparseInformation->FileReference);
         InitializeObjectAttributes(&ObjectAttributes, &Reference,
                                 0, hFindVolumeMountPoint, NULL);
-        Status2 = NtOpenFile(&VolumeHandle, FILE_GENERIC_READ,
+        NtOpenFile(&VolumeHandle, FILE_GENERIC_READ,
                 &ObjectAttributes, &IoStatusBlock,
                 FILE_SHARE_READ | FILE_SHARE_WRITE,
                 FILE_OPEN_REPARSE_POINT | FILE_OPEN_FOR_BACKUP_INTENT | FILE_OPEN_BY_FILE_ID);
@@ -1529,7 +1848,7 @@ FindNextVolumeMountPointW(IN HANDLE hFindVolumeMountPoint,
         }
         RtlFreeHeap(RtlGetProcessHeap(), 0, ReparseDataBuffer);
 
-    } while (Status != STATUS_NO_MORE_FILES);
+    } while (NT_SUCCESS(Status));
 
     if (VolumeHandle == 0)
     {
@@ -1543,9 +1862,17 @@ FindNextVolumeMountPointW(IN HANDLE hFindVolumeMountPoint,
 
     if(!NT_SUCCESS(Status))
     {
+		if ((cchBufferLength * sizeof(WCHAR) + sizeof(UNICODE_NULL)) < FileInformation->FileNameLength)
+		{
+			SetLastError(ERROR_BAD_LENGTH);
+		}
+		else
+		{
+			BaseSetLastNTError(Status);
+		}
         CloseHandle(VolumeHandle);
         RtlFreeHeap(RtlGetProcessHeap(), 0, FileInformation);
-        BaseSetLastNTError(Status);
+        return FALSE;
     }
     swprintf(lpszVolumeMountPoint, L"%s\\", &FileInformation->FileName[1]);
     CloseHandle(VolumeHandle);
@@ -1554,8 +1881,21 @@ FindNextVolumeMountPointW(IN HANDLE hFindVolumeMountPoint,
     return TRUE;
 }
 
-/*
- * @unimplemented
+/**
+ * @brief
+ * Closes the mounted folder search handle.
+ *
+ * @param[in] hFindVolumeMountPoint 
+ * A mounted folder search handle returned by the FindFirstVolumeMountPoint function.
+ * 
+ * @return
+ * TRUE if the function was successful, FALSE otherwise.
+ * 
+ * To get extended error information in case of failure, call GetLastError.
+ * 
+ * @remarks
+ * After the FindVolumeMountPointClose function is called, the handle hFindVolumeMountPoint cannot
+ * be used in subsequent calls to either FindNextVolumeMountPoint or FindVolumeMountPointClose.
  */
 BOOL
 WINAPI
