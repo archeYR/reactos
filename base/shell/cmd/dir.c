@@ -1778,7 +1778,7 @@ ResolvePattern(
      * they are part of the actual directory path; the exception being if
      * these are the special "." or ".." directories.
      */
-    if (_istalpha(pNextDir[0]) && pNextDir[1] == _T(':') && pNextDir[2] != _T('\\'))
+    if (pNextDir[1] == _T(':') && pNextDir[2] != _T('\\'))
     {
         /*
          * The syntax "<drive_letter>:" without any trailing backslash actually
