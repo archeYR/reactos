@@ -383,7 +383,7 @@ Execute(LPTSTR Full, LPTSTR First, LPTSTR Rest, PARSED_COMMAND *Cmd)
     _tcscpy(first, First);
 
     /* check for a drive change */
-    if ((_istalpha (first[0])) && (!_tcscmp (first + 1, _T(":"))))
+    if (!_tcscmp (first + 1, _T(":")))
     {
         BOOL working = TRUE;
         if (!SetCurrentDirectory(first))
