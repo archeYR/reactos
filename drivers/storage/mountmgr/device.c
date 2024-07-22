@@ -2018,8 +2018,9 @@ MountMgrVolumeMountPointChanged(IN PDEVICE_EXTENSION DeviceExtension,
 
     VolumeMountPoint = (PMOUNTMGR_VOLUME_MOUNT_POINT)Irp->AssociatedIrp.SystemBuffer;
 
-    if (((ULONG)VolumeMountPoint->SourceVolumeNameLength + VolumeMountPoint->TargetVolumeNameLength) <
-        Stack->Parameters.DeviceIoControl.InputBufferLength)
+    if (((ULONG)VolumeMountPoint->SourceVolumeNameLength +
+        VolumeMountPoint->TargetVolumeNameLength) +
+        sizeof(MOUNTMGR_VOLUME_MOUNT_POINT) < Stack->Parameters.DeviceIoControl.InputBufferLength)
     {
         return STATUS_INVALID_PARAMETER;
     }
