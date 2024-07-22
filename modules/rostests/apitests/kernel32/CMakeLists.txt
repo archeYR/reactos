@@ -38,6 +38,7 @@ list(APPEND SOURCE
     TerminateProcess.c
     TunnelCache.c
     UEFIFirmware.c
+    VolumeMountPoint.c
     WideCharToMultiByte.c)
 
 list(APPEND PCH_SKIP_SOURCE
