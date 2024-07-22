@@ -908,8 +908,9 @@ RemoveDirectoryW(IN LPCWSTR lpPathName)
     }
 
     /* Prepare to delete mount point */
-    RtlInitUnicodeString(&PathName, lpPathName);
-    PathName.Buffer = RtlAllocateHeap(RtlGetProcessHeap(), 0, PathName.Length + 2 * sizeof(WCHAR));
+    PathName.Length = wcslen(lpPathName) * sizeof(WCHAR);
+    PathName.MaximumLength = PathName.Length + sizeof(UNICODE_NULL);
+    PathName.Buffer = RtlAllocateHeap(RtlGetProcessHeap(), 0, PathName.MaximumLength + sizeof(WCHAR));
     if (!PathName.Buffer)
     {
         RtlReleaseRelativeName(&RelativeName);
