@@ -2063,11 +2063,13 @@ MountMgrVolumeMountPointChanged(IN PDEVICE_EXTENSION DeviceExtension,
 
     if (FsDeviceInfo.DeviceType != FILE_DEVICE_DISK && FsDeviceInfo.DeviceType != FILE_DEVICE_VIRTUAL_DISK)
     {
+        Status = STATUS_INVALID_PARAMETER;
         goto Cleanup;
     }
 
-    if (FsDeviceInfo.Characteristics != (FILE_REMOTE_DEVICE | FILE_REMOVABLE_MEDIA))
+    if (FsDeviceInfo.Characteristics & (FILE_REMOTE_DEVICE | FILE_REMOVABLE_MEDIA))
     {
+        Status = STATUS_INVALID_PARAMETER;
         goto Cleanup;
     }
 
