@@ -1,0 +1,33 @@
+LANGUAGE LANG_ENGLISH, SUBLANG_DEFAULT
+
+STRINGTABLE
+{
+    STRING_MOUNTVOL_USAGE, "Creates, deletes, or lists a volume mount point.\n\
+\n\
+    MOUNTVOL [drive:]path VolumeName\n\
+    MOUNTVOL [drive:]path /D\n\
+    MOUNTVOL [drive:]path /L\n\
+    MOUNTVOL [drive:]path /P\n\
+    MOUNTVOL /R\n\
+    MOUNTVOL /N\n\
+    MOUNTVOL /E\n\
+    MOUNTVOL drive: /S\n\
+\n\
+    path        Specifies the existing NTFS directory where the mount\n\
+                point will reside.\n\
+    VolumeName  Specifies the volume name that is the target of the mount\n\
+                point.\n\
+    /D          Removes the volume mount point from the specified directory.\n\
+    /L          Lists the mounted volume name for the specified directory.\n\
+    /P          Removes the volume mount pint from the specified directory,\n\
+                dismounts the volume, and makes the volume not mountable.\n\
+                You can make the volume mountable again by creating a volume \n\
+                mount point.\n\
+    /R          Removes volume mount point directories and registry setting\n\
+                for volumes that are no longer in the system.\n\
+    /N          Disables automatic mounting of new volumes.\n\
+    /E          Re-enables automatic mounting of new volumes.\n\
+    /S          Mount the EFI System Partition on the given drive.\n\n"
+    STRING_MOUNTVOL_LIST, "Possible values for VolumeName along with current mount points are:\n\n"
+    STRING_MOUNTVOL_NOPOINTS, "*** NO MOUNT POINTS ***\n\n"
+}
