@@ -187,6 +187,13 @@ IsThisARootDirectory(IN HANDLE VolumeHandle,
         UNICODE_STRING LinkTarget;
         OBJECT_ATTRIBUTES ObjectAttributes;
 
+        /* It could be a device path */
+        if((!wcsncmp(NtPathName->Buffer, L"\\??\\GLOBALROOT\\Device\\", 22) || !wcsncmp(NtPathName->Buffer, L"\\Device\\", 8)) &&
+            NtPathName->Buffer[NtPathName->Length / sizeof(WCHAR) - 1] == L'\\')
+        {
+            return TRUE;
+        }
+
         NtPathName->Length -= sizeof(WCHAR);
 
         InitializeObjectAttributes(&ObjectAttributes, NtPathName,
