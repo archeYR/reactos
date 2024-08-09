@@ -351,10 +351,15 @@ CcSetLogHandleForFile (
     IN PVOID LogHandle,
     IN PFLUSH_TO_LSN FlushToLsnRoutine)
 {
+    PROS_SHARED_CACHE_MAP Map = FileObject->SectionObjectPointer->SharedCacheMap;
+
     CCTRACE(CC_API_DEBUG, "FileObject=%p LogHandle=%p FlushToLsnRoutine=%p\n",
         FileObject, LogHandle, FlushToLsnRoutine);
 
-    UNIMPLEMENTED;
+    if (!Map) return;
+
+    Map->LogHandle = LogHandle;
+    Map->FlushToLsn = FlushToLsnRoutine;
 }
 
 /*
