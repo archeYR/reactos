@@ -159,8 +159,8 @@
 @ stdcall CreateProcessW(wstr wstr ptr ptr long long ptr wstr ptr ptr)
 @ stdcall CreateRemoteThread(long ptr long ptr long long ptr)
 @ stdcall CreateSemaphoreA(ptr long long str)
-@ stdcall -version=0x600+ CreateSemaphoreExA(ptr long long str long long)
-@ stdcall -version=0x600+ CreateSemaphoreExW(ptr long long wstr long long)
+@ stdcall CreateSemaphoreExA(ptr long long str long long)
+@ stdcall CreateSemaphoreExW(ptr long long wstr long long)
 @ stdcall CreateSemaphoreW(ptr long long wstr)
 @ stdcall -i386 CreateSocketHandle()
 @ stdcall -version=0x600+ CreateSymbolicLinkA(str str long)
@@ -846,10 +846,12 @@
 @ stub -version=0x600+ OpenPrivateNamespaceA
 @ stub -version=0x600+ OpenPrivateNamespaceW
 @ stdcall OpenProcess(long long long)
+@ stdcall OpenProcessToken(long long ptr) advapi32.OpenProcessToken
 @ stdcall OpenProfileUserMapping()
 @ stdcall OpenSemaphoreA(long long str)
 @ stdcall OpenSemaphoreW(long long wstr)
 @ stdcall OpenThread(long long long)
+@ stdcall OpenThreadToken(long long long ptr) advapi32.OpenThreadToken
 @ stdcall OpenWaitableTimerA(long long str)
 @ stdcall OpenWaitableTimerW(long long wstr)
 @ stdcall OutputDebugStringA(str)
@@ -1085,6 +1087,8 @@
 @ stdcall SetThreadPriority(long long)
 @ stdcall SetThreadPriorityBoost(long long)
 @ stdcall SetThreadStackGuarantee(ptr)
+@ stdcall SetThreadToken(ptr ptr) advapi32.SetThreadToken
+@ stdcall -stub SetThreadIdealProcessorEx(ptr ptr ptr)
 @ stdcall SetThreadUILanguage(long)
 @ stub -version=0x600+ SetThreadpoolThreadMaximum
 @ stub -version=0x600+ SetThreadpoolThreadMinimum
