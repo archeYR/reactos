@@ -181,6 +181,8 @@ typedef struct _ROS_SHARED_CACHE_MAP
     LIST_ENTRY SharedCacheMapLinks;
     ULONG Flags;
     PVOID Section;
+    PVOID LogHandle;
+    PFLUSH_TO_LSN FlushToLsn;
     PKEVENT CreateEvent;
     PCACHE_MANAGER_CALLBACKS Callbacks;
     PVOID LazyWriteContext;
