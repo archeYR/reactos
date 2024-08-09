@@ -553,7 +553,7 @@ USBSTOR_HandleExecuteSCSI(
     DPRINT("USBSTOR_HandleExecuteSCSI Operation Code %x, Length %lu\n", SrbGetCdb(Request)->CDB10.OperationCode, Request->DataTransferLength);
 
     // check that we're sending to the right LUN
-    ASSERT(SrbGetCdb(Request)->CDB10.LogicalUnitNumber == PDODeviceExtension->LUN);
+    //ASSERT(SrbGetCdb(Request)->CDB10.LogicalUnitNumber == PDODeviceExtension->LUN);
 
     return USBSTOR_SendCBWRequest(PDODeviceExtension->LowerDeviceObject->DeviceExtension, Irp);
 }

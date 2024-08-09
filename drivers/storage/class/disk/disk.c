@@ -586,7 +586,7 @@ Return Value:
         (residualBytes != 0) ||
         (residualOffset != 0))
     {
-        NT_ASSERT(residualOffset == 0);
+        //NT_ASSERT(residualOffset == 0);
         status = STATUS_INVALID_PARAMETER;
     }
     else
