@@ -1902,8 +1902,10 @@ CmpParseKey(IN PVOID ParseObject,
 
     /* Fail if the key was marked as deleted */
     if (Kcb->Delete)
+    {
+        DPRINT1("Here\n");
         return STATUS_KEY_DELETED;
-
+    }
     /* Lookup in the cache */
     Status = CmpBuildHashStackAndLookupCache(ParseObject,
                                              &Kcb,
