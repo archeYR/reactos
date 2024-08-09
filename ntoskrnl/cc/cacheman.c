@@ -144,9 +144,12 @@ CcRemapBcb (
     IN PVOID Bcb
     )
 {
-	UNIMPLEMENTED;
+    PINTERNAL_BCB iBcb = CONTAINING_RECORD(Bcb, INTERNAL_BCB, PFCB);
 
-    return 0;
+    CCTRACE(CC_API_DEBUG, "Bcb=%p\n", Bcb);
+
+    iBcb->RefCount++;
+    return Bcb;
 }
 
 /*
