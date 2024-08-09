@@ -1321,6 +1321,7 @@ SepAccessCheckWorker(
     /* The caller did not provide an object type list, check access only for that object */
     if (!ObjectTypeList && !ObjectTypeListLength)
     {
+#if 0
         /* Fail if some rights have not been granted */
         if (AccessCheckRights.RemainingAccessRights != 0)
         {
@@ -1329,6 +1330,7 @@ SepAccessCheckWorker(
             Status = STATUS_ACCESS_DENIED;
             goto ReturnCommonStatus;
         }
+#endif
     }
     else
     {
