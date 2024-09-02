@@ -30,10 +30,41 @@
 #include <conutils.h>
 
 #include <mountmgr.h>
+#include <winioctl.h>
+#include <ntddvol.h>
 
 #define NTOS_MODE_USER
+#include <ndk/extypes.h>
+#include <ndk/exfuncs.h>
 #include <ndk/rtlfuncs.h>
-#include <ndk/iofuncs.h>
-#include <ndk/obfuncs.h>
+
+#ifndef __REACTOS__
+#define SystemSystemPartitionInformation 0x62
+#define SystemBootEnvironmentInformation 0x5A
+
+typedef struct _SYSTEM_SYSTEM_PARTITION_INFORMATION
+{
+    UNICODE_STRING SystemPartition;
+} SYSTEM_SYSTEM_PARTITION_INFORMATION, *PSYSTEM_SYSTEM_PARTITION_INFORMATION;
+
+typedef enum _FIRMWARE_TYPE
+{
+    FirmwareTypeUnknown,
+    FirmwareTypeBios,
+    FirmwareTypeUefi,
+    FirmwareTypeMax
+} FIRMWARE_TYPE, *PFIRMWARE_TYPE;
+
+//#if (NTDDI_VERSION >= NTDDI_LONGHORN)
+typedef struct _SYSTEM_BOOT_ENVIRONMENT_INFORMATION
+{
+    GUID BootIdentifier;
+    FIRMWARE_TYPE FirmwareType;
+//#if (NTDDI_VERSION >= NTDDI_WIN8)
+    ULONGLONG BootFlags;
+//#endif
+} SYSTEM_BOOT_ENVIRONMENT_INFORMATION, *PSYSTEM_BOOT_ENVIRONMENT_INFORMATION;
+//#endif
+#endif
 
 #endif /* __MOUNTVOL_H__ */
