@@ -1112,15 +1112,18 @@ MountMgrValidateBackPointer(IN PASSOCIATED_DEVICE_ENTRY AssociatedDeviceEntry,
     }
 
     /* Create a string with the substitute name */
-    SubstituteName.Length = ReparseData->SymbolicLinkReparseBuffer.SubstituteNameLength;
+    SubstituteName.Length = ReparseData->MountPointReparseBuffer.SubstituteNameLength;
     SubstituteName.MaximumLength = SubstituteName.Length;
-    SubstituteName.Buffer = (PWSTR)((ULONG_PTR)ReparseData->SymbolicLinkReparseBuffer.PathBuffer + ReparseData->SymbolicLinkReparseBuffer.SubstituteNameOffset);
+    SubstituteName.Buffer = (PWSTR)((ULONG_PTR)ReparseData->MountPointReparseBuffer.PathBuffer + ReparseData->MountPointReparseBuffer.SubstituteNameOffset);
 
     /* If that's a volume name that matches our associated device, that's a success! */
     if (MOUNTMGR_IS_VOLUME_NAME(&SubstituteName))
     {
         if (SubstituteName.Length == 98 && SubstituteName.Buffer[1] == L'?')
         {
+            /* Symlinks don't have a trailing backslash */
+            SubstituteName.Length -= sizeof(WCHAR);
+
             for (SymlinksEntry = DeviceInformation->SymbolicLinksListHead.Flink;
                  SymlinksEntry != &(DeviceInformation->SymbolicLinksListHead);
                  SymlinksEntry = SymlinksEntry->Flink)
@@ -1258,7 +1261,6 @@ MountMgrQueryVolumePaths(IN PDEVICE_EXTENSION DeviceExtension,
          Entry != &DeviceInformation->AssociatedDevicesHead;
          Entry = Entry->Flink)
     {
-        USHORT InnerStrings;
         BOOLEAN Invalid = FALSE;
 
         AssociatedDeviceEntry = CONTAINING_RECORD(Entry, ASSOCIATED_DEVICE_ENTRY, AssociatedDevicesEntry);
@@ -1316,28 +1318,12 @@ MountMgrQueryVolumePaths(IN PDEVICE_EXTENSION DeviceExtension,
             return Status;
         }
 
-        /* Count the number of strings we have in the multi string buffer */
-        InnerStrings = 0;
-        if ((*CurrentPath)->MultiSzLength != sizeof(UNICODE_NULL))
-        {
-            ULONG i;
-            PWSTR MultiSz = (*CurrentPath)->MultiSz;
-
-            for (i = 0; i < (*CurrentPath)->MultiSzLength / sizeof(WCHAR); ++i, ++MultiSz)
-            {
-                if (*MultiSz == UNICODE_NULL)
-                {
-                    ++InnerStrings;
-                }
-            }
-        }
-
         /* We returned one more path (ie, one more allocated buffer) */
         ++ReturnedPaths;
+        /* Multiply String.Length by the number of found paths, we always add it after a path */
+        OutputPathLength += (*CurrentPath)->MultiSzLength + AssociatedDeviceEntry->String.Length - sizeof(UNICODE_NULL);
         /* Move the next pointer to use in the array */
         ++CurrentPath;
-        /* Multiply String.Length by the number of found paths, we always add it after a path */
-        OutputPathLength += (*CurrentPath)->MultiSzLength + InnerStrings * AssociatedDeviceEntry->String.Length - sizeof(UNICODE_NULL);
     }
 
     /* Allocate the output buffer */
