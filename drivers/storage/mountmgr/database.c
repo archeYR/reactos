@@ -1301,13 +1301,14 @@ QueryVolumeName(IN HANDLE RootDirectory,
     OBJECT_ATTRIBUTES ObjectAttributes;
     PFILE_NAME_INFORMATION FileNameInfo;
     PREPARSE_DATA_BUFFER ReparseDataBuffer;
-
-    UNREFERENCED_PARAMETER(ReparsePointInformation);
+    UNICODE_STRING Reference;
 
     if (!FileName)
     {
+        Reference.Length = Reference.MaximumLength = sizeof(ReparsePointInformation->FileReference);
+        Reference.Buffer = (PWSTR)&(ReparsePointInformation->FileReference);
         InitializeObjectAttributes(&ObjectAttributes,
-                                   NULL,
+                                   &Reference,
                                    OBJ_KERNEL_HANDLE,
                                    RootDirectory,
                                    NULL);
