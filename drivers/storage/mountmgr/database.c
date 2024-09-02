@@ -374,13 +374,13 @@ WaitForRemoteDatabaseSemaphore(IN PDEVICE_EXTENSION DeviceExtension)
     LARGE_INTEGER Timeout;
 
     /* Wait for 7 minutes */
-    Timeout.QuadPart = 0xFA0A1F00;
+    Timeout.QuadPart = Int32x32To64(7, -10000000 * 60);
     Status = KeWaitForSingleObject(&(DeviceExtension->RemoteDatabaseLock), Executive, KernelMode, FALSE, &Timeout);
     if (Status != STATUS_TIMEOUT)
     {
         return Status;
     }
-
+    __debugbreak();
     return STATUS_IO_TIMEOUT;
 }
 
@@ -1120,7 +1120,6 @@ ReconcileThisDatabaseWithMasterWorker(IN PVOID Parameter)
     }
 
     KeReleaseSemaphore(&DeviceExtension->DeviceLock, IO_NO_INCREMENT, 1, FALSE);
-
     goto CloseRDB;
 
 FreeUniqueId:
