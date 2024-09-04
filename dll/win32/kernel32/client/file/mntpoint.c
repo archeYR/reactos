@@ -1281,7 +1281,7 @@ DeleteVolumeMountPointW(IN LPCWSTR lpszVolumeMountPoint)
     PWSTR SubstituteName;
     HANDLE VolumeHandle;
     WCHAR VolumeName[64];
-    __debugbreak();
+
     /* Sanity checks */
     if (!lpszVolumeMountPoint)
     {
@@ -1446,7 +1446,7 @@ FindFirstVolumeMountPointW(IN LPCWSTR lpszRootPathName,
     PWSTR SubstituteName;
     NTSTATUS Status;
     BOOL Ret;
-    __debugbreak();
+
     /* Sanity check */
     if (!lpszRootPathName)
     {
@@ -1785,7 +1785,7 @@ FindNextVolumeMountPointW(IN HANDLE hFindVolumeMountPoint,
     DWORD BytesReturned;
     NTSTATUS Status;
     BOOL Ret;
-    __debugbreak();
+
     do
     {
         FileReparseInformation = RtlAllocateHeap(RtlGetProcessHeap(), 0, sizeof(*FileReparseInformation));
