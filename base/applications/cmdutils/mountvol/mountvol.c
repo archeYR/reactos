@@ -48,6 +48,8 @@ QueryAutoMount(PMOUNTMGR_QUERY_AUTO_MOUNT CurrentState)
     return Ret;
 }
 
+static
+BOOL
 IsVolumeOffline(LPCWSTR lpVolumeName)
 {
     BOOL Ret;
@@ -621,6 +623,7 @@ DismountVolume(LPCWSTR lpMountPoint)
     {
         /* It cannot, inform the user */
         ConResPuts(StdOut, STRING_MOUNTVOL_UNSUPPORTEDOPERATION);
+        CloseHandle(hVolume);
         return FALSE;
     }
 
@@ -643,6 +646,7 @@ DismountVolume(LPCWSTR lpMountPoint)
                         NULL))
     {
         ConFormatMessage(StdOut, GetLastError());
+        CloseHandle(hVolume);
         return FALSE;
     }
 
@@ -654,9 +658,11 @@ DismountVolume(LPCWSTR lpMountPoint)
                         NULL))
     {
         ConFormatMessage(StdOut, GetLastError());
+        CloseHandle(hVolume);
         return FALSE;
     }
 
+    CloseHandle(hVolume);
     return TRUE;
 }
 
