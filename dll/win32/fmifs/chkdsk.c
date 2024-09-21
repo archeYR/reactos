@@ -31,31 +31,24 @@ Chkdsk(
     UNICODE_STRING usDriveRoot;
     NTSTATUS Status;
     BOOLEAN Success = FALSE;
-    WCHAR DriveName[50];
-    WCHAR VolumeName[50];
+    WCHAR DriveName[MAX_PATH];
+    WCHAR VolumeName[MAX_PATH];
 
     Provider = GetProvider(Format);
     if (!Provider)
     {
         /* Unknown file system */
-        Callback(DONE, 0, &Success);
-        return;
+        goto Quit;
     }
 
     if (!NT_SUCCESS(RtlStringCchCopyW(DriveName, ARRAYSIZE(DriveName), DriveRoot)))
-    {
-        Callback(DONE, 0, &Success);
-        return;
-    }
+        goto Quit;
 
     if (DriveName[wcslen(DriveName) - 1] != L'\\')
     {
         /* Append the trailing backslash for GetVolumeNameForVolumeMountPointW */
         if (!NT_SUCCESS(RtlStringCchCatW(DriveName, ARRAYSIZE(DriveName), L"\\")))
-        {
-            Callback(DONE, 0, &Success);
-            return;
-        }
+            goto Quit;
     }
 
     if (!GetVolumeNameForVolumeMountPointW(DriveName, VolumeName, ARRAYSIZE(VolumeName)))
@@ -66,10 +59,7 @@ Chkdsk(
     }
 
     if (!RtlDosPathNameToNtPathName_U(VolumeName, &usDriveRoot, NULL, NULL))
-    {
-        Callback(DONE, 0, &Success);
-        return;
-    }
+        goto Quit;
 
     /* Trim the trailing backslash since we will work with a device object */
     usDriveRoot.Length -= sizeof(WCHAR);
@@ -90,10 +80,11 @@ Chkdsk(
     if (!Success)
         DPRINT1("Chkdsk() failed with Status 0x%lx\n", Status);
 
-    /* Report success */
-    Callback(DONE, 0, &Success);
-
     RtlFreeUnicodeString(&usDriveRoot);
+
+Quit:
+    /* Report result */
+    Callback(DONE, 0, &Success);
 }
 
 /* EOF */

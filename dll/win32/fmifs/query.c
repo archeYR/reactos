@@ -90,25 +90,35 @@ QueryDeviceInformation(
     UNICODE_STRING DeviceName;
     HANDLE FileHandle;
     NTSTATUS Status;
-    WCHAR DiskDevice[64];
-    WCHAR DosPath[16];
+    WCHAR DiskDevice[MAX_PATH];
+    WCHAR DriveName[MAX_PATH];
 
     /* Sanity checks, buffer should be able to at least hold DeviceFlags */
-    if (DriveRoot == NULL || BufferSize < sizeof(ULONG))
+    if (DriveRoot == NULL || BufferSize < sizeof(ULONG) ||
+        !NT_SUCCESS(RtlStringCchCopyW(DriveName, ARRAYSIZE(DriveName), DriveRoot)))
     {
         return FALSE;
     }
 
-    RtlStringCchCopyW(DosPath, ARRAYSIZE(DosPath), DriveRoot);
-
-    /* Trim trailing backslash if there is one */
-    if (DosPath[wcslen(DosPath)-1] == L'\\')
+    if (DriveName[wcslen(DriveName) - 1] != L'\\')
     {
-        DosPath[wcslen(DosPath)-1] = UNICODE_NULL;
+        /* Append the trailing backslash for GetVolumeNameForVolumeMountPointW */
+        if (!NT_SUCCESS(RtlStringCchCatW(DriveName, ARRAYSIZE(DriveName), L"\\")))
+            return FALSE;
     }
 
-    QueryDosDeviceW(DosPath, DiskDevice, ARRAYSIZE(DiskDevice));
-    RtlInitUnicodeString(&DeviceName, DiskDevice);
+    if (!GetVolumeNameForVolumeMountPointW(DriveName, DiskDevice, ARRAYSIZE(DiskDevice)) ||
+        !RtlDosPathNameToNtPathName_U(DiskDevice, &DeviceName, NULL, NULL))
+    {
+        /* Disk has no volume GUID, fallback to QueryDosDevice */
+        DriveName[wcslen(DriveName) - 1] = UNICODE_NULL;
+        if (!QueryDosDeviceW(DriveName, DiskDevice, ARRAYSIZE(DiskDevice)))
+            return FALSE;
+        RtlInitUnicodeString(&DeviceName, DiskDevice);
+    }
+
+    /* Trim the trailing backslash since we will work with a device object */
+    DeviceName.Length -= sizeof(WCHAR);
 
     InitializeObjectAttributes(&ObjectAttributes,
                                &DeviceName,

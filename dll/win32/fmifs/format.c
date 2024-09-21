@@ -51,8 +51,8 @@ FormatEx(
     BOOLEAN Success = FALSE;
     BOOLEAN BackwardCompatible = FALSE; // Default to latest FS versions.
     MEDIA_TYPE MediaType;
-    WCHAR DriveName[50];
-    WCHAR VolumeName[50];
+    WCHAR DriveName[MAX_PATH];
+    WCHAR VolumeName[MAX_PATH];
 
 //
 // TODO: Convert filesystem Format into ULIB format string.
@@ -62,24 +62,17 @@ FormatEx(
     if (!Provider)
     {
         /* Unknown file system */
-        Callback(DONE, 0, &Success);
-        return;
+        goto Quit;
     }
 
     if (!NT_SUCCESS(RtlStringCchCopyW(DriveName, ARRAYSIZE(DriveName), DriveRoot)))
-    {
-        Callback(DONE, 0, &Success);
-        return;
-    }
+        goto Quit;
 
     if (DriveName[wcslen(DriveName) - 1] != L'\\')
     {
         /* Append the trailing backslash for GetVolumeNameForVolumeMountPointW */
         if (!NT_SUCCESS(RtlStringCchCatW(DriveName, ARRAYSIZE(DriveName), L"\\")))
-        {
-            Callback(DONE, 0, &Success);
-            return;
-        }
+            goto Quit;
     }
 
     if (!GetVolumeNameForVolumeMountPointW(DriveName, VolumeName, ARRAYSIZE(VolumeName)))
@@ -90,10 +83,7 @@ FormatEx(
     }
 
     if (!RtlDosPathNameToNtPathName_U(VolumeName, &usDriveRoot, NULL, NULL))
-    {
-        Callback(DONE, 0, &Success);
-        return;
-    }
+        goto Quit;
 
     /* Trim the trailing backslash since we will work with a device object */
     usDriveRoot.Length -= sizeof(WCHAR);
@@ -137,10 +127,11 @@ FormatEx(
     if (!Success)
         DPRINT1("Format() failed\n");
 
-    /* Report success */
-    Callback(DONE, 0, &Success);
-
     RtlFreeUnicodeString(&usDriveRoot);
+
+Quit:
+    /* Report result */
+    Callback(DONE, 0, &Success);
 }
 
 /* EOF */
