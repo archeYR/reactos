@@ -71,7 +71,8 @@ PWCHAR  Label = L"";
 PWCHAR  Drive = NULL;
 PWCHAR  FileSystem = L"FAT";
 
-WCHAR   RootDirectory[MAX_PATH];
+WCHAR   RootDirectory[MAX_PATH] = {0};
+WCHAR   DriveName[MAX_PATH];
 WCHAR   LabelString[12];
 
 #ifndef FMIFS_IMPORT_DLL
@@ -193,7 +194,6 @@ static int ParseCommandLine(int argc, WCHAR *argv[])
             default:
             {
                 if (Drive) return i;
-                if (argv[i][1] != L':') return i;
 
                 Drive = argv[i];
                 break;
@@ -366,6 +366,9 @@ int wmain(int argc, WCHAR *argv[])
     WCHAR fileSystem[1024];
     WCHAR volumeName[1024];
     WCHAR input[1024];
+    BOOL Ret;
+    LPWCH lpszVolumePathNames = NULL;
+    DWORD cchReturnLength = MAX_PATH, PathOffset = 0;
     DWORD serialNumber;
     DWORD flags, maxComponent;
     ULARGE_INTEGER freeBytesAvailableToCaller, totalNumberOfBytes, totalNumberOfFreeBytes;
@@ -413,15 +416,60 @@ int wmain(int argc, WCHAR *argv[])
     }
     else
     {
-        wcscpy(RootDirectory, Drive);
+        wcscpy(DriveName, Drive);
     }
-    RootDirectory[2] = L'\\';
-    RootDirectory[3] = L'\0';
+    DriveName[wcslen(DriveName)] = L'\\';
+    DriveName[wcslen(DriveName) + 1] = UNICODE_NULL;
+    __debugbreak();
+    if (wcslen(DriveName) < 5)
+    {
+        wcscpy(RootDirectory, DriveName);
+    }
+    else if (GetVolumeNameForVolumeMountPointW(DriveName, volumeName, ARRAYSIZE(volumeName)))
+    {
+
+        lpszVolumePathNames = RtlAllocateHeap(GetProcessHeap(), 0, cchReturnLength * sizeof(WCHAR) + sizeof(UNICODE_NULL));
+
+        if (!lpszVolumePathNames)
+        {
+            SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+            return FALSE;
+        }
+
+        /* Get volume mount points */
+        Ret = GetVolumePathNamesForVolumeNameW(volumeName, lpszVolumePathNames, cchReturnLength + sizeof(UNICODE_NULL), &cchReturnLength);
+
+        if (GetLastError() == ERROR_MORE_DATA)
+        {
+            /* We need more heap */
+            RtlFreeHeap(GetProcessHeap(), 0, lpszVolumePathNames);
+            lpszVolumePathNames = RtlAllocateHeap(GetProcessHeap(), 0, cchReturnLength * sizeof(WCHAR) + sizeof(UNICODE_NULL));
+            if (!lpszVolumePathNames)
+            {
+                SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+                return FALSE;
+            }
+            Ret = GetVolumePathNamesForVolumeNameW(volumeName, lpszVolumePathNames, cchReturnLength + sizeof(UNICODE_NULL), &cchReturnLength);
+        }
+
+        if (Ret && cchReturnLength > sizeof(UNICODE_NULL))
+        {
+            while (PathOffset < cchReturnLength - sizeof(UNICODE_NULL))
+            {
+                if (wcslen(lpszVolumePathNames + PathOffset) < 5)
+                {
+                    wcscpy(RootDirectory, (lpszVolumePathNames + PathOffset));
+                    break;
+                }
+                PathOffset += wcslen(lpszVolumePathNames + PathOffset) + 1;
+            }
+        }
+    }
 
     //
     // See if the drive is removable or not
     //
-    driveType = GetDriveTypeW(RootDirectory);
+    driveType = GetDriveTypeW(DriveName);
     switch (driveType)
     {
         case DRIVE_UNKNOWN :
@@ -440,7 +488,8 @@ int wmain(int argc, WCHAR *argv[])
             return -1;
 
         case DRIVE_REMOVABLE:
-            ConResPrintf(StdOut, STRING_INSERT_DISK, RootDirectory[0]);
+            if (RootDirectory[0])
+                ConResPrintf(StdOut, STRING_INSERT_DISK, RootDirectory[0]);
             fgetws(input, ARRAYSIZE(input), stdin);
             media = FMIFS_FLOPPY;
             break;
@@ -470,7 +519,7 @@ int wmain(int argc, WCHAR *argv[])
     //
     // Determine the drive's file system format
     //
-    if (!GetVolumeInformationW(RootDirectory,
+    if (!GetVolumeInformationW(DriveName,
                                volumeName, ARRAYSIZE(volumeName),
                                &serialNumber, &maxComponent, &flags,
                                fileSystem, ARRAYSIZE(fileSystem)))
@@ -490,7 +539,7 @@ int wmain(int argc, WCHAR *argv[])
     /* Get the volume size */
     totalNumberOfBytes.QuadPart = 0;
 
-    if (QueryDeviceInformation(RootDirectory,
+    if (QueryDeviceInformation(DriveName,
                                &DeviceInformation,
                                sizeof(DeviceInformation)))
     {
@@ -502,7 +551,7 @@ int wmain(int argc, WCHAR *argv[])
      * unformatted volumes, however it will NOT return volume length on XP/2003.
      * Fallback to GetFreeDiskSpaceExW if we did not get any volume length. */
     if (totalNumberOfBytes.QuadPart == 0 &&
-        !GetDiskFreeSpaceExW(RootDirectory,
+        !GetDiskFreeSpaceExW(DriveName,
                              &freeBytesAvailableToCaller,
                              &totalNumberOfBytes,
                              &totalNumberOfFreeBytes))
@@ -522,7 +571,8 @@ int wmain(int argc, WCHAR *argv[])
         {
             while (TRUE)
             {
-                ConResPrintf(StdOut, STRING_LABEL_NAME_EDIT, RootDirectory[0]);
+                if (RootDirectory[0])
+                    ConResPrintf(StdOut, STRING_LABEL_NAME_EDIT, RootDirectory[0]);
                 fgetws(input, ARRAYSIZE(input), stdin);
                 input[wcslen(input) - 1] = 0;
 
@@ -533,7 +583,8 @@ int wmain(int argc, WCHAR *argv[])
             }
         }
 
-        ConResPrintf(StdOut, STRING_YN_FORMAT, RootDirectory[0]);
+        if (RootDirectory[0])
+            ConResPrintf(StdOut, STRING_YN_FORMAT, RootDirectory[0]);
 
         K32LoadStringW(GetModuleHandle(NULL), STRING_YES_NO_FAQ, szMsg, ARRAYSIZE(szMsg));
         while (TRUE)
@@ -582,7 +633,7 @@ int wmain(int argc, WCHAR *argv[])
     //
     // Format away!
     //
-    FormatEx(RootDirectory, media, FileSystem, Label, QuickFormat,
+    FormatEx(DriveName, media, FileSystem, Label, QuickFormat,
              ClusterSize, FormatExCallback);
     if (Error) return -1;
     ConPuts(StdOut, L"\n");
@@ -593,7 +644,7 @@ int wmain(int argc, WCHAR *argv[])
     //
     if (CompressDrive)
     {
-        if (!EnableVolumeCompression(RootDirectory, TRUE))
+        if (!EnableVolumeCompression(DriveName, TRUE))
             ConResPuts(StdOut, STRING_VOL_COMPRESS);
     }
 
@@ -606,7 +657,7 @@ int wmain(int argc, WCHAR *argv[])
         fgetws(input, ARRAYSIZE(LabelString), stdin);
 
         input[wcslen(input) - 1] = 0;
-        if (!SetVolumeLabelW(RootDirectory, input))
+        if (!SetVolumeLabelW(DriveName, input))
         {
             K32LoadStringW(GetModuleHandle(NULL), STRING_NO_LABEL, szMsg, ARRAYSIZE(szMsg));
             PrintWin32Error(szMsg, GetLastError());
@@ -614,7 +665,7 @@ int wmain(int argc, WCHAR *argv[])
         }
     }
 
-    if (!GetVolumeInformationW(RootDirectory,
+    if (!GetVolumeInformationW(DriveName,
                                volumeName, ARRAYSIZE(volumeName),
                                &serialNumber, &maxComponent, &flags,
                                fileSystem, ARRAYSIZE(fileSystem)))
@@ -627,7 +678,7 @@ int wmain(int argc, WCHAR *argv[])
     //
     // Print out some stuff including the formatted size
     //
-    if (!GetDiskFreeSpaceExW(RootDirectory,
+    if (!GetDiskFreeSpaceExW(DriveName,
                              &freeBytesAvailableToCaller,
                              &totalNumberOfBytes,
                              &totalNumberOfFreeBytes))
@@ -643,7 +694,7 @@ int wmain(int argc, WCHAR *argv[])
     //
     // Get the drive's serial number
     //
-    if (!GetVolumeInformationW(RootDirectory,
+    if (!GetVolumeInformationW(DriveName,
                                volumeName, ARRAYSIZE(volumeName),
                                &serialNumber, &maxComponent, &flags,
                                fileSystem, ARRAYSIZE(fileSystem)))
