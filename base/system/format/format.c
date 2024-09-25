@@ -245,6 +245,9 @@ FormatExCallback(
             }
             break;
 
+        case STRUCTUREPROGRESS:
+            /* Figure out what this is for */
+            break;
         case DONEWITHSTRUCTURE:
         case UNKNOWN2:
         case UNKNOWN3:
@@ -257,8 +260,8 @@ FormatExCallback(
         case UNKNOWNA:
         case UNKNOWNC:
         case UNKNOWND:
-        case STRUCTUREPROGRESS:
         case CLUSTERSIZETOOSMALL:
+            ConPrintf(StdOut, L"Command: %d\n", Command);
             ConResPuts(StdOut, STRING_NO_SUPPORT);
             return FALSE;
     }
@@ -412,14 +415,13 @@ int wmain(int argc, WCHAR *argv[])
     }
     DriveName[wcslen(DriveName)] = L'\\';
     DriveName[wcslen(DriveName) + 1] = UNICODE_NULL;
-    __debugbreak();
+
     if (wcslen(DriveName) < 5)
     {
         wcscpy(RootDirectory, DriveName);
     }
     else if (GetVolumeNameForVolumeMountPointW(DriveName, volumeName, ARRAYSIZE(volumeName)))
     {
-
         lpszVolumePathNames = RtlAllocateHeap(GetProcessHeap(), 0, cchReturnLength * sizeof(WCHAR) + sizeof(UNICODE_NULL));
 
         if (!lpszVolumePathNames)
@@ -456,6 +458,9 @@ int wmain(int argc, WCHAR *argv[])
                 PathOffset += wcslen(lpszVolumePathNames + PathOffset) + 1;
             }
         }
+
+        wcscpy(DriveName, volumeName);
+        DriveName[wcslen(DriveName)] = UNICODE_NULL;
     }
 
     //
@@ -620,9 +625,12 @@ int wmain(int argc, WCHAR *argv[])
     //
     // Format away!
     //
+    DriveName[wcslen(DriveName) - 1] = UNICODE_NULL;
     FormatEx(DriveName, media, FileSystem, Label, QuickFormat,
              ClusterSize, FormatExCallback);
     if (Error) return -1;
+    DriveName[wcslen(DriveName)] = L'\\';
+    DriveName[wcslen(DriveName) + 1] = UNICODE_NULL;
     ConPuts(StdOut, L"\n");
     ConResPuts(StdOut, STRING_FMT_COMPLETE);
 
