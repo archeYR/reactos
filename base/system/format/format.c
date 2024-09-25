@@ -245,6 +245,9 @@ FormatExCallback(
             }
             break;
 
+        case STRUCTUREPROGRESS:
+            /* Figure out what this is for */
+            break;
         case DONEWITHSTRUCTURE:
         case UNKNOWN2:
         case UNKNOWN3:
@@ -257,8 +260,8 @@ FormatExCallback(
         case UNKNOWNA:
         case UNKNOWNC:
         case UNKNOWND:
-        case STRUCTUREPROGRESS:
         case CLUSTERSIZETOOSMALL:
+            ConPrintf(StdOut, L"Command: %d\n", Command);
             ConResPuts(StdOut, STRING_NO_SUPPORT);
             return FALSE;
     }
@@ -360,7 +363,7 @@ static VOID Usage(LPWSTR ProgramName)
 int wmain(int argc, WCHAR *argv[])
 {
     int badArg;
-    DEVICE_INFORMATION DeviceInformation;
+    DEVICE_INFORMATION DeviceInformation = {0};
     FMIFS_MEDIA_FLAG media = FMIFS_HARDDISK;
     DWORD driveType;
     WCHAR fileSystem[1024];
@@ -371,7 +374,7 @@ int wmain(int argc, WCHAR *argv[])
     DWORD cchReturnLength = MAX_PATH, PathOffset = 0;
     DWORD serialNumber;
     DWORD flags, maxComponent;
-    ULARGE_INTEGER freeBytesAvailableToCaller, totalNumberOfBytes, totalNumberOfFreeBytes;
+    ULARGE_INTEGER freeBytesAvailableToCaller, totalNumberOfBytes = {0}, totalNumberOfFreeBytes;
     WCHAR szMsg[RC_STRING_MAX_SIZE];
 
     /* Initialize the Console Standard Streams */
@@ -420,14 +423,13 @@ int wmain(int argc, WCHAR *argv[])
     }
     DriveName[wcslen(DriveName)] = L'\\';
     DriveName[wcslen(DriveName) + 1] = UNICODE_NULL;
-    __debugbreak();
+
     if (wcslen(DriveName) < 5)
     {
         wcscpy(RootDirectory, DriveName);
     }
     else if (GetVolumeNameForVolumeMountPointW(DriveName, volumeName, ARRAYSIZE(volumeName)))
     {
-
         lpszVolumePathNames = RtlAllocateHeap(GetProcessHeap(), 0, cchReturnLength * sizeof(WCHAR) + sizeof(UNICODE_NULL));
 
         if (!lpszVolumePathNames)
@@ -464,6 +466,9 @@ int wmain(int argc, WCHAR *argv[])
                 PathOffset += wcslen(lpszVolumePathNames + PathOffset) + 1;
             }
         }
+
+        wcscpy(DriveName, volumeName);
+        DriveName[wcslen(DriveName)] = UNICODE_NULL;
     }
 
     //
@@ -537,8 +542,6 @@ int wmain(int argc, WCHAR *argv[])
     }
 
     /* Get the volume size */
-    totalNumberOfBytes.QuadPart = 0;
-
     if (QueryDeviceInformation(DriveName,
                                &DeviceInformation,
                                sizeof(DeviceInformation)))
@@ -633,9 +636,12 @@ int wmain(int argc, WCHAR *argv[])
     //
     // Format away!
     //
+    DriveName[wcslen(DriveName) - 1] = UNICODE_NULL;
     FormatEx(DriveName, media, FileSystem, Label, QuickFormat,
              ClusterSize, FormatExCallback);
     if (Error) return -1;
+    DriveName[wcslen(DriveName)] = L'\\';
+    DriveName[wcslen(DriveName) + 1] = UNICODE_NULL;
     ConPuts(StdOut, L"\n");
     ConResPuts(StdOut, STRING_FMT_COMPLETE);
 

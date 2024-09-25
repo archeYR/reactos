@@ -93,8 +93,8 @@ QueryDeviceInformation(
     WCHAR DiskDevice[MAX_PATH];
     WCHAR DriveName[MAX_PATH];
 
-    /* Sanity checks, buffer should be able to at least hold DeviceFlags */
-    if (DriveRoot == NULL || BufferSize < sizeof(ULONG) ||
+    /* Buffer should be able to at least hold DeviceFlags */
+    if (BufferSize < sizeof(ULONG) ||
         !NT_SUCCESS(RtlStringCchCopyW(DriveName, ARRAYSIZE(DriveName), DriveRoot)))
     {
         return FALSE;
