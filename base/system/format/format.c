@@ -368,6 +368,7 @@ int wmain(int argc, WCHAR *argv[])
     DWORD driveType;
     WCHAR fileSystem[1024];
     WCHAR volumeName[1024] = {0};
+    WCHAR volumeGUID[50];
     WCHAR input[1024];
     BOOL Ret;
     LPWCH lpszVolumePathNames = NULL;
@@ -428,7 +429,7 @@ int wmain(int argc, WCHAR *argv[])
     {
         wcscpy(RootDirectory, DriveName);
     }
-    else if (GetVolumeNameForVolumeMountPointW(DriveName, volumeName, ARRAYSIZE(volumeName)))
+    else if (GetVolumeNameForVolumeMountPointW(DriveName, volumeGUID, ARRAYSIZE(volumeGUID)))
     {
         lpszVolumePathNames = RtlAllocateHeap(GetProcessHeap(), 0, cchReturnLength * sizeof(WCHAR) + sizeof(UNICODE_NULL));
 
@@ -439,7 +440,7 @@ int wmain(int argc, WCHAR *argv[])
         }
 
         /* Get volume mount points */
-        Ret = GetVolumePathNamesForVolumeNameW(volumeName, lpszVolumePathNames, cchReturnLength + sizeof(UNICODE_NULL), &cchReturnLength);
+        Ret = GetVolumePathNamesForVolumeNameW(volumeGUID, lpszVolumePathNames, cchReturnLength + sizeof(UNICODE_NULL), &cchReturnLength);
 
         if (GetLastError() == ERROR_MORE_DATA)
         {
@@ -451,7 +452,7 @@ int wmain(int argc, WCHAR *argv[])
                 SetLastError(ERROR_NOT_ENOUGH_MEMORY);
                 return FALSE;
             }
-            Ret = GetVolumePathNamesForVolumeNameW(volumeName, lpszVolumePathNames, cchReturnLength + sizeof(UNICODE_NULL), &cchReturnLength);
+            Ret = GetVolumePathNamesForVolumeNameW(volumeGUID, lpszVolumePathNames, cchReturnLength + sizeof(UNICODE_NULL), &cchReturnLength);
         }
 
         if (Ret && cchReturnLength > sizeof(UNICODE_NULL))
@@ -467,8 +468,7 @@ int wmain(int argc, WCHAR *argv[])
             }
         }
 
-        wcscpy(DriveName, volumeName);
-        DriveName[wcslen(DriveName)] = UNICODE_NULL;
+        wcscpy(DriveName, volumeGUID);
     }
 
     //
