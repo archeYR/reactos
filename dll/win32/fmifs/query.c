@@ -116,9 +116,11 @@ QueryDeviceInformation(
             return FALSE;
         RtlInitUnicodeString(&DeviceName, DiskDevice);
     }
-
-    /* Trim the trailing backslash since we will work with a device object */
-    DeviceName.Length -= sizeof(WCHAR);
+    else
+    {
+        /* Trim the trailing backslash since we will work with a device object */
+        DeviceName.Length -= sizeof(WCHAR);
+    }
 
     InitializeObjectAttributes(&ObjectAttributes,
                                &DeviceName,
@@ -130,7 +132,7 @@ QueryDeviceInformation(
                         FILE_READ_DATA | FILE_READ_ATTRIBUTES | SYNCHRONIZE,
                         &ObjectAttributes,
                         &Iosb,
-                        FILE_SHARE_READ,
+                        FILE_SHARE_READ | FILE_SHARE_WRITE,
                         FILE_SYNCHRONOUS_IO_NONALERT);
 
     if (!NT_SUCCESS(Status))
