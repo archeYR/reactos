@@ -9,8 +9,11 @@ spec2def(rosload.exe rosload.spec)
 
 list(APPEND ROSLOAD_SOURCE
     include/freeldr.h
+    arch/i386/halstub.c
+    arch/i386/ntoskrnl.c
     bootmgr.c
     custom.c
+    disk/scsiport.c
     linuxboot.c
     miscboot.c
     options.c
@@ -29,9 +32,6 @@ list(APPEND ROSLOAD_SOURCE
 if(ARCH STREQUAL "i386")
 
     list(APPEND ROSLOAD_SOURCE
-        arch/i386/halstub.c
-        arch/i386/ntoskrnl.c
-        disk/scsiport.c
         ntldr/arch/i386/winldr.c
         ntldr/headless.c)
 

@@ -56,7 +56,6 @@ IoSetPartitionInformation(
     return STATUS_NOT_IMPLEMENTED;
 }
 
-#ifndef _M_AMD64
 NTSTATUS
 NTAPI
 IopReadBootRecord(
@@ -203,7 +202,6 @@ IoReadPartitionTable(
     *PartitionBuffer = Partitions;
     return STATUS_SUCCESS;
 }
-#endif // _M_AMD64
 
 NTSTATUS
 FASTCALL
