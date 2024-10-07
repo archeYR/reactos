@@ -418,6 +418,11 @@ int wmain(int argc, WCHAR *argv[])
         Usage(argv[0]);
         return -1;
     }
+    else if (Drive[wcslen(Drive) - 1] == L'\\')
+    {
+        ConResPuts(StdErr, STRING_NO_VOLUME);
+        return -1;
+    }
     else
     {
         wcscpy(DriveName, Drive);
@@ -498,22 +503,6 @@ int wmain(int argc, WCHAR *argv[])
         case DRIVE_RAMDISK:
             media = FMIFS_HARDDISK;
             break;
-    }
-
-    // Reject attempts to format the system drive
-    {
-        WCHAR path[MAX_PATH + 1];
-        UINT rc;
-        rc = GetWindowsDirectoryW(path, MAX_PATH);
-        if (rc == 0 || rc > MAX_PATH)
-            // todo: Report "Unable to query system directory"
-            return -1;
-        if (towlower(path[0]) == towlower(Drive[0]))
-        {
-            // todo: report "Cannot format system drive"
-            ConResPuts(StdOut, STRING_NO_SUPPORT);
-            return -1;
-        }
     }
 
     //
