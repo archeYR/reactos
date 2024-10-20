@@ -455,6 +455,181 @@ CleanAndQuit:
     return Ret;
 }
 
+/* Quick not necessarily compliant implementation */
+BOOL
+WINAPI
+GetVolumeInformationByHandleW(IN HANDLE hFile,
+                      IN LPWSTR lpVolumeNameBuffer,
+                      IN DWORD nVolumeNameSize,
+                      OUT LPDWORD lpVolumeSerialNumber OPTIONAL,
+                      OUT LPDWORD lpMaximumComponentLength OPTIONAL,
+                      OUT LPDWORD lpFileSystemFlags OPTIONAL,
+                      OUT LPWSTR lpFileSystemNameBuffer OPTIONAL,
+                      IN DWORD nFileSystemNameSize)
+{
+    BOOL Ret;
+    NTSTATUS Status;
+    HANDLE VolumeHandle;
+    IO_STATUS_BLOCK IoStatusBlock;
+    PFILE_FS_VOLUME_INFORMATION VolumeInfo;
+    PFILE_FS_ATTRIBUTE_INFORMATION VolumeAttr;
+    ULONG VolumeInfoSize, VolumeAttrSize;
+
+    VolumeHandle = hFile;
+
+    /* Assume we don't need to query FileFsVolumeInformation */
+    VolumeInfo = NULL;
+    /* If user wants volume name, allocate a buffer to query it */
+    if (lpVolumeNameBuffer != NULL)
+    {
+        VolumeInfoSize = nVolumeNameSize + sizeof(FILE_FS_VOLUME_INFORMATION);
+    }
+    /* If user just wants the serial number, allocate a dummy buffer */
+    else if (lpVolumeSerialNumber != NULL)
+    {
+        VolumeInfoSize = MAX_PATH * sizeof(WCHAR) + sizeof(FILE_FS_VOLUME_INFORMATION);
+    }
+    /* Otherwise, nothing to query */
+    else
+    {
+        VolumeInfoSize = 0;
+    }
+
+    /* If we're to query, allocate a big enough buffer */
+    if (VolumeInfoSize != 0)
+    {
+        VolumeInfo = RtlAllocateHeap(RtlGetProcessHeap(), 0, VolumeInfoSize);
+        if (VolumeInfo == NULL)
+        {
+            BaseSetLastNTError(STATUS_NO_MEMORY);
+            return FALSE;
+        }
+    }
+
+    /* Assume we don't need to query FileFsAttributeInformation */
+    VolumeAttr = NULL;
+    /* If user wants filesystem name, allocate a buffer to query it */
+    if (lpFileSystemNameBuffer != NULL)
+    {
+        VolumeAttrSize = nFileSystemNameSize + sizeof(FILE_FS_ATTRIBUTE_INFORMATION);
+    }
+    /* If user just wants max compo len or flags, allocate a dummy buffer */
+    else if (lpMaximumComponentLength != NULL || lpFileSystemFlags != NULL)
+    {
+        VolumeAttrSize = MAX_PATH * sizeof(WCHAR) + sizeof(FILE_FS_ATTRIBUTE_INFORMATION);
+    }
+    else
+    {
+        VolumeAttrSize = 0;
+    }
+
+    /* If we're to query, allocate a big enough buffer */
+    if (VolumeAttrSize != 0)
+    {
+        VolumeAttr = RtlAllocateHeap(RtlGetProcessHeap(), 0, VolumeAttrSize);
+        if (VolumeAttr == NULL)
+        {
+            if (VolumeInfo != NULL)
+            {
+                RtlFreeHeap(RtlGetProcessHeap(), 0, VolumeInfo);
+            }
+
+            BaseSetLastNTError(STATUS_NO_MEMORY);
+            return FALSE;
+        }
+    }
+
+    /* Assume we'll fail */
+    Ret = FALSE;
+
+    /* If we're to query FileFsVolumeInformation, do it now! */
+    if (VolumeInfo != NULL)
+    {
+        Status = NtQueryVolumeInformationFile(VolumeHandle, &IoStatusBlock, VolumeInfo, VolumeInfoSize, FileFsVolumeInformation);
+        if (!NT_SUCCESS(Status))
+        {
+            BaseSetLastNTError(Status);
+            goto CleanAndQuit;
+        }
+    }
+
+    /* If we're to query FileFsAttributeInformation, do it now! */
+    if (VolumeAttr != NULL)
+    {
+        Status = NtQueryVolumeInformationFile(VolumeHandle, &IoStatusBlock, VolumeAttr, VolumeAttrSize, FileFsAttributeInformation);
+        if (!NT_SUCCESS(Status))
+        {
+            BaseSetLastNTError(Status);
+            goto CleanAndQuit;
+        }
+    }
+
+    /* If user wants volume name */
+    if (lpVolumeNameBuffer != NULL)
+    {
+        /* Check its buffer can hold it (+ 0) */
+        if (VolumeInfo->VolumeLabelLength >= nVolumeNameSize)
+        {
+            SetLastError(ERROR_BAD_LENGTH);
+            goto CleanAndQuit;
+        }
+
+        /* Copy and zero */
+        RtlCopyMemory(lpVolumeNameBuffer, VolumeInfo->VolumeLabel, VolumeInfo->VolumeLabelLength);
+        lpVolumeNameBuffer[VolumeInfo->VolumeLabelLength / sizeof(WCHAR)] = UNICODE_NULL;
+    }
+
+    /* If user wants wants serial number, return it */
+    if (lpVolumeSerialNumber != NULL)
+    {
+        *lpVolumeSerialNumber = VolumeInfo->VolumeSerialNumber;
+    }
+
+    /* If user wants filesystem name */
+    if (lpFileSystemNameBuffer != NULL)
+    {
+        /* Check its buffer can hold it (+ 0) */
+        if (VolumeAttr->FileSystemNameLength >= nFileSystemNameSize)
+        {
+            SetLastError(ERROR_BAD_LENGTH);
+            goto CleanAndQuit;
+        }
+
+        /* Copy and zero */
+        RtlCopyMemory(lpFileSystemNameBuffer, VolumeAttr->FileSystemName, VolumeAttr->FileSystemNameLength);
+        lpFileSystemNameBuffer[VolumeAttr->FileSystemNameLength / sizeof(WCHAR)] = UNICODE_NULL;
+    }
+
+    /* If user wants wants max compo len, return it */
+    if (lpMaximumComponentLength != NULL)
+    {
+        *lpMaximumComponentLength = VolumeAttr->MaximumComponentNameLength;
+    }
+
+    /* If user wants wants FS flags, return them */
+    if (lpFileSystemFlags != NULL)
+    {
+        *lpFileSystemFlags = VolumeAttr->FileSystemAttributes;
+    }
+
+    /* We did it! */
+    Ret = TRUE;
+
+CleanAndQuit:
+
+    if (VolumeInfo != NULL)
+    {
+        RtlFreeHeap(RtlGetProcessHeap(), 0, VolumeInfo);
+    }
+
+    if (VolumeAttr != NULL)
+    {
+        RtlFreeHeap(RtlGetProcessHeap(), 0, VolumeAttr);
+    }
+
+    return Ret;
+}
+
 /*
  * @implemented
  */
