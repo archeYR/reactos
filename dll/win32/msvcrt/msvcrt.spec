@@ -958,7 +958,7 @@
 @ stub -version=0x600+ _snprintf_c
 @ stub -version=0x600+ _snprintf_c_l
 @ stub -version=0x600+ _snprintf_l
-@ stub -version=0x600+ _snprintf_s
+@ varargs -version=0x600+ _snprintf_s(str long long str)
 @ stub -version=0x600+ _snprintf_s_l
 @ varargs _snscanf(str long str)
 @ stub -version=0x600+ _snscanf_l

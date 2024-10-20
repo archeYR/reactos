@@ -1298,7 +1298,7 @@ DeleteVolumeMountPointW(IN LPCWSTR lpszVolumeMountPoint)
     /* If this any mount point, we should be able to get a volume name for it */
     if (!BasepGetVolumeNameForVolumeMountPoint(lpszVolumeMountPoint, VolumeName, ARRAYSIZE(VolumeName), NULL))
     {
-        return FALSE;
+        //return FALSE; Perhaps this is wrong
     }
 
     /* Check if this is a reparse point or a relative path */
