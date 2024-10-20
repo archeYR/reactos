@@ -789,8 +789,8 @@ strncat_s(
     _In_reads_or_z_(maxCount) char const* src,
     _In_ rsize_t  maxCount)
 {
-    UNIMPLEMENTED;
-    return ENOTSUP;
+    strncat(dest, src, maxCount);
+    return 0;
 }
 
 _Check_return_opt_

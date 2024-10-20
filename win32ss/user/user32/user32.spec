@@ -37,6 +37,7 @@
 36 stdcall ChangeDisplaySettingsW(ptr long)
 37 stdcall ChangeMenuA(long long ptr long long)
 38 stdcall ChangeMenuW(long long ptr long long)
+@ stdcall -stub ChangeWindowMessageFilterEx(ptr long long ptr)
 39 stdcall CharLowerA(str)
 40 stdcall CharLowerBuffA(str long)
 41 stdcall CharLowerBuffW(wstr long)
