@@ -261,17 +261,16 @@ DeviceIoControl(IN HANDLE hDevice,
             if (NT_SUCCESS(Status)) Status = Iosb.Status;
         }
 
-        /* Check for success */
-        if (NT_SUCCESS(Status))
+        /* Check for success or a warning code */
+        if (lpBytesReturned && (NT_SUCCESS(Status) || !NT_ERROR(Status)))
         {
             /* Return the byte count */
             *lpBytesReturned = Iosb.Information;
         }
-        else
-        {
-            /* Check for informational or warning failure */
-            if (!NT_ERROR(Status)) *lpBytesReturned = Iosb.Information;
 
+        /* Check for failue */
+        if (!NT_SUCCESS(Status))
+        {
             /* Return a failure */
             BaseSetLastNTError(Status);
             return FALSE;

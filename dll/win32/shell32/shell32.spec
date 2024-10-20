@@ -280,6 +280,7 @@
 281 stdcall SHCreateProcessAsUserW(ptr)
 282 stdcall SHCreateQueryCancelAutoPlayMoniker(ptr)
 283 stdcall SHCreateShellItem(ptr ptr ptr ptr)
+@ stdcall -stub -version=0x600+ SHCreateItemFromParsingName(wstr ptr long ptr)
 @ stdcall -version=0x600+ SHCreateShellItemArrayFromDataObject(ptr ptr ptr)
 284 stdcall SHEmptyRecycleBinA(long str long)
 285 stdcall SHEmptyRecycleBinW(long wstr long)
@@ -308,6 +309,7 @@
 308 stdcall SHGetIconOverlayIndexA(str long)
 309 stdcall SHGetIconOverlayIndexW(wstr long)
 310 stdcall SHGetInstanceExplorer(long)
+@ stdcall -stub -version=0x600+ SHGetKnownFolderPath(long long ptr wstr)
 311 stdcall SHGetMalloc(ptr)
 312 stdcall SHGetNewLinkInfo(str str ptr long long) SHGetNewLinkInfoA
 313 stdcall SHGetPathFromIDList(ptr ptr) SHGetPathFromIDListA
