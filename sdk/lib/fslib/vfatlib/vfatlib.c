@@ -67,7 +67,7 @@ VfatFormat(
     DPRINT("VfatFormat(DriveRoot '%wZ')\n", DriveRoot);
 
     // FIXME:
-    UNREFERENCED_PARAMETER(BackwardCompatible);
+    //UNREFERENCED_PARAMETER(BackwardCompatible);
     UNREFERENCED_PARAMETER(MediaType);
 
     Context.TotalSectorCount = 0;
@@ -142,7 +142,7 @@ VfatFormat(
     }
     else
     {
-        PartitionInfo.PartitionType = 0;
+        PartitionInfo.PartitionType = BackwardCompatible ? PARTITION_FAT_16 : PARTITION_FAT32;
         PartitionInfo.StartingOffset.QuadPart = 0ULL;
         PartitionInfo.PartitionLength.QuadPart =
             DiskGeometry.Cylinders.QuadPart *

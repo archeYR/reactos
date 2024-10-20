@@ -414,6 +414,19 @@ GetNumaAvailableMemoryNode(IN UCHAR Node,
     return TRUE;
 }
 
+BOOL
+WINAPI
+GetProductInfo(
+    _In_ DWORD dwOSMajorVersion,
+    _In_ DWORD dwOSMinorVersion,
+    _In_ DWORD dwSpMajorVersion,
+    _In_ DWORD dwSpMinorVersion,
+    _Out_ PDWORD pdwReturnedProductType)
+{
+    *pdwReturnedProductType = 7; // PRODUCT_STANDARD_SERVER
+    return TRUE;
+}
+
 _Success_(return > 0)
 DWORD
 WINAPI

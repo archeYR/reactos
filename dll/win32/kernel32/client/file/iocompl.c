@@ -274,6 +274,20 @@ GetOverlappedResult(IN HANDLE hFile,
  */
 BOOL
 WINAPI
+GetOverlappedResultEx(IN HANDLE hFile,
+                    IN LPOVERLAPPED lpOverlapped,
+                    OUT LPDWORD lpNumberOfBytesTransferred,
+                    IN DWORD dwMilliseconds,
+                    IN BOOL bAlertable)
+{
+    return GetOverlappedResult(hFile, lpOverlapped, lpNumberOfBytesTransferred, (BOOL)dwMilliseconds);
+}
+
+/*
+ * @implemented
+ */
+BOOL
+WINAPI
 BindIoCompletionCallback(IN HANDLE FileHandle,
                          IN LPOVERLAPPED_COMPLETION_ROUTINE Function,
                          IN ULONG Flags)
