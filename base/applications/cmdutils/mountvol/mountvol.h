@@ -38,7 +38,7 @@
 #include <ndk/exfuncs.h>
 #include <ndk/rtlfuncs.h>
 
-#ifndef __REACTOS__
+//#ifndef __REACTOS__
 #define SystemSystemPartitionInformation 0x62
 #define SystemBootEnvironmentInformation 0x5A
 
@@ -65,6 +65,6 @@ typedef struct _SYSTEM_BOOT_ENVIRONMENT_INFORMATION
 //#endif
 } SYSTEM_BOOT_ENVIRONMENT_INFORMATION, *PSYSTEM_BOOT_ENVIRONMENT_INFORMATION;
 //#endif
-#endif
+//#endif
 
 #endif /* __MOUNTVOL_H__ */

@@ -121,7 +121,7 @@ GetESPDevice(LPWSTR lpMountPoint)
      * The method below uses a system information class introduced in Vista
      * FIXME: Enable when ReactOS supports ESPs and exposes necessary SystemInformation classes */
 
-#if !defined(__REACTOS__) && (NTDDI_VERSION >= NTDDI_LONGHORN)
+#if 1 //!defined(__REACTOS__) && (NTDDI_VERSION >= NTDDI_LONGHORN)
     PSYSTEM_SYSTEM_PARTITION_INFORMATION SystemPartitionInformation;
     ULONG SystemInformationLength = sizeof(*SystemPartitionInformation);
     ULONG ReturnLength = 0;
@@ -169,13 +169,11 @@ BOOL
 MountESPVolume(LPCWSTR lpMountPoint)
 {
     WCHAR szDeviceName[50];
-
     if (!GetESPDevice(szDeviceName) || !DefineDosDeviceW(DDD_RAW_TARGET_PATH, lpMountPoint, szDeviceName))
     {
         ConFormatMessage(StdOut, GetLastError());
         return FALSE;
     }
-
     return TRUE;
 }
 
@@ -187,23 +185,33 @@ PrintESPMountPoint()
     WCHAR szTargetPath[50];
     WCHAR szMountPoint[5];
     ULONG Letter;
+    DWORD Drives;
 
     if (!GetESPDevice(szDeviceName))
     {
         return FALSE;
     }
 
+    Drives = GetLogicalDrives();
+
     szMountPoint[1] = ':';
     szMountPoint[2] = UNICODE_NULL;
-    for (Letter = 65; Letter <= 90; Letter++)
+    for (Letter = 65; Drives != 0; Letter++)
     {
+        if (!(Drives & 1))
+        {
+            Drives >>= 1;
+            continue;
+        }
+
         szMountPoint[0] = Letter;
         QueryDosDeviceW(szMountPoint, szTargetPath, ARRAYSIZE(szTargetPath));
         if (!wcscmp(szDeviceName, szTargetPath))
             break;
+        Drives >>= 1;
     }
 
-    if (Letter > 90)
+    if (Drives == 0)
     {
         return FALSE;
     }
@@ -218,7 +226,7 @@ static
 BOOL
 IsEFI()
 {
-#if (NTDDI_VERSION >= NTDDI_LONGHORN)
+#if 1 //(NTDDI_VERSION >= NTDDI_LONGHORN)
     SYSTEM_BOOT_ENVIRONMENT_INFORMATION SystemBootInfo = {0};
     ULONG SystemInformationLength = sizeof(SystemBootInfo);
     NTSTATUS Status;
@@ -738,6 +746,16 @@ int wmain(int argc, WCHAR *argv[])
                     /* Delete the mount point */
                     if (!DeleteVolumeMountPointW(DosPath))
                     {
+                        /* Maybe this mount point doesn't have a volume name. */
+                        if (GetLastError() == ERROR_INVALID_PARAMETER)
+                        {
+                            DosPath[wcslen(DosPath) - 1] = UNICODE_NULL;
+                            if (DefineDosDeviceW(DDD_REMOVE_DEFINITION, DosPath, NULL))
+                            {
+                                RtlFreeHeap(GetProcessHeap(), 0, DosPath);
+                                return 0;
+                            }
+                        }
                         ConFormatMessage(StdOut, GetLastError());
                         RtlFreeHeap(GetProcessHeap(), 0, DosPath);
                         return 1;
@@ -764,7 +782,11 @@ int wmain(int argc, WCHAR *argv[])
 
                     /* Mount ESP partition at requested mount point */
                     DosPath[wcslen(DosPath) - 1] = UNICODE_NULL;
-                    MountESPVolume(DosPath);
+                    if (!MountESPVolume(DosPath))
+                    {
+                        RtlFreeHeap(GetProcessHeap(), 0, DosPath);
+                        return 1;
+                    }
                     return 0;
                default:
                     /* Unsupported switch, print help */
