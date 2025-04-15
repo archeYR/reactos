@@ -2,17 +2,16 @@ LANGUAGE LANG_ENGLISH, SUBLANG_DEFAULT
 
 STRINGTABLE
 {
-    STRING_MOUNTVOL_USAGE, "Creates, deletes, or lists a volume mount point.\n\
-\n\
-    MOUNTVOL [drive:]path VolumeName\n\
-    MOUNTVOL [drive:]path /D\n\
-    MOUNTVOL [drive:]path /L\n\
-    MOUNTVOL [drive:]path /P\n\
-    MOUNTVOL /R\n\
-    MOUNTVOL /N\n\
-    MOUNTVOL /E\n"
+    STRING_MOUNTVOL_USAGE, "Creates, deletes, or lists a volume mount point.\n\n\
+MOUNTVOL [drive:]path VolumeName\n\
+MOUNTVOL [drive:]path /D\n\
+MOUNTVOL [drive:]path /L\n\
+MOUNTVOL [drive:]path /P\n\
+MOUNTVOL /R\n\
+MOUNTVOL /N\n\
+MOUNTVOL /E\n"
     STRING_MOUNTVOL_ESPMOUNTUSAGE, "\
-    MOUNTVOL drive: /S\n"
+MOUNTVOL drive: /S\n\n"
     STRING_MOUNTVOL_HELP, "\
     path        Specifies the existing NTFS directory where the mount\n\
                 point will reside.\n\
@@ -37,5 +36,5 @@ STRINGTABLE
     STRING_MOUNTVOL_UNSUPPORTEDOPERATION, "This volume does not support this operation.\nDynamic volumes and removable volumes do not support this operation.\n"
     STRING_MOUNTVOL_VOLUMESTILLINUSE, "The volume is still in use. A force dismount was issued and\ncurrent handles to the volume have been invalidated.\n"
     STRING_MOUNTVOL_TOOMANYPOINTS, "The /P option can only be used when the given mount is\nthe only mount point for the volume.\n"
-    STRING_MOUNTVOL_ESPMOUNTPOINT, "The EFI System Partition is mounted at %s\n\n"
+    STRING_MOUNTVOL_ESPMOUNTPOINT, "    The EFI System Partition is mounted at %s\n\n"
 }
