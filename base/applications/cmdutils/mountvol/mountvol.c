@@ -50,32 +50,32 @@ QueryAutoMount(PMOUNTMGR_QUERY_AUTO_MOUNT CurrentState)
 
 static
 BOOL
-IsVolumeOffline(LPCWSTR lpVolumeName)
+IsVolumeOffline(LPCWSTR VolumeName)
 {
     BOOL Ret;
-    HANDLE hVolume;
+    HANDLE MountMgrHandle;
     DWORD BytesReturned;
 
     /* Open a handle to the mount manager */
-    hVolume = CreateFileW(lpVolumeName,
+    Volume = CreateFileW(VolumeName,
                         0,
                         FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
                         OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
                         INVALID_HANDLE_VALUE);
-    if (hVolume == INVALID_HANDLE_VALUE)
+    if (Volume == INVALID_HANDLE_VALUE)
     {
         ConFormatMessage(StdOut, GetLastError());
         return FALSE;
     }
 
-    /* Get current auto mount state */
-    Ret = DeviceIoControl(hVolume,
+    /* Get the volume status */
+    Ret = DeviceIoControl(Volume,
                           IOCTL_VOLUME_IS_OFFLINE,
                           NULL, 0,
                           NULL, 0, &BytesReturned,
                           NULL);
 
-    CloseHandle(hVolume);
+    CloseHandle(Volume);
     return Ret;
 }
 
@@ -115,57 +115,47 @@ SetAutoMount(MOUNTMGR_AUTO_MOUNT_STATE NewState)
 
 static
 BOOL
-GetESPDevice(LPWSTR lpMountPoint)
+GetESPDevice(PSYSTEM_SYSTEM_PARTITION_INFORMATION SystemPartitionInformation)
 {
-    /* NOTE: This is done differently (probably by querying registry) on NT 5.x IA-64.
+    /* NOTE: This is done differently (probably by querying registry) on NT 5.x IA-64
      * The method below uses a system information class introduced in Vista */
-
-    PSYSTEM_SYSTEM_PARTITION_INFORMATION SystemPartitionInformation;
-    ULONG SystemInformationLength = sizeof(*SystemPartitionInformation);
-    ULONG ReturnLength = 0;
     NTSTATUS Status;
 
-    SystemPartitionInformation = RtlAllocateHeap(GetProcessHeap(), 0, SystemInformationLength);
-    Status = NtQuerySystemInformation(SystemSystemPartitionInformation, SystemPartitionInformation, SystemInformationLength, &ReturnLength);
-
-    while (Status == STATUS_BUFFER_TOO_SMALL)
-    {
-        RtlFreeHeap(GetProcessHeap(), 0, SystemPartitionInformation);
-        SystemInformationLength = ReturnLength;
-        SystemPartitionInformation = RtlAllocateHeap(GetProcessHeap(), 0, SystemInformationLength);
-        if (!SystemPartitionInformation)
-        {
-            lpMountPoint[0] = UNICODE_NULL;
-            ConFormatMessage(StdOut, ERROR_NOT_ENOUGH_MEMORY);
-            return FALSE;
-        }
-        Status = NtQuerySystemInformation(SystemSystemPartitionInformation, SystemPartitionInformation, SystemInformationLength, &ReturnLength);
-    }
-
+    Status = NtQuerySystemInformation(SystemSystemPartitionInformation,
+                                      SystemPartitionInformation,
+                                      SystemInformationLength,
+                                      NULL);
     if (!NT_SUCCESS(Status))
     {
-        RtlFreeHeap(GetProcessHeap(), 0, SystemPartitionInformation);
-        lpMountPoint[0] = UNICODE_NULL;
-        ConFormatMessage(StdOut, RtlNtStatusToDosError(Status));
+        SetLastError(RtlNtStatusToDosError(Status));
         return FALSE;
     }
 
-    wcscpy(lpMountPoint, SystemPartitionInformation->SystemPartition.Buffer);
-
-    RtlFreeHeap(GetProcessHeap(), 0, SystemPartitionInformation);
     return TRUE;
 }
 
 static
 BOOL
-MountESPVolume(LPCWSTR lpMountPoint)
+MountESPVolume(LPCWSTR MountPoint)
 {
-    WCHAR szDeviceName[50];
-    if (!GetESPDevice(szDeviceName) || !DefineDosDeviceW(DDD_RAW_TARGET_PATH, lpMountPoint, szDeviceName))
+    PSYSTEM_SYSTEM_PARTITION_INFORMATION SystemPartitionInformation;
+
+    SystemPartitionInformation = RtlAllocateHeap(GetProcessHeap(),
+                                                 0,
+                                                 sizeof(*SystemPartitionInformation));
+
+    /* We will try to get the device that is used for ESP, and then map it at desired mount point */
+    if (!GetESPDevice(SystemPartitionInformation) ||
+        !DefineDosDeviceW(DDD_RAW_TARGET_PATH,
+                          MountPoint,
+                          SystemPartitionInformation->SystemPartition.Buffer))
     {
+        RtlFreeHeap(GetProcessHeap(), 0, ESPDeviceName);
         ConFormatMessage(StdOut, GetLastError());
         return FALSE;
     }
+
+    RtlFreeHeap(GetProcessHeap(), 0, ESPDeviceName);
     return TRUE;
 }
 
@@ -173,22 +163,26 @@ static
 BOOL
 PrintESPMountPoint()
 {
-    WCHAR szDeviceName[50];
-    WCHAR szTargetPath[50];
-    WCHAR szMountPoint[5];
-    ULONG Letter;
+    PSYSTEM_SYSTEM_PARTITION_INFORMATION SystemPartitionInformation;
+    WCHAR TargetPath[MAX_PATH];
+    WCHAR MountPoint[4] = L"A:";
     DWORD Drives;
 
-    if (!GetESPDevice(szDeviceName))
+    SystemPartitionInformation = RtlAllocateHeap(GetProcessHeap(),
+                                                 0,
+                                                 sizeof(*SystemPartitionInformation));
+
+    /* Get the path of device that is used for system partition */
+    if (!GetESPDevice(SystemPartitionInformation))
     {
+        RtlFreeHeap(GetProcessHeap(), 0, SystemPartitionInformation);
         return FALSE;
     }
 
+    /* Loop through all drive letters and compare corresponding device paths of
+     * occupied letters to the system partition device path */
     Drives = GetLogicalDrives();
-
-    szMountPoint[1] = ':';
-    szMountPoint[2] = UNICODE_NULL;
-    for (Letter = 65; Drives != 0; Letter++)
+    while (Drives != 0)
     {
         if (!(Drives & 1))
         {
@@ -196,21 +190,23 @@ PrintESPMountPoint()
             continue;
         }
 
-        szMountPoint[0] = Letter;
-        QueryDosDeviceW(szMountPoint, szTargetPath, ARRAYSIZE(szTargetPath));
-        if (!wcscmp(szDeviceName, szTargetPath))
+        QueryDosDeviceW(szMountPoint, TargetPath, ARRAYSIZE(TargetPath));
+        if (!wcscmp(SystemPartitionInformation->SystemPartition.Buffer, TargetPath))
             break;
+
         Drives >>= 1;
+        MountPoint[0]++;
     }
 
+    RtlFreeHeap(GetProcessHeap(), 0, SystemPartitionInformation);
     if (Drives == 0)
     {
         return FALSE;
     }
 
-    szMountPoint[2] = '\\';
-    szMountPoint[3] = UNICODE_NULL;
-    ConResPrintf(StdOut, STRING_MOUNTVOL_ESPMOUNTPOINT, szMountPoint);
+    /* Append backlash for display on console output */
+    wcscat(MountPoint, L"\\");
+    ConResPrintf(StdOut, STRING_MOUNTVOL_ESPMOUNTPOINT, MountPoint);
     return TRUE;
 }
 
@@ -222,15 +218,18 @@ IsEFI()
     ULONG SystemInformationLength = sizeof(SystemBootInfo);
     NTSTATUS Status;
 
-    Status = NtQuerySystemInformation(SystemBootEnvironmentInformation, &SystemBootInfo, SystemInformationLength, NULL);
-
+    Status = NtQuerySystemInformation(SystemBootEnvironmentInformation,
+                                      &SystemBootInfo,
+                                      SystemInformationLength,
+                                      NULL);
     if (!NT_SUCCESS(Status))
     {
-        /* Assume non-EFI system */
+        /* Assume non-(U)EFI system */
+        ConPrintf(StdOut, L"NTSTATUS %d\n", Status);
         return FALSE;
     }
-
-    return SystemBootInfo.FirmwareType ? FirmwareTypeUefi : FirmwareTypeBios;
+    ConPrintf(StdOut, L"Firmware Type %d\n", SystemBootInfo.FirmwareType);
+    return (SystemBootInfo.FirmwareType == FirmwareTypeUefi) ? TRUE : FALSE;
 }
 
 static
@@ -238,21 +237,23 @@ BOOL
 PrintVolumeList()
 {
     BOOL Ret;
-    WCHAR szVolumeName[60];
-    LPWCH lpszVolumePathNames = NULL;
-    HANDLE hVolume;
-    DWORD cchReturnLength = MAX_PATH, PathOffset;
+    WCHAR VolumeName[50];
+    LPWCH VolumePathNames = NULL;
+    HANDLE Volume;
+    DWORD ReturnLength = MAX_PATH, PathOffset;
     MOUNTMGR_QUERY_AUTO_MOUNT AutoMountState = {0};
 
     /* Loop through all volumes */
-    hVolume = FindFirstVolumeW((LPWSTR)szVolumeName, ARRAYSIZE(szVolumeName));
+    Volume = FindFirstVolumeW((LPWSTR)VolumeName, ARRAYSIZE(VolumeName));
 
-    if (hVolume == INVALID_HANDLE_VALUE)
+    if (Volume == INVALID_HANDLE_VALUE)
         goto Fail;
     
-    lpszVolumePathNames = RtlAllocateHeap(GetProcessHeap(), 0, cchReturnLength * sizeof(WCHAR) + sizeof(UNICODE_NULL));
+    VolumePathNames = RtlAllocateHeap(GetProcessHeap(),
+                                      0,
+                                      ReturnLength * sizeof(WCHAR) + sizeof(UNICODE_NULL));
 
-    if (!lpszVolumePathNames)
+    if (!VolumePathNames)
     {
         ConFormatMessage(StdOut, ERROR_NOT_ENOUGH_MEMORY);
         return FALSE;
@@ -261,22 +262,28 @@ PrintVolumeList()
     do
     {
         /* Get volume mount points */
-        Ret = GetVolumePathNamesForVolumeNameW(szVolumeName, lpszVolumePathNames, cchReturnLength + sizeof(UNICODE_NULL), &cchReturnLength);
+        Ret = GetVolumePathNamesForVolumeNameW(VolumeName,
+                                               VolumePathNames,
+                                               ReturnLength + sizeof(UNICODE_NULL), &ReturnLength);
         
         if (GetLastError() == ERROR_MORE_DATA)
         {
             /* We need more heap */
-            RtlFreeHeap(GetProcessHeap(), 0, lpszVolumePathNames);
-            lpszVolumePathNames = RtlAllocateHeap(GetProcessHeap(), 0, cchReturnLength * sizeof(WCHAR) + sizeof(UNICODE_NULL));
-            if (!lpszVolumePathNames)
+            RtlFreeHeap(GetProcessHeap(), 0, VolumePathNames);
+            VolumePathNames = RtlAllocateHeap(GetProcessHeap(), 0, ReturnLength * sizeof(WCHAR));
+            if (!VolumePathNames)
             {
                 ConFormatMessage(StdOut, ERROR_NOT_ENOUGH_MEMORY);
                 return FALSE;
             }
-            Ret = GetVolumePathNamesForVolumeNameW(szVolumeName, lpszVolumePathNames, cchReturnLength + sizeof(UNICODE_NULL), &cchReturnLength);
+            Ret = GetVolumePathNamesForVolumeNameW(VolumeName,
+                                                   VolumePathNames,
+                                                   ReturnLength),
+                                                   &ReturnLength);
         }
 
-        ConPrintf(StdOut, L"%*s%s\n", 4, "", szVolumeName);
+        /* Print volume name */
+        ConPrintf(StdOut, L"%*s%s\n", 4, "", VolumeName);
 
         if (!Ret)
         {
@@ -286,44 +293,41 @@ PrintVolumeList()
 
         PathOffset = 0;
 
-        if (cchReturnLength > sizeof(UNICODE_NULL))
+        if (ReturnLength > sizeof(UNICODE_NULL))
         {
             /* Print all paths found in multiline string */
-            while (PathOffset < cchReturnLength - sizeof(UNICODE_NULL))
+            while (PathOffset < ReturnLength - sizeof(UNICODE_NULL))
             {
-                ConPrintf(StdOut, L"%*s%s\n", 8, "", lpszVolumePathNames + PathOffset);
-                PathOffset += wcslen(lpszVolumePathNames + PathOffset) + 1;
+                ConPrintf(StdOut, L"%*s%s\n", 8, "", VolumePathNames + PathOffset);
+                PathOffset += wcslen(VolumePathNames + PathOffset) + sizeof(UNICODE_NULL);
             }
             ConPuts(StdOut, L"\n");
         }
         else
         {
-            szVolumeName[wcslen(szVolumeName) - 1] = UNICODE_NULL;
-            IsVolumeOffline(szVolumeName) ? ConResPuts(StdOut, STRING_MOUNTVOL_NOTMOUNTABLE) :
+            /* No mount points, determine if the volume is mountable */
+            VolumeName[wcslen(VolumeName) - 1] = UNICODE_NULL;
+            IsVolumeOffline(VolumeName) ? ConResPuts(StdOut, STRING_MOUNTVOL_NOTMOUNTABLE) :
             ConResPuts(StdOut, STRING_MOUNTVOL_NOPOINTS);
-            szVolumeName[wcslen(szVolumeName)] = '\\';
-            szVolumeName[wcslen(szVolumeName) + 1] = UNICODE_NULL;
+            wcscat(VolumeName, L"\\");
         }
 
-    } while (FindNextVolumeW(hVolume, szVolumeName, ARRAYSIZE(szVolumeName)) == TRUE);
+    } while (FindNextVolumeW(Volume, VolumeName, ARRAYSIZE(VolumeName)) == TRUE);
 
-    RtlFreeHeap(GetProcessHeap(), 0, lpszVolumePathNames);
-    FindVolumeClose(hVolume);
+    RtlFreeHeap(GetProcessHeap(), 0, VolumePathNames);
+    FindVolumeClose(Volume);
 
     if (GetLastError() != ERROR_NO_MORE_FILES)
         goto Fail;
 
     /* If automount is disabled, inform the user */
     if (!QueryAutoMount(&AutoMountState))
-    {
         return FALSE;
-    }
 
     if (AutoMountState.CurrentState == Disabled)
-    {
         ConResPrintf(StdOut, STRING_MOUNTVOL_NOAUTOMOUNT);
-    }
 
+    /* If running on (U)EFI system, print the ESP mount point if there is any */
     if (IsEFI())
         PrintESPMountPoint();
 
@@ -340,10 +344,10 @@ RemoveMountPoints()
 {
     BOOL Ret;
     DWORD BytesReturned;
-    WCHAR szVolumeName[60], szVolumeNameFolder[60];
-    LPWSTR lpszVolumeMountPointName, lpszVolumeMountPointPath;
-    DWORD dwVolumeMountPointPathLength = MAX_PATH * sizeof(WCHAR);
-    HANDLE hVolume, hVolumeMountPoint, VolumeHandle, MountMgrHandle;
+    WCHAR VolumeName[50], VolumeNameFolder[50];
+    LPWSTR VolumeMountPointName, VolumeMountPointPath;
+    DWORD VolumeMountPointPathLength = MAX_PATH * sizeof(WCHAR);
+    HANDLE Volume, VolumeMountPoint, VolumeHandle, MountMgrHandle;
 
     /* Open a handle to the mount manager */
     MountMgrHandle = CreateFileW(MOUNTMGR_DOS_DEVICE_NAME, 
@@ -354,7 +358,7 @@ RemoveMountPoints()
     if (MountMgrHandle == INVALID_HANDLE_VALUE)
         goto Fail;
 
-    /* Invoke Mount Manager registry scrubbing */
+    /* Invoke mount manager registry scrubbing */
     Ret = DeviceIoControl(MountMgrHandle,
                           IOCTL_MOUNTMGR_SCRUB_REGISTRY,
                           NULL, 0,
@@ -365,72 +369,83 @@ RemoveMountPoints()
     if (!Ret)
         goto Fail;
 
-    lpszVolumeMountPointName = RtlAllocateHeap(GetProcessHeap(), HEAP_ZERO_MEMORY, dwVolumeMountPointPathLength);
-    lpszVolumeMountPointPath = RtlAllocateHeap(GetProcessHeap(), HEAP_ZERO_MEMORY, dwVolumeMountPointPathLength + sizeof(szVolumeNameFolder));
+    VolumeMountPointName = RtlAllocateHeap(GetProcessHeap(),
+                                           HEAP_ZERO_MEMORY,
+                                           VolumeMountPointPathLength);
+    VolumeMountPointPath = RtlAllocateHeap(GetProcessHeap(),
+                                           HEAP_ZERO_MEMORY,
+                                           VolumeMountPointPathLength + sizeof(VolumeNameFolder));
 
-    if (!lpszVolumeMountPointName || !lpszVolumeMountPointPath)
+    if (!VolumeMountPointName || !VolumeMountPointPath)
     {
         ConFormatMessage(StdOut, ERROR_NOT_ENOUGH_MEMORY);
         return FALSE;
     }
 
     /* Loop through all volumes */
-    hVolume = FindFirstVolumeW(szVolumeName, ARRAYSIZE(szVolumeName));
+    Volume = FindFirstVolumeW(VolumeName, ARRAYSIZE(VolumeName));
 
-    if (hVolume == INVALID_HANDLE_VALUE)
+    if (Volume == INVALID_HANDLE_VALUE)
         goto Fail;
 
     do
     {
         /* Loop through all folder mount points on this volume */
-        hVolumeMountPoint = FindFirstVolumeMountPointW(szVolumeName, lpszVolumeMountPointName, dwVolumeMountPointPathLength/sizeof(WCHAR));
+        VolumeMountPoint = FindFirstVolumeMountPointW(VolumeName,
+                                                      VolumeMountPointName,
+                                                      VolumeMountPointPathLength/sizeof(WCHAR));
   
-        while (hVolumeMountPoint == INVALID_HANDLE_VALUE && GetLastError() == ERROR_MORE_DATA)
+        while (VolumeMountPoint == INVALID_HANDLE_VALUE && GetLastError() == ERROR_MORE_DATA)
         {
-            RtlFreeHeap(GetProcessHeap(), 0, lpszVolumeMountPointName);
-            RtlFreeHeap(GetProcessHeap(), 0, lpszVolumeMountPointPath);
-            dwVolumeMountPointPathLength += dwVolumeMountPointPathLength;
-            lpszVolumeMountPointName = RtlAllocateHeap(GetProcessHeap(), HEAP_ZERO_MEMORY, dwVolumeMountPointPathLength);
-            lpszVolumeMountPointPath = RtlAllocateHeap(GetProcessHeap(), HEAP_ZERO_MEMORY, dwVolumeMountPointPathLength + sizeof(szVolumeName));
-            if (!lpszVolumeMountPointName || !lpszVolumeMountPointPath)
+            RtlFreeHeap(GetProcessHeap(), 0, VolumeMountPointName);
+            RtlFreeHeap(GetProcessHeap(), 0, VolumeMountPointPath);
+            VolumeMountPointPathLength += VolumeMountPointPathLength;
+            VolumeMountPointName = RtlAllocateHeap(GetProcessHeap(),
+                                                   HEAP_ZERO_MEMORY,
+                                                   VolumeMountPointPathLength);
+            VolumeMountPointPath = RtlAllocateHeap(GetProcessHeap(),
+                                                   HEAP_ZERO_MEMORY,
+                                                   VolumeMountPointPathLength + sizeof(VolumeName));
+            if (!VolumeMountPointName || !VolumeMountPointPath)
             {
                 ConFormatMessage(StdOut, ERROR_NOT_ENOUGH_MEMORY);
                 return FALSE;
             }
-            FindFirstVolumeMountPointW(szVolumeName, lpszVolumeMountPointName, dwVolumeMountPointPathLength/sizeof(WCHAR));
+            FindFirstVolumeMountPointW(VolumeName,
+                                       VolumeMountPointName,
+                                       VolumeMountPointPathLength/sizeof(WCHAR));
         }
     
-        if (hVolumeMountPoint == INVALID_HANDLE_VALUE)
+        if (VolumeMountPoint == INVALID_HANDLE_VALUE)
         {
             ConPrintf(StdOut, L"FindFirstVolumeMountPointW not found %d\n", GetLastError());
             continue;
         }
 
-        wcscpy(lpszVolumeMountPointPath, szVolumeName);
-        wcscat(lpszVolumeMountPointPath, lpszVolumeMountPointName);
-
+        /* Assemble a full mounted folder path */
+        wcscpy(VolumeMountPointPath, VolumeName);
+        wcscat(VolumeMountPointPath, VolumeMountPointName);
         do
         {
-            ConPrintf(StdOut, L"szVolumeMountPoint %s\n", lpszVolumeMountPointName);
+            ConPrintf(StdOut, L"szVolumeMountPoint %s\n", VolumeMountPointName);
             /* Get the volume name from mounted folder */
-            GetVolumeNameForVolumeMountPointW(lpszVolumeMountPointPath,
-                                              (LPWSTR)szVolumeNameFolder,
-                                              ARRAYSIZE(szVolumeNameFolder));
+            GetVolumeNameForVolumeMountPointW(VolumeMountPointPath,
+                                              (LPWSTR)VolumeNameFolder,
+                                              ARRAYSIZE(VolumeNameFolder));
 
             /* Trim trailing backslash */
-            szVolumeNameFolder[wcslen(szVolumeNameFolder) - 1] = UNICODE_NULL;
+            VolumeNameFolder[wcslen(VolumeNameFolder) - 1] = UNICODE_NULL;
 
             /* Try to open the volume */
-            VolumeHandle = CreateFileW(szVolumeNameFolder, 0, 0, NULL, 
+            VolumeHandle = CreateFileW(VolumeNameFolder, 0, 0, NULL,
                                        OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
                                        INVALID_HANDLE_VALUE);
-            ConPrintf(StdOut, L"szVolumeNameFolder %s\n", szVolumeNameFolder);
+            ConPrintf(StdOut, L"VolumeNameFolder %s\n", VolumeNameFolder);
             if (VolumeHandle == INVALID_HANDLE_VALUE && GetLastError() == ERROR_FILE_NOT_FOUND)
             {
                 ConPrintf(StdOut, L"RemoveDirectory\n");
                 /* Mounted fodler appears to be not used, remove it */
-                //lpszVolumeMountPointPath[wcslen(lpszVolumeMountPointPath) - 1] = UNICODE_NULL;
-                RemoveDirectoryW(lpszVolumeMountPointPath);
+                RemoveDirectoryW(VolumeMountPointPath);
             }
             else if (VolumeHandle != INVALID_HANDLE_VALUE)
             {
@@ -443,47 +458,53 @@ RemoveMountPoints()
                 ConFormatMessage(StdOut, GetLastError());
             }
 
-            Ret = FindNextVolumeMountPointW(hVolumeMountPoint, lpszVolumeMountPointName, dwVolumeMountPointPathLength/sizeof(WCHAR));
-
+            Ret = FindNextVolumeMountPointW(VolumeMountPoint,
+                                            VolumeMountPointName,
+                                            VolumeMountPointPathLength/sizeof(WCHAR));
             while (Ret == FALSE && GetLastError() == ERROR_MORE_DATA)
             {
-                RtlFreeHeap(GetProcessHeap(), 0, lpszVolumeMountPointName);
-                RtlFreeHeap(GetProcessHeap(), 0, lpszVolumeMountPointPath);
-                dwVolumeMountPointPathLength += dwVolumeMountPointPathLength;
-                lpszVolumeMountPointName = RtlAllocateHeap(GetProcessHeap(), HEAP_ZERO_MEMORY, dwVolumeMountPointPathLength);
-                lpszVolumeMountPointPath = RtlAllocateHeap(GetProcessHeap(), HEAP_ZERO_MEMORY, dwVolumeMountPointPathLength + sizeof(szVolumeName));
-                if (!lpszVolumeMountPointName || !lpszVolumeMountPointPath)
+                RtlFreeHeap(GetProcessHeap(), 0, VolumeMountPointName);
+                RtlFreeHeap(GetProcessHeap(), 0, VolumeMountPointPath);
+                VolumeMountPointPathLength += VolumeMountPointPathLength;
+                VolumeMountPointName = RtlAllocateHeap(GetProcessHeap(),
+                                                       HEAP_ZERO_MEMORY,
+                                                       VolumeMountPointPathLength);
+                VolumeMountPointPath = RtlAllocateHeap(GetProcessHeap(),
+                                                       HEAP_ZERO_MEMORY,
+                                                       VolumeMountPointPathLength +
+                                                       sizeof(VolumeName));
+                if (!VolumeMountPointName || !VolumeMountPointPath)
                 {
-                    FindVolumeMountPointClose(hVolumeMountPoint);
-                    FindVolumeClose(hVolume);
+                    FindVolumeMountPointClose(VolumeMountPoint);
+                    FindVolumeClose(Volume);
                     ConFormatMessage(StdOut, ERROR_NOT_ENOUGH_MEMORY);
                     return FALSE;
                 }
-                Ret = FindNextVolumeMountPointW(hVolumeMountPoint, lpszVolumeMountPointName, dwVolumeMountPointPathLength/sizeof(WCHAR));
+                Ret = FindNextVolumeMountPointW(VolumeMountPoint,
+                                                VolumeMountPointName,
+                                                VolumeMountPointPathLength/sizeof(WCHAR));
             }
 
-            ZeroMemory(lpszVolumeMountPointPath, dwVolumeMountPointPathLength);
-            wcscpy(lpszVolumeMountPointPath, szVolumeName);
-            wcscat(lpszVolumeMountPointPath, lpszVolumeMountPointName);
+            ZeroMemory(VolumeMountPointPath, VolumeMountPointPathLength);
+            wcscpy(VolumeMountPointPath, VolumeName);
+            wcscat(VolumeMountPointPath, VolumeMountPointName);
 
         } while (Ret == TRUE);
 
-        FindVolumeMountPointClose(hVolumeMountPoint);
-
+        FindVolumeMountPointClose(VolumeMountPoint);
         if (GetLastError() != ERROR_NO_MORE_FILES)
         {
-            RtlFreeHeap(GetProcessHeap(), 0, lpszVolumeMountPointName);
-            RtlFreeHeap(GetProcessHeap(), 0, lpszVolumeMountPointPath);
-            FindVolumeClose(hVolume);
+            RtlFreeHeap(GetProcessHeap(), 0, VolumeMountPointName);
+            RtlFreeHeap(GetProcessHeap(), 0, VolumeMountPointPath);
+            FindVolumeClose(Volume);
             goto Fail;
         }
 
-    } while (FindNextVolumeW(hVolume, szVolumeName, ARRAYSIZE(szVolumeName)) == TRUE);
+    } while (FindNextVolumeW(Volume, VolumeName, ARRAYSIZE(VolumeName)) == TRUE);
 
-    RtlFreeHeap(GetProcessHeap(), 0, lpszVolumeMountPointName);
-    RtlFreeHeap(GetProcessHeap(), 0, lpszVolumeMountPointPath);
-    FindVolumeClose(hVolume);
-
+    RtlFreeHeap(GetProcessHeap(), 0, VolumeMountPointName);
+    RtlFreeHeap(GetProcessHeap(), 0, VolumeMountPointPath);
+    FindVolumeClose(Volume);
     if (GetLastError() != ERROR_NO_MORE_FILES)
         goto Fail;
 
@@ -496,14 +517,14 @@ Fail:
 
 static
 BOOL
-PrintVolumeNameForMountPoint(LPCWSTR lpMountPoint)
+PrintVolumeNameForMountPoint(LPCWSTR MountPoint)
 {
-    WCHAR szVolumeName[50];
+    WCHAR VolumeName[50];
 
     /* Print the volume name for requested mount point */
-    if (GetVolumeNameForVolumeMountPointW(lpMountPoint, szVolumeName, ARRAYSIZE(szVolumeName)))
+    if (GetVolumeNameForVolumeMountPointW(MountPoint, VolumeName, ARRAYSIZE(VolumeName)))
     {
-         ConPrintf(StdOut, L"%*s%s\n", 4, "", szVolumeName);
+         ConPrintf(StdOut, L"%*s%s\n", 4, "", VolumeName);
          return TRUE;
     }
 
@@ -513,90 +534,106 @@ PrintVolumeNameForMountPoint(LPCWSTR lpMountPoint)
 
 static
 BOOL
-DismountVolume(LPCWSTR lpMountPoint)
+DismountVolume(LPCWSTR MountPoint)
 {
     BOOL Ret;
     DWORD BytesReturned;
-    WCHAR szVolumeName[50];
-    LPWCH lpszVolumePathNames = NULL;
-    HANDLE hVolume;
-    DWORD cchReturnLength = MAX_PATH, PathOffset = 0, PathNum = 0;
+    WCHAR VolumeName[50];
+    LPWCH VolumePathNames = NULL;
+    HANDLE Volume;
+    DWORD ReturnLength = MAX_PATH, PathOffset = 0, PathNum = 0;
 
     /* Get the volume name */
-    if (!GetVolumeNameForVolumeMountPointW(lpMountPoint, szVolumeName, ARRAYSIZE(szVolumeName)))
+    if (!GetVolumeNameForVolumeMountPointW(MountPoint, VolumeName, ARRAYSIZE(VolumeName)))
     {
         goto Fail;
     }
 
     /* Get volume mount points for volume */
-    lpszVolumePathNames = RtlAllocateHeap(GetProcessHeap(), 0, cchReturnLength * sizeof(WCHAR) + sizeof(UNICODE_NULL));
-    if (!lpszVolumePathNames)
+    VolumePathNames = RtlAllocateHeap(GetProcessHeap(),
+                                      0,
+                                      ReturnLength * sizeof(WCHAR) + sizeof(UNICODE_NULL));
+    if (!VolumePathNames)
     {
         ConFormatMessage(StdOut, ERROR_NOT_ENOUGH_MEMORY);
         return FALSE;
     }
-    Ret = GetVolumePathNamesForVolumeNameW(szVolumeName, lpszVolumePathNames, cchReturnLength + sizeof(UNICODE_NULL), &cchReturnLength);
 
+    Ret = GetVolumePathNamesForVolumeNameW(VolumeName,
+                                           VolumePathNames,
+                                           ReturnLength + sizeof(UNICODE_NULL),
+                                           &ReturnLength);
     if (GetLastError() == ERROR_MORE_DATA)
     {
         /* We need more heap */
-        RtlFreeHeap(GetProcessHeap(), 0, lpszVolumePathNames);
-        lpszVolumePathNames = RtlAllocateHeap(GetProcessHeap(), 0, cchReturnLength * sizeof(WCHAR) + sizeof(UNICODE_NULL));
-        if (!lpszVolumePathNames)
+        RtlFreeHeap(GetProcessHeap(), 0, VolumePathNames);
+        VolumePathNames = RtlAllocateHeap(GetProcessHeap(),
+                                          0,
+                                          ReturnLength * sizeof(WCHAR) + sizeof(UNICODE_NULL));
+        if (!VolumePathNames)
         {
             ConFormatMessage(StdOut, ERROR_NOT_ENOUGH_MEMORY);
             return FALSE;
         }
-        Ret = GetVolumePathNamesForVolumeNameW(szVolumeName, lpszVolumePathNames, cchReturnLength + sizeof(UNICODE_NULL), &cchReturnLength);
+        Ret = GetVolumePathNamesForVolumeNameW(VolumeName,
+                                               VolumePathNames,
+                                               ReturnLength + sizeof(UNICODE_NULL),
+                                               &ReturnLength);
     }
 
     if (!Ret)
+    {
+        RtlFreeHeap(GetProcessHeap(), 0, VolumePathNames);
         goto Fail;
+    }
 
     /* Verify there are no more than one path in multiline string */
-    if (cchReturnLength > sizeof(UNICODE_NULL))
+    if (ReturnLength > sizeof(UNICODE_NULL))
     {
-        while (PathOffset < cchReturnLength - sizeof(UNICODE_NULL) && PathNum < 2)
+        while (PathOffset < ReturnLength - sizeof(UNICODE_NULL) && PathNum < 2)
         {
-            PathOffset += wcslen(lpszVolumePathNames + PathOffset) + 1;
+            PathOffset += wcslen(VolumePathNames + PathOffset) + sizeof(UNICODE_NULL);
             PathNum++;
         }
 
         /* We cannot dismount the volume if it has multiple mount points */
         if (PathNum > 1)
         {
+            RtlFreeHeap(GetProcessHeap(), 0, VolumePathNames);
             ConResPuts(StdOut, STRING_MOUNTVOL_TOOMANYPOINTS);
             return FALSE;
         }
     }
 
-    DeleteVolumeMountPointW(lpMountPoint);
-    szVolumeName[wcslen(szVolumeName) - 1] = UNICODE_NULL;
+    RtlFreeHeap(GetProcessHeap(), 0, VolumePathNames);
+
+    /* Delete the only mount point */
+    DeleteVolumeMountPointW(MountPoint);
+    VolumeName[wcslen(VolumeName) - 1] = UNICODE_NULL;
 
     /* Open a handle to the volume */
-    hVolume = CreateFileW(szVolumeName,
+    Volume = CreateFileW(VolumeName,
                                  GENERIC_READ | GENERIC_WRITE,
                                  FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
                                  OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
                                  INVALID_HANDLE_VALUE);
-    if (hVolume == INVALID_HANDLE_VALUE)
+    if (Volume == INVALID_HANDLE_VALUE)
         goto Fail;
 
-    /* Verify if volume in question can be offline */
-    if (!DeviceIoControl(hVolume,
+    /* Verify the volume in question can be offline */
+    if (!DeviceIoControl(Volume,
                         IOCTL_VOLUME_SUPPORTS_ONLINE_OFFLINE,
                         NULL, 0,
                         NULL, 0, &BytesReturned,
                         NULL))
     {
-        /* It cannot, inform the user */
         ConResPuts(StdOut, STRING_MOUNTVOL_UNSUPPORTEDOPERATION);
-        CloseHandle(hVolume);
+        CloseHandle(Volume);
         return FALSE;
     }
 
     /* Try locking the volume first */
-    if (!DeviceIoControl(hVolume,
+    if (!DeviceIoControl(Volume,
                         FSCTL_LOCK_VOLUME,
                         NULL, 0,
                         NULL, 0, &BytesReturned,
@@ -607,28 +644,28 @@ DismountVolume(LPCWSTR lpMountPoint)
     }
 
     /* Dismount the vloume */
-    if (!DeviceIoControl(hVolume,
+    if (!DeviceIoControl(Volume,
                         FSCTL_DISMOUNT_VOLUME,
                         NULL, 0,
                         NULL, 0, &BytesReturned,
                         NULL))
     {
-        CloseHandle(hVolume);
+        CloseHandle(Volume);
         goto Fail;
     }
 
     /* Offline the volume */
-    if (!DeviceIoControl(hVolume,
+    if (!DeviceIoControl(Volume,
                         IOCTL_VOLUME_OFFLINE,
                         NULL, 0,
                         NULL, 0, &BytesReturned,
                         NULL))
     {
-        CloseHandle(hVolume);
+        CloseHandle(Volume);
         goto Fail;
     }
 
-    CloseHandle(hVolume);
+    CloseHandle(Volume);
     return TRUE;
 
 Fail:
@@ -640,6 +677,7 @@ static
 VOID
 PrintHelp()
 {
+    /* Print (U)EFI specific strings only when running on such system */
     ConResPuts(StdOut, STRING_MOUNTVOL_USAGE);
     IsEFI() ? ConResPuts(StdOut, STRING_MOUNTVOL_ESPMOUNTUSAGE) : ConPuts(StdOut, L"\n");
     ConResPuts(StdOut, STRING_MOUNTVOL_HELP);
@@ -650,7 +688,8 @@ PrintHelp()
 
 int wmain(int argc, WCHAR *argv[])
 {
-    PWSTR DosPath;
+    int Ret = 0;
+    PWSTR DosPath = NULL;
 
     /* Initialize the Console Standard Streams */
     ConInitStdStreams();
@@ -672,6 +711,14 @@ int wmain(int argc, WCHAR *argv[])
     /* Check if first argument is a mount point */
     if (argv[1][1] == L':')
     {
+        /* If we got more or less than 2 arguments here, print help */
+        if (argc != 3)
+        {
+            PrintHelp();
+            return 1;
+        }
+
+        /* Allocate another buffer for the path string so we can manipulate it as needed */
         DosPath = RtlAllocateHeap(GetProcessHeap(),
                                   0,
                                   (wcslen(argv[1]) * sizeof(WCHAR)) +
@@ -691,14 +738,6 @@ int wmain(int argc, WCHAR *argv[])
             wcscat(DosPath, L"\\");
         }
 
-        /* If we got more or less than 2 arguments here, print help */
-        if (argc != 3)
-        {
-            PrintHelp();
-            RtlFreeHeap(GetProcessHeap(), 0, DosPath);
-            return 1;
-        }
-
         /* Check if second argument looks like a switch */
         if ((wcslen(argv[2]) == 2) && argv[2][0] == L'/')
         {
@@ -707,74 +746,49 @@ int wmain(int argc, WCHAR *argv[])
             {
                 case L'D':
                     /* Delete the mount point */
-                    if (!DeleteVolumeMountPointW(DosPath))
+                    Ret = !DeleteVolumeMountPointW(DosPath);
+                    if (Ret && GetLastError() == ERROR_INVALID_PARAMETER)
                     {
-                        /* Maybe this mount point doesn't have a volume name. */
-                        if (GetLastError() == ERROR_INVALID_PARAMETER)
+                        /* It could be a mount point without a volume name (ESP for example) */
+                        DosPath[wcslen(DosPath) - 1] = UNICODE_NULL;
+                        if (!DefineDosDeviceW(DDD_REMOVE_DEFINITION, DosPath, NULL))
                         {
-                            DosPath[wcslen(DosPath) - 1] = UNICODE_NULL;
-                            if (DefineDosDeviceW(DDD_REMOVE_DEFINITION, DosPath, NULL))
-                            {
-                                RtlFreeHeap(GetProcessHeap(), 0, DosPath);
-                                return 0;
-                            }
+                            /* We report the original error code */
+                            SetLastError(ERROR_INVALID_PARAMETER);
                         }
-
-                        ConFormatMessage(StdOut, GetLastError());
-                        RtlFreeHeap(GetProcessHeap(), 0, DosPath);
-                        return 1;
                     }
-                    
-                    RtlFreeHeap(GetProcessHeap(), 0, DosPath);
-                    return 0;
+
+                    goto Exit;
                 case L'L':
                     /* Print volume name for the mount point */
-                    PrintVolumeNameForMountPoint(DosPath);
-                    RtlFreeHeap(GetProcessHeap(), 0, DosPath);
-                    return 0;
+                    Ret = !PrintVolumeNameForMountPoint(DosPath);
+                    goto Exit;
                 case L'P':
                     /* Delete the mount point and dismount the volume */
-                    DismountVolume(DosPath);
-                    RtlFreeHeap(GetProcessHeap(), 0, DosPath);
-                    return 0;
+                    Ret = !DismountVolume(DosPath);
+                    goto Exit;
                 case L'S':
-                    /* ESP mount is requested, we should be running on EFI system
-                     * and mount point should be a root path */
-                    if (!IsEFI() || wcslen(argv[1]) > 3)
+                    /* ESP mount is requested, mount point should be a root path */
+                    if (wcslen(argv[1]) > 3)
                     {
-                        ConFormatMessage(StdOut, ERROR_INVALID_PARAMETER);
-                        RtlFreeHeap(GetProcessHeap(), 0, DosPath);
-                        return 1;
+                        Ret = 1;
+                        goto Exit;
                     }
 
                     /* Mount ESP partition at requested mount point */
                     DosPath[wcslen(DosPath) - 1] = UNICODE_NULL;
-                    if (!MountESPVolume(DosPath))
-                    {
-                        ConFormatMessage(StdOut, GetLastError());
-                        RtlFreeHeap(GetProcessHeap(), 0, DosPath);
-                        return 1;
-                    }
-                    RtlFreeHeap(GetProcessHeap(), 0, DosPath);
-                    return 0;
+                    Ret = !MountESPVolume(DosPath);
+                    goto Exit;
                default:
                     /* Unsupported switch, print help */
                     PrintHelp();
-                    RtlFreeHeap(GetProcessHeap(), 0, DosPath);
-                    return 0;
+                    goto Exit;
             }    
         }
 
         /* Not a switch, pass it as a volume name then */
-        if (!SetVolumeMountPointW(DosPath, argv[2]))
-        {
-            ConFormatMessage(StdOut, GetLastError());
-            RtlFreeHeap(GetProcessHeap(), 0, DosPath);
-            return 1;
-        }
-
-        RtlFreeHeap(GetProcessHeap(), 0, DosPath);
-        return 0;
+        Ret = !SetVolumeMountPointW(DosPath, argv[2]);
+        goto Exit;
     }
 
     /* Maybe we just got a switch as an argument, don't allow more than one argument anymore */
@@ -795,22 +809,25 @@ int wmain(int argc, WCHAR *argv[])
     switch (towupper(argv[1][1]))
     {
         case L'R':
-            /* Remove mount manager entries and mount points for volumes that are no longer in system */
-            RemoveMountPoints();
-            return 0;
+            /* Remove mount manager entries and mount points for volumes that are not in system */
+            return !RemoveMountPoints();
         case L'N':
             /* Disable automatic mounting of new volumes */
-            SetAutoMount(Disabled);
-            return 0;
+            return !SetAutoMount(Disabled);
         case L'E':
             /* Enable automatic mounting of new volumes */
-            SetAutoMount(Enabled);
-            return 0;
+            return !SetAutoMount(Enabled);
         default:
             /* Unsupported switch, print help */
             PrintHelp();
             return 0;
     }
+
+Exit:
+    RtlFreeHeap(GetProcessHeap(), 0, DosPath);
+    if (Ret)
+        ConFormatMessage(StdOut, GetLastError());
+    return Ret;
 }
 
 /* EOF */
