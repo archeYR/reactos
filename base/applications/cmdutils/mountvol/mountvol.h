@@ -20,7 +20,6 @@
 #define __MOUNTVOL_H__
 
 #include <stdio.h>
-#include <tchar.h>
 
 /* PSDK/NDK Headers */
 #define WIN32_NO_STATUS
