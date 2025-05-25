@@ -13,6 +13,7 @@ include_directories(BEFORE
 
 list(APPEND UEFILDR_ARC_SOURCE
     ${FREELDR_ARC_SOURCE}
+    arch/drivers/genfb.c
     arch/uefi/stubs.c
     arch/uefi/ueficon.c
     arch/uefi/uefidisk.c

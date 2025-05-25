@@ -7,6 +7,8 @@
 
 #include <uefildr.h>
 
+#include <genfb.h>
+
 #include <debug.h>
 DBG_DEFAULT_CHANNEL(WARNING);
 
@@ -25,19 +27,19 @@ MachInit(const char *CmdLine)
     MachVtbl.ConsPutChar = UefiConsPutChar;
     MachVtbl.ConsKbHit = UefiConsKbHit;
     MachVtbl.ConsGetCh = UefiConsGetCh;
-    MachVtbl.VideoClearScreen = UefiVideoClearScreen;
-    MachVtbl.VideoSetDisplayMode = UefiVideoSetDisplayMode;
-    MachVtbl.VideoGetDisplaySize = UefiVideoGetDisplaySize;
-    MachVtbl.VideoGetBufferSize = UefiVideoGetBufferSize;
-    MachVtbl.VideoGetFontsFromFirmware = UefiVideoGetFontsFromFirmware;
-    MachVtbl.VideoSetTextCursorPosition = UefiVideoSetTextCursorPosition;
-    MachVtbl.VideoHideShowTextCursor = UefiVideoHideShowTextCursor;
-    MachVtbl.VideoPutChar = UefiVideoPutChar;
-    MachVtbl.VideoCopyOffScreenBufferToVRAM = UefiVideoCopyOffScreenBufferToVRAM;
-    MachVtbl.VideoIsPaletteFixed = UefiVideoIsPaletteFixed;
-    MachVtbl.VideoSetPaletteColor = UefiVideoSetPaletteColor;
-    MachVtbl.VideoGetPaletteColor = UefiVideoGetPaletteColor;
-    MachVtbl.VideoSync = UefiVideoSync;
+    MachVtbl.VideoClearScreen = GenFbVideoClearScreen;
+    MachVtbl.VideoSetDisplayMode = GenFbVideoSetDisplayMode;
+    MachVtbl.VideoGetDisplaySize = GenFbVideoGetDisplaySize;
+    MachVtbl.VideoGetBufferSize = GenFbVideoGetBufferSize;
+    MachVtbl.VideoGetFontsFromFirmware = GenFbVideoGetFontsFromFirmware;
+    MachVtbl.VideoSetTextCursorPosition = GenFbVideoSetTextCursorPosition;
+    MachVtbl.VideoHideShowTextCursor = GenFbVideoHideShowTextCursor;
+    MachVtbl.VideoPutChar = GenFbVideoPutChar;
+    MachVtbl.VideoCopyOffScreenBufferToVRAM = GenFbVideoCopyOffScreenBufferToVRAM;
+    MachVtbl.VideoIsPaletteFixed = GenFbVideoIsPaletteFixed;
+    MachVtbl.VideoSetPaletteColor = GenFbVideoSetPaletteColor;
+    MachVtbl.VideoGetPaletteColor = GenFbVideoGetPaletteColor;
+    MachVtbl.VideoSync = GenFbVideoSync;
     MachVtbl.Beep = UefiPcBeep;
     MachVtbl.PrepareForReactOS = UefiPrepareForReactOS;
     MachVtbl.GetMemoryMap = UefiMemGetMemoryMap;

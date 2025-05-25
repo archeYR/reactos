@@ -20,49 +20,6 @@ EFI_STATUS
 UefiInitializeVideo(VOID);
 
 VOID
-UefiVideoClearScreen(UCHAR Attr);
-
-VIDEODISPLAYMODE
-UefiVideoSetDisplayMode(char *DisplayMode, BOOLEAN Init);
-
-VOID
-UefiVideoGetDisplaySize(PULONG Width, PULONG Height, PULONG Depth);
-
-ULONG
-UefiVideoGetBufferSize(VOID);
-
-VOID
-UefiVideoGetFontsFromFirmware(PULONG RomFontPointers);
-
-VOID
-UefiVideoSetTextCursorPosition(UCHAR X, UCHAR Y);
-
-VOID
-UefiVideoHideShowTextCursor(BOOLEAN Show);
-
-VOID
-UefiVideoPutChar(int Ch, UCHAR Attr,
-                 unsigned X, unsigned Y);
-
-
-VOID
-UefiVideoCopyOffScreenBufferToVRAM(PVOID Buffer);
-
-BOOLEAN
-UefiVideoIsPaletteFixed(VOID);
-
-VOID
-UefiVideoSetPaletteColor(UCHAR Color, UCHAR Red,
-                         UCHAR Green, UCHAR Blue);
-
-VOID
-UefiVideoGetPaletteColor(UCHAR Color, UCHAR* Red,
-                         UCHAR* Green, UCHAR* Blue);
-
-VOID
-UefiVideoSync(VOID);
-
-VOID
 UefiPcBeep(VOID);
 
 PFREELDR_MEMORY_DESCRIPTOR
@@ -107,6 +64,3 @@ UefiHwIdle(VOID);
 VOID
 UefiInitializeFileSystemSupport(_In_ EFI_HANDLE ImageHandle,
                                 _In_ EFI_SYSTEM_TABLE *SystemTable);
-
-VOID
-UefiVideoScrollUp(VOID);

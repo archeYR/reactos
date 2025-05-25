@@ -7,8 +7,7 @@
 
 #include <uefildr.h>
 
-#define CHAR_WIDTH  8
-#define CHAR_HEIGHT 16
+#include <genfb.h>
 
 /* GLOBALS ********************************************************************/
 
@@ -28,12 +27,12 @@ UefiConsPutChar(int c)
     ULONG Width, Height, Unused;
     BOOLEAN NeedScroll;
 
-    UefiVideoGetDisplaySize(&Width, &Height, &Unused);
+    GenFbVideoGetDisplaySize(&Width, &Height, &Unused);
 
     NeedScroll = (CurrentCursorY >= Height);
     if (NeedScroll)
     {
-        UefiVideoScrollUp();
+        GenFbVideoScrollUp();
         --CurrentCursorY;
     }
     if (c == '\r')
@@ -53,7 +52,7 @@ UefiConsPutChar(int c)
     }
     else
     {
-        UefiVideoPutChar(c, CurrentAttr, CurrentCursorX, CurrentCursorY);
+        GenFbVideoPutChar(c, CurrentAttr, CurrentCursorX, CurrentCursorY);
         CurrentCursorX++;
     }
     if (CurrentCursorX >= Width)

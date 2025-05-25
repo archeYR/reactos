@@ -67,6 +67,7 @@ if(ARCH STREQUAL "i386")
     if(SARCH STREQUAL "xbox")
         list(APPEND PCATLDR_ARC_SOURCE
             # FIXME: Abstract things better so we don't need to include /pc/* here
+            arch/drivers/genfb.c
             arch/i386/pc/machpc.c       # machxbox.c depends on it
             arch/i386/pc/pcbeep.c       # machxbox.c depends on it
             arch/i386/pc/pcdisk.c       # hwdisk.c depends on it

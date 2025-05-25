@@ -21,126 +21,18 @@
 
 #include <freeldr.h>
 
+#include <genfb.h>
+
 #include <debug.h>
 DBG_DEFAULT_CHANNEL(UI);
 
 ULONG NvBase = 0xFD000000;
-PVOID FrameBuffer;
-ULONG FrameBufferSize;
-static ULONG ScreenWidth;
-static ULONG ScreenHeight;
-static ULONG BytesPerPixel;
-static ULONG Delta;
+
 extern multiboot_info_t * MultibootInfoPtr;
 
 UCHAR MachDefaultTextColor = COLOR_GRAY;
 
-#define CHAR_WIDTH  8
-#define CHAR_HEIGHT 16
-
-#define TOP_BOTTOM_LINES 0
-
 #define FB_SIZE_MB 4
-
-#define MAKE_COLOR(Red, Green, Blue) (0xff000000 | (((Red) & 0xff) << 16) | (((Green) & 0xff) << 8) | ((Blue) & 0xff))
-
-static VOID
-XboxVideoOutputChar(UCHAR Char, unsigned X, unsigned Y, ULONG FgColor, ULONG BgColor)
-{
-  PUCHAR FontPtr;
-  PULONG Pixel;
-  UCHAR Mask;
-  unsigned Line;
-  unsigned Col;
-
-  FontPtr = BitmapFont8x16 + Char * 16;
-  Pixel = (PULONG) ((char *) FrameBuffer + (Y * CHAR_HEIGHT + TOP_BOTTOM_LINES) * Delta
-                  + X * CHAR_WIDTH * BytesPerPixel);
-  for (Line = 0; Line < CHAR_HEIGHT; Line++)
-    {
-      Mask = 0x80;
-      for (Col = 0; Col < CHAR_WIDTH; Col++)
-        {
-          Pixel[Col] = (0 != (FontPtr[Line] & Mask) ? FgColor : BgColor);
-          Mask = Mask >> 1;
-        }
-      Pixel = (PULONG) ((char *) Pixel + Delta);
-    }
-}
-
-static ULONG
-XboxVideoAttrToSingleColor(UCHAR Attr)
-{
-  UCHAR Intensity;
-
-  Intensity = (0 == (Attr & 0x08) ? 127 : 255);
-
-  return 0xff000000 |
-         (0 == (Attr & 0x04) ? 0 : (Intensity << 16)) |
-         (0 == (Attr & 0x02) ? 0 : (Intensity << 8)) |
-         (0 == (Attr & 0x01) ? 0 : Intensity);
-}
-
-static VOID
-XboxVideoAttrToColors(UCHAR Attr, ULONG *FgColor, ULONG *BgColor)
-{
-  *FgColor = XboxVideoAttrToSingleColor(Attr & 0xf);
-  *BgColor = XboxVideoAttrToSingleColor((Attr >> 4) & 0xf);
-}
-
-static VOID
-XboxVideoClearScreenColor(ULONG Color, BOOLEAN FullScreen)
-{
-  ULONG Line, Col;
-  PULONG p;
-
-  for (Line = 0; Line < ScreenHeight - (FullScreen ? 0 : 2 * TOP_BOTTOM_LINES); Line++)
-    {
-      p = (PULONG) ((char *) FrameBuffer + (Line + (FullScreen ? 0 : TOP_BOTTOM_LINES)) * Delta);
-      for (Col = 0; Col < ScreenWidth; Col++)
-        {
-          *p++ = Color;
-        }
-    }
-}
-
-VOID
-XboxVideoScrollUp(VOID)
-{
-    ULONG BgColor, Dummy;
-    ULONG PixelCount = ScreenWidth * CHAR_HEIGHT *
-                       (((ScreenHeight - 2 * TOP_BOTTOM_LINES) / CHAR_HEIGHT) - 1);
-    PULONG Src = (PULONG)((PUCHAR)FrameBuffer + (CHAR_HEIGHT + TOP_BOTTOM_LINES) * Delta);
-    PULONG Dst = (PULONG)((PUCHAR)FrameBuffer + TOP_BOTTOM_LINES * Delta);
-
-    XboxVideoAttrToColors(ATTR(COLOR_WHITE, COLOR_BLACK), &Dummy, &BgColor);
-
-    while (PixelCount--)
-        *Dst++ = *Src++;
-
-    for (PixelCount = 0; PixelCount < ScreenWidth * CHAR_HEIGHT; PixelCount++)
-        *Dst++ = BgColor;
-}
-
-VOID
-XboxVideoClearScreen(UCHAR Attr)
-{
-  ULONG FgColor, BgColor;
-
-  XboxVideoAttrToColors(Attr, &FgColor, &BgColor);
-
-  XboxVideoClearScreenColor(BgColor, FALSE);
-}
-
-VOID
-XboxVideoPutChar(int Ch, UCHAR Attr, unsigned X, unsigned Y)
-{
-  ULONG FgColor, BgColor;
-
-  XboxVideoAttrToColors(Attr, &FgColor, &BgColor);
-
-  XboxVideoOutputChar(Ch, X, Y, FgColor, BgColor);
-}
 
 UCHAR
 NvGetCrtc(UCHAR Index)
@@ -150,7 +42,7 @@ NvGetCrtc(UCHAR Index)
 }
 
 ULONG
-XboxGetFramebufferSize(PVOID Offset)
+XboxGetFramebufferSize(ULONG_PTR Offset)
 {
     memory_map_t * MemoryMap;
     INT Count, i;
@@ -182,7 +74,7 @@ XboxGetFramebufferSize(PVOID Offset)
         /* Framebuffer address offset value is coming from the GPU within
          * memory mapped I/O address space, so we're comparing only low
          * 28 bits of the address within actual RAM address space */
-        if (MemoryMap->base_addr_low == ((ULONG)Offset & 0x0FFFFFFF) && MemoryMap->base_addr_high == 0)
+        if (MemoryMap->base_addr_low == (Offset & 0x0FFFFFFF) && MemoryMap->base_addr_high == 0)
         {
             TRACE("Video memory found\n");
             return MemoryMap->length_low;
@@ -195,127 +87,60 @@ XboxGetFramebufferSize(PVOID Offset)
 VOID
 XboxVideoInit(VOID)
 {
-  /* Reuse framebuffer that was set up by firmware */
-  FrameBuffer = (PVOID)READ_REGISTER_ULONG(NvBase + NV2A_CRTC_FRAMEBUFFER_START);
-  /* Verify that framebuffer address is page-aligned */
-  ASSERT((ULONG_PTR)FrameBuffer % PAGE_SIZE == 0);
+    ULONG BytesPerPixel;
+    GENERIC_FRAMEBUFFER_CONTEXT FrameBuffer;
 
-  /* Obtain framebuffer memory size from multiboot memory map */
-  if ((FrameBufferSize = XboxGetFramebufferSize(FrameBuffer)) == 0)
-  {
-    /* Fallback to Cromwell standard which reserves high 4 MB of RAM */
-    FrameBufferSize = 4 * 1024 * 1024;
-    WARN("Could not detect framebuffer memory size, fallback to 4 MB\n");
-  }
+    RtlZeroMemory(&FrameBuffer, sizeof(FrameBuffer));
 
-  ScreenWidth = READ_REGISTER_ULONG(NvBase + NV2A_RAMDAC_FP_HVALID_END) + 1;
-  ScreenHeight = READ_REGISTER_ULONG(NvBase + NV2A_RAMDAC_FP_VVALID_END) + 1;
-  /* Get BPP directly from NV2A CRTC (magic constants are from Cromwell) */
-  BytesPerPixel = 8 * (((NvGetCrtc(0x19) & 0xE0) << 3) | (NvGetCrtc(0x13) & 0xFF)) / ScreenWidth;
-  if (BytesPerPixel == 4)
-  {
-    ASSERT((NvGetCrtc(0x28) & 0xF) == BytesPerPixel - 1);
-  }
-  else
-  {
-    ASSERT((NvGetCrtc(0x28) & 0xF) == BytesPerPixel);
-  }
-  Delta = (ScreenWidth * BytesPerPixel + 3) & ~ 0x3;
+    /* Reuse framebuffer that was set up by firmware */
+    FrameBuffer.BaseAddress = READ_REGISTER_ULONG(NvBase + NV2A_CRTC_FRAMEBUFFER_START);
+    /* Verify that framebuffer address is page-aligned */
+    ASSERT(FrameBuffer.BaseAddress % PAGE_SIZE == 0);
 
-  /* Verify screen resolution */
-  ASSERT(ScreenWidth > 1);
-  ASSERT(ScreenHeight > 1);
-  ASSERT(BytesPerPixel >= 1 && BytesPerPixel <= 4);
-  /* Verify that screen fits framebuffer size */
-  ASSERT(ScreenWidth * ScreenHeight * BytesPerPixel <= FrameBufferSize);
-
-  XboxVideoClearScreenColor(MAKE_COLOR(0, 0, 0), TRUE);
-}
-
-VIDEODISPLAYMODE
-XboxVideoSetDisplayMode(char *DisplayMode, BOOLEAN Init)
-{
-  /* We only have one mode, semi-text */
-  return VideoTextMode;
-}
-
-VOID
-XboxVideoGetDisplaySize(PULONG Width, PULONG Height, PULONG Depth)
-{
-  *Width = ScreenWidth / CHAR_WIDTH;
-  *Height = (ScreenHeight - 2 * TOP_BOTTOM_LINES) / CHAR_HEIGHT;
-  *Depth = 0;
-}
-
-ULONG
-XboxVideoGetBufferSize(VOID)
-{
-  return (ScreenHeight - 2 * TOP_BOTTOM_LINES) / CHAR_HEIGHT * (ScreenWidth / CHAR_WIDTH) * 2;
-}
-
-VOID
-XboxVideoGetFontsFromFirmware(PULONG RomFontPointers)
-{
-    TRACE("XboxVideoGetFontsFromFirmware(): UNIMPLEMENTED\n");
-}
-
-VOID
-XboxVideoSetTextCursorPosition(UCHAR X, UCHAR Y)
-{
-  /* We don't have a cursor yet */
-}
-
-VOID
-XboxVideoHideShowTextCursor(BOOLEAN Show)
-{
-  /* We don't have a cursor yet */
-}
-
-VOID
-XboxVideoCopyOffScreenBufferToVRAM(PVOID Buffer)
-{
-  PUCHAR OffScreenBuffer = (PUCHAR) Buffer;
-  ULONG Col, Line;
-
-  for (Line = 0; Line < (ScreenHeight - 2 * TOP_BOTTOM_LINES) / CHAR_HEIGHT; Line++)
+    /* Obtain framebuffer memory size from multiboot memory map */
+    if ((FrameBuffer.BufferSize = XboxGetFramebufferSize(FrameBuffer.BaseAddress)) == 0)
     {
-      for (Col = 0; Col < ScreenWidth / CHAR_WIDTH; Col++)
-        {
-          XboxVideoPutChar(OffScreenBuffer[0], OffScreenBuffer[1], Col, Line);
-          OffScreenBuffer += 2;
-        }
+        /* Fallback to Cromwell standard which reserves high 4 MB of RAM */
+        FrameBuffer.BufferSize = 4 * 1024 * 1024;
+        WARN("Could not detect framebuffer memory size, fallback to 4 MB\n");
     }
-}
 
-BOOLEAN
-XboxVideoIsPaletteFixed(VOID)
-{
-  return FALSE;
-}
+    FrameBuffer.ScreenWidth = FrameBuffer.PixelsPerScanLine = READ_REGISTER_ULONG(NvBase + NV2A_RAMDAC_FP_HVALID_END) + 1;
+    FrameBuffer.ScreenHeight = READ_REGISTER_ULONG(NvBase + NV2A_RAMDAC_FP_VVALID_END) + 1;
+    /* Get BPP directly from NV2A CRTC (magic constants are from Cromwell) */
+    BytesPerPixel = 8 * (((NvGetCrtc(0x19) & 0xE0) << 3) | (NvGetCrtc(0x13) & 0xFF)) / FrameBuffer.ScreenWidth;
+    if (BytesPerPixel == 4)
+    {
+        ASSERT((NvGetCrtc(0x28) & 0xF) == BytesPerPixel - 1);
+        FrameBuffer.PixelFormat = GENFB_A8R8G8B8;
+    }
+    else if (BytesPerPixel == 3)
+    {
+        ASSERT((NvGetCrtc(0x28) & 0xF) == BytesPerPixel);
+        FrameBuffer.PixelFormat = GENFB_R8G8B8;
+    }
+    else
+    {
+        ASSERT((NvGetCrtc(0x28) & 0xF) == BytesPerPixel);
+        FrameBuffer.PixelFormat = GENFB_R5G6B5;
+    }
 
-VOID
-XboxVideoSetPaletteColor(UCHAR Color, UCHAR Red, UCHAR Green, UCHAR Blue)
-{
-  /* Not supported */
-}
+    /* Verify screen resolution */
+    ASSERT(FrameBuffer.ScreenWidth > 1);
+    ASSERT(FrameBuffer.ScreenHeight > 1);
+    ASSERT(BytesPerPixel >= 2 && BytesPerPixel <= 4);
+    /* Verify that screen fits framebuffer size */
+    ASSERT(FrameBuffer.ScreenWidth * FrameBuffer.ScreenHeight * BytesPerPixel <= FrameBuffer.BufferSize);
+    GenFbInitialize(&FrameBuffer);
 
-VOID
-XboxVideoGetPaletteColor(UCHAR Color, UCHAR* Red, UCHAR* Green, UCHAR* Blue)
-{
-  /* Not supported */
-}
-
-VOID
-XboxVideoSync(VOID)
-{
-  /* Not supported */
+    GenFbVideoClearScreen(ATTR(COLOR_WHITE, COLOR_BLACK));
 }
 
 VOID
 XboxVideoPrepareForReactOS(VOID)
 {
-    XboxVideoClearScreenColor(MAKE_COLOR(0, 0, 0), TRUE);
-    XboxVideoHideShowTextCursor(FALSE);
+    GenFbVideoClearScreen(ATTR(COLOR_WHITE, COLOR_BLACK));
+    GenFbVideoHideShowTextCursor(FALSE);
 }
 
 /* EOF */

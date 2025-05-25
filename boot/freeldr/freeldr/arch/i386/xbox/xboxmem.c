@@ -21,6 +21,7 @@
 
 #include <freeldr.h>
 #include <debug.h>
+#include <genfb.h>
 
 DBG_DEFAULT_CHANNEL(MEMORY);
 
@@ -227,6 +228,7 @@ FREELDR_MEMORY_DESCRIPTOR XboxMemoryMap[MAX_BIOS_DESCRIPTORS + 1];
 PFREELDR_MEMORY_DESCRIPTOR
 XboxMemGetMemoryMap(ULONG *MemoryMapSize)
 {
+    GENERIC_FRAMEBUFFER_CONTEXT FramebufferData;
     memory_map_t * MbMap;
     INT Count, i;
 
@@ -263,12 +265,14 @@ XboxMemGetMemoryMap(ULONG *MemoryMapSize)
                   AvailableMemoryMb * 1024 * 1024,
                   LoaderFree);
 
-        if (FrameBufferSize != 0)
+        RtlZeroMemory(&FramebufferData, sizeof(FramebufferData));
+        GenFbGetFramebufferData(&FramebufferData);
+        if (FramebufferData.BufferSize != 0)
         {
             /* Video memory */
             ReserveMemory(XboxMemoryMap,
-                          (ULONG_PTR)FrameBuffer,
-                          FrameBufferSize,
+                          (ULONG_PTR)FramebufferData.BaseAddress,
+                          FramebufferData.BufferSize,
                           LoaderFirmwarePermanent,
                           "Video memory");
         }

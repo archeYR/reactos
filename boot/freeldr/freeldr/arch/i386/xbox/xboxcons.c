@@ -18,6 +18,8 @@
 
 #include <freeldr.h>
 
+#include <genfb.h>
+
 static unsigned CurrentCursorX = 0;
 static unsigned CurrentCursorY = 0;
 static unsigned CurrentAttr = 0x0f;
@@ -28,12 +30,12 @@ XboxConsPutChar(int c)
     ULONG Width, Height, Unused;
     BOOLEAN NeedScroll;
 
-    XboxVideoGetDisplaySize(&Width, &Height, &Unused);
+    GenFbVideoGetDisplaySize(&Width, &Height, &Unused);
 
     NeedScroll = (CurrentCursorY >= Height);
     if (NeedScroll)
     {
-        XboxVideoScrollUp();
+        GenFbVideoScrollUp();
         --CurrentCursorY;
     }
 
@@ -54,7 +56,7 @@ XboxConsPutChar(int c)
     }
     else
     {
-        XboxVideoPutChar(c, CurrentAttr, CurrentCursorX, CurrentCursorY);
+        GenFbVideoPutChar(c, CurrentAttr, CurrentCursorX, CurrentCursorY);
         CurrentCursorX++;
     }
 

@@ -18,6 +18,7 @@
 
 #include <freeldr.h>
 #include <drivers/xbox/superio.h>
+#include <genfb.h>
 
 #include <debug.h>
 DBG_DEFAULT_CHANNEL(HWDETECT);
@@ -157,9 +158,13 @@ DetectDisplayController(PCONFIGURATION_COMPONENT_DATA BusKey)
     PCONFIGURATION_COMPONENT_DATA ControllerKey;
     PCM_PARTIAL_RESOURCE_LIST PartialResourceList;
     PCM_PARTIAL_RESOURCE_DESCRIPTOR PartialDescriptor;
+    GENERIC_FRAMEBUFFER_CONTEXT FramebufferData;
     ULONG Size;
 
-    if (FrameBufferSize == 0)
+    RtlZeroMemory(&FramebufferData, sizeof(FramebufferData));
+    GenFbGetFramebufferData(&FramebufferData);
+
+    if (FramebufferData.BufferSize == 0)
         return;
 
     Size = sizeof(CM_PARTIAL_RESOURCE_LIST);
@@ -181,8 +186,8 @@ DetectDisplayController(PCONFIGURATION_COMPONENT_DATA BusKey)
     PartialDescriptor->Type = CmResourceTypeMemory;
     PartialDescriptor->ShareDisposition = CmResourceShareDeviceExclusive;
     PartialDescriptor->Flags = CM_RESOURCE_MEMORY_READ_WRITE;
-    PartialDescriptor->u.Memory.Start.LowPart = (ULONG_PTR)FrameBuffer & 0x0FFFFFFF;
-    PartialDescriptor->u.Memory.Length = FrameBufferSize;
+    PartialDescriptor->u.Memory.Start.LowPart = (ULONG_PTR)FramebufferData.BaseAddress & 0x0FFFFFFF;
+    PartialDescriptor->u.Memory.Length = FramebufferData.BufferSize;
 
     FldrCreateComponentKey(BusKey,
                            ControllerClass,
@@ -333,19 +338,19 @@ MachInit(const char *CmdLine)
     MachVtbl.ConsPutChar = XboxConsPutChar;
     MachVtbl.ConsKbHit = XboxConsKbHit;
     MachVtbl.ConsGetCh = XboxConsGetCh;
-    MachVtbl.VideoClearScreen = XboxVideoClearScreen;
-    MachVtbl.VideoSetDisplayMode = XboxVideoSetDisplayMode;
-    MachVtbl.VideoGetDisplaySize = XboxVideoGetDisplaySize;
-    MachVtbl.VideoGetBufferSize = XboxVideoGetBufferSize;
-    MachVtbl.VideoGetFontsFromFirmware = XboxVideoGetFontsFromFirmware;
-    MachVtbl.VideoSetTextCursorPosition = XboxVideoSetTextCursorPosition;
-    MachVtbl.VideoHideShowTextCursor = XboxVideoHideShowTextCursor;
-    MachVtbl.VideoPutChar = XboxVideoPutChar;
-    MachVtbl.VideoCopyOffScreenBufferToVRAM = XboxVideoCopyOffScreenBufferToVRAM;
-    MachVtbl.VideoIsPaletteFixed = XboxVideoIsPaletteFixed;
-    MachVtbl.VideoSetPaletteColor = XboxVideoSetPaletteColor;
-    MachVtbl.VideoGetPaletteColor = XboxVideoGetPaletteColor;
-    MachVtbl.VideoSync = XboxVideoSync;
+    MachVtbl.VideoClearScreen = GenFbVideoClearScreen;
+    MachVtbl.VideoSetDisplayMode = GenFbVideoSetDisplayMode;
+    MachVtbl.VideoGetDisplaySize = GenFbVideoGetDisplaySize;
+    MachVtbl.VideoGetBufferSize = GenFbVideoGetBufferSize;
+    MachVtbl.VideoGetFontsFromFirmware = GenFbVideoGetFontsFromFirmware;
+    MachVtbl.VideoSetTextCursorPosition = GenFbVideoSetTextCursorPosition;
+    MachVtbl.VideoHideShowTextCursor = GenFbVideoHideShowTextCursor;
+    MachVtbl.VideoPutChar = GenFbVideoPutChar;
+    MachVtbl.VideoCopyOffScreenBufferToVRAM = GenFbVideoCopyOffScreenBufferToVRAM;
+    MachVtbl.VideoIsPaletteFixed = GenFbVideoIsPaletteFixed;
+    MachVtbl.VideoSetPaletteColor = GenFbVideoSetPaletteColor;
+    MachVtbl.VideoGetPaletteColor = GenFbVideoGetPaletteColor;
+    MachVtbl.VideoSync = GenFbVideoSync;
     MachVtbl.Beep = PcBeep;
     MachVtbl.PrepareForReactOS = XboxPrepareForReactOS;
     MachVtbl.GetMemoryMap = XboxMemGetMemoryMap;
