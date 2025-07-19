@@ -615,7 +615,7 @@ NotifyMountMgr(_In_ LPCWSTR lpszMountPoint,
     DWORD BytesReturned;
     HANDLE MountMgrHandle;
     BOOL Ret;
-
+__debugbreak();
     /* Get the NT path for mount point */
     if (!RtlDosPathNameToNtPathName_U(lpszMountPoint, &NtPathName, NULL, NULL))
     {
@@ -635,7 +635,7 @@ NotifyMountMgr(_In_ LPCWSTR lpszMountPoint,
     NtPathName.Length -= sizeof(WCHAR);
     NtPathVolumeName.Buffer[(NtPathVolumeName.Length / sizeof(WCHAR)) - 1] = UNICODE_NULL;
     NtPathVolumeName.Length -= sizeof(WCHAR);
-
+    /* FIXME */
     /* Uppercase the DOS drive letter */
     NtPathName.Buffer[(NtPathName.Length / sizeof(WCHAR)) - 2] = towupper(NtPathName.Buffer[(NtPathName.Length / sizeof(WCHAR)) - 2]);
 
@@ -683,7 +683,7 @@ NotifyMountMgr(_In_ LPCWSTR lpszMountPoint,
     /* If the mount manager failed, just quit */
     if (!Ret)
     {
-        //SetLastError(ERROR_INVALID_PARAMETER);
+        SetLastError(ERROR_INVALID_PARAMETER);
         return FALSE;
     }
 
