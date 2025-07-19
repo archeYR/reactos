@@ -1,5 +1,6 @@
 
 #include "mountvol.h"
+#include <sys/types.h>
 
 static
 VOID
@@ -57,25 +58,25 @@ IsVolumeOffline(LPCWSTR VolumeName)
     DWORD BytesReturned;
 
     /* Open a handle to the mount manager */
-    Volume = CreateFileW(VolumeName,
+    MountMgrHandle = CreateFileW(VolumeName,
                         0,
                         FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
                         OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
                         INVALID_HANDLE_VALUE);
-    if (Volume == INVALID_HANDLE_VALUE)
+    if (MountMgrHandle == INVALID_HANDLE_VALUE)
     {
         ConFormatMessage(StdOut, GetLastError());
         return FALSE;
     }
 
     /* Get the volume status */
-    Ret = DeviceIoControl(Volume,
+    Ret = DeviceIoControl(MountMgrHandle,
                           IOCTL_VOLUME_IS_OFFLINE,
                           NULL, 0,
                           NULL, 0, &BytesReturned,
                           NULL);
 
-    CloseHandle(Volume);
+    CloseHandle(MountMgrHandle);
     return Ret;
 }
 
@@ -115,7 +116,7 @@ SetAutoMount(MOUNTMGR_AUTO_MOUNT_STATE NewState)
 
 static
 BOOL
-GetESPDevice(PSYSTEM_SYSTEM_PARTITION_INFORMATION SystemPartitionInformation)
+GetESPDevice(PSYSTEM_SYSTEM_PARTITION_INFORMATION SystemPartitionInformation, PULONG BufferSize)
 {
     /* NOTE: This is done differently (probably by querying registry) on NT 5.x IA-64
      * The method below uses a system information class introduced in Vista */
@@ -123,10 +124,11 @@ GetESPDevice(PSYSTEM_SYSTEM_PARTITION_INFORMATION SystemPartitionInformation)
 
     Status = NtQuerySystemInformation(SystemSystemPartitionInformation,
                                       SystemPartitionInformation,
-                                      SystemInformationLength,
-                                      NULL);
+                                      *BufferSize,
+                                      BufferSize);
     if (!NT_SUCCESS(Status))
     {
+        ConPrintf(StdOut, L"sizeof %d, ReturnLength %d\n", sizeof(*SystemPartitionInformation), *BufferSize);
         SetLastError(RtlNtStatusToDosError(Status));
         return FALSE;
     }
@@ -136,46 +138,51 @@ GetESPDevice(PSYSTEM_SYSTEM_PARTITION_INFORMATION SystemPartitionInformation)
 
 static
 BOOL
-MountESPVolume(LPCWSTR MountPoint)
+GetESPMountPoint(LPWSTR ESPMountPoint)
 {
     PSYSTEM_SYSTEM_PARTITION_INFORMATION SystemPartitionInformation;
+    PWSTR TargetPath;
+    ULONG SystemInformationLength = sizeof(*SystemPartitionInformation);
+    WCHAR MountPoint[4] = {'A', ':', UNICODE_NULL};
+    ULONG TargetPathLength = 100;
+    DWORD Drives;
 
+    /* First call is to get required buffer size */
     SystemPartitionInformation = RtlAllocateHeap(GetProcessHeap(),
                                                  0,
-                                                 sizeof(*SystemPartitionInformation));
-
-    /* We will try to get the device that is used for ESP, and then map it at desired mount point */
-    if (!GetESPDevice(SystemPartitionInformation) ||
-        !DefineDosDeviceW(DDD_RAW_TARGET_PATH,
-                          MountPoint,
-                          SystemPartitionInformation->SystemPartition.Buffer))
+                                                 SystemInformationLength);
+    if (!SystemPartitionInformation)
     {
-        RtlFreeHeap(GetProcessHeap(), 0, ESPDeviceName);
-        ConFormatMessage(StdOut, GetLastError());
+        ConFormatMessage(StdOut, ERROR_NOT_ENOUGH_MEMORY);
         return FALSE;
     }
 
-    RtlFreeHeap(GetProcessHeap(), 0, ESPDeviceName);
-    return TRUE;
-}
-
-static
-BOOL
-PrintESPMountPoint()
-{
-    PSYSTEM_SYSTEM_PARTITION_INFORMATION SystemPartitionInformation;
-    WCHAR TargetPath[MAX_PATH];
-    WCHAR MountPoint[4] = L"A:";
-    DWORD Drives;
-
+    GetESPDevice(SystemPartitionInformation, &SystemInformationLength);
+    RtlFreeHeap(GetProcessHeap(), 0, SystemPartitionInformation);
     SystemPartitionInformation = RtlAllocateHeap(GetProcessHeap(),
                                                  0,
-                                                 sizeof(*SystemPartitionInformation));
+                                                 SystemInformationLength);
+    if (!SystemPartitionInformation)
+    {
+        ConFormatMessage(StdOut, ERROR_NOT_ENOUGH_MEMORY);
+        return FALSE;
+    }
+
+    /* Allocate initial buffer for target path, 50 characters should suffice */
+    TargetPath = RtlAllocateHeap(GetProcessHeap(),
+                                 HEAP_ZERO_MEMORY,
+                                 TargetPathLength);
+    if (!TargetPath)
+    {
+        ConFormatMessage(StdOut, ERROR_NOT_ENOUGH_MEMORY);
+        return FALSE;
+    }
 
     /* Get the path of device that is used for system partition */
-    if (!GetESPDevice(SystemPartitionInformation))
+    if (!GetESPDevice(SystemPartitionInformation, &SystemInformationLength))
     {
         RtlFreeHeap(GetProcessHeap(), 0, SystemPartitionInformation);
+        RtlFreeHeap(GetProcessHeap(), 0, TargetPath);
         return FALSE;
     }
 
@@ -187,10 +194,29 @@ PrintESPMountPoint()
         if (!(Drives & 1))
         {
             Drives >>= 1;
+            MountPoint[0]++;
             continue;
         }
 
-        QueryDosDeviceW(szMountPoint, TargetPath, ARRAYSIZE(TargetPath));
+        ConPrintf(StdOut, L"Mountpoint %s TargetPathLength %d\n", MountPoint, TargetPathLength);
+        while (!QueryDosDeviceW(MountPoint, TargetPath, TargetPathLength/sizeof(WCHAR)) &&
+            GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+        {
+            ConPrintf(StdOut, L"insufficient buffer\n");
+            /* Increase the buffer size */
+            RtlFreeHeap(GetProcessHeap(), 0, TargetPath);
+            TargetPathLength += TargetPathLength;
+            TargetPath = RtlAllocateHeap(GetProcessHeap(),
+                                        HEAP_ZERO_MEMORY,
+                                        TargetPathLength);
+            if (!TargetPath)
+            {
+                RtlFreeHeap(GetProcessHeap(), 0, SystemPartitionInformation);
+                ConFormatMessage(StdOut, ERROR_NOT_ENOUGH_MEMORY);
+                return FALSE;
+            }
+        }
+
         if (!wcscmp(SystemPartitionInformation->SystemPartition.Buffer, TargetPath))
             break;
 
@@ -199,10 +225,79 @@ PrintESPMountPoint()
     }
 
     RtlFreeHeap(GetProcessHeap(), 0, SystemPartitionInformation);
+    RtlFreeHeap(GetProcessHeap(), 0, TargetPath);
     if (Drives == 0)
     {
         return FALSE;
     }
+
+    if (ESPMountPoint)
+        wcscpy(ESPMountPoint, MountPoint);
+
+    return TRUE;
+}
+
+static
+BOOL
+MountESPVolume(LPCWSTR MountPoint)
+{
+    PSYSTEM_SYSTEM_PARTITION_INFORMATION SystemPartitionInformation;
+    ULONG SystemInformationLength = sizeof(*SystemPartitionInformation);
+    WCHAR VolumeName[50];
+
+    /* Ensure that the mount point is not already occupied and that ESP is not already mounted */
+    if (GetVolumeNameForVolumeMountPointW(MountPoint, VolumeName, ARRAYSIZE(VolumeName)) ||
+        GetESPMountPoint(NULL))
+    {
+        ConFormatMessage(StdOut, ERROR_DIR_NOT_EMPTY);
+        return FALSE;
+    }
+
+    /* First call is to get required buffer size */
+    SystemPartitionInformation = RtlAllocateHeap(GetProcessHeap(),
+                                                 0,
+                                                 SystemInformationLength);
+    if (!SystemPartitionInformation)
+    {
+        ConFormatMessage(StdOut, ERROR_NOT_ENOUGH_MEMORY);
+        return FALSE;
+    }
+
+    GetESPDevice(SystemPartitionInformation, &SystemInformationLength);
+    RtlFreeHeap(GetProcessHeap(), 0, SystemPartitionInformation);
+    SystemPartitionInformation = RtlAllocateHeap(GetProcessHeap(),
+                                                 0,
+                                                 SystemInformationLength);
+    if (!SystemPartitionInformation)
+    {
+        ConFormatMessage(StdOut, ERROR_NOT_ENOUGH_MEMORY);
+        return FALSE;
+    }
+
+    /* We will try to get the device that is used for ESP, and then map it at desired mount point */
+    if (!GetESPDevice(SystemPartitionInformation, &SystemInformationLength) ||
+        !DefineDosDeviceW(DDD_RAW_TARGET_PATH,
+                          MountPoint,
+                          SystemPartitionInformation->SystemPartition.Buffer))
+    {
+        RtlFreeHeap(GetProcessHeap(), 0, SystemPartitionInformation);
+        ConFormatMessage(StdOut, GetLastError());
+        return FALSE;
+    }
+
+    RtlFreeHeap(GetProcessHeap(), 0, SystemPartitionInformation);
+    return TRUE;
+}
+
+static
+BOOL
+PrintESPMountPoint()
+{
+    WCHAR MountPoint[4];
+
+    /* Get the ESP mount point */
+    if (!GetESPMountPoint(MountPoint))
+        return FALSE;
 
     /* Append backlash for display on console output */
     wcscat(MountPoint, L"\\");
@@ -264,7 +359,8 @@ PrintVolumeList()
         /* Get volume mount points */
         Ret = GetVolumePathNamesForVolumeNameW(VolumeName,
                                                VolumePathNames,
-                                               ReturnLength + sizeof(UNICODE_NULL), &ReturnLength);
+                                               ReturnLength + sizeof(UNICODE_NULL),
+                                               &ReturnLength);
         
         if (GetLastError() == ERROR_MORE_DATA)
         {
@@ -278,7 +374,7 @@ PrintVolumeList()
             }
             Ret = GetVolumePathNamesForVolumeNameW(VolumeName,
                                                    VolumePathNames,
-                                                   ReturnLength),
+                                                   ReturnLength,
                                                    &ReturnLength);
         }
 
@@ -293,13 +389,13 @@ PrintVolumeList()
 
         PathOffset = 0;
 
-        if (ReturnLength > sizeof(UNICODE_NULL))
+        if (ReturnLength > 1)
         {
             /* Print all paths found in multiline string */
-            while (PathOffset < ReturnLength - sizeof(UNICODE_NULL))
+            while (PathOffset < ReturnLength - 1)
             {
                 ConPrintf(StdOut, L"%*s%s\n", 8, "", VolumePathNames + PathOffset);
-                PathOffset += wcslen(VolumePathNames + PathOffset) + sizeof(UNICODE_NULL);
+                PathOffset += wcslen(VolumePathNames + PathOffset) + 1;
             }
             ConPuts(StdOut, L"\n");
         }
@@ -588,11 +684,11 @@ DismountVolume(LPCWSTR MountPoint)
     }
 
     /* Verify there are no more than one path in multiline string */
-    if (ReturnLength > sizeof(UNICODE_NULL))
+    if (ReturnLength > 1)
     {
-        while (PathOffset < ReturnLength - sizeof(UNICODE_NULL) && PathNum < 2)
+        while (PathOffset < ReturnLength - 1 && PathNum < 2)
         {
-            PathOffset += wcslen(VolumePathNames + PathOffset) + sizeof(UNICODE_NULL);
+            PathOffset += wcslen(VolumePathNames + PathOffset) + 1;
             PathNum++;
         }
 
@@ -606,9 +702,6 @@ DismountVolume(LPCWSTR MountPoint)
     }
 
     RtlFreeHeap(GetProcessHeap(), 0, VolumePathNames);
-
-    /* Delete the only mount point */
-    DeleteVolumeMountPointW(MountPoint);
     VolumeName[wcslen(VolumeName) - 1] = UNICODE_NULL;
 
     /* Open a handle to the volume */
@@ -666,6 +759,9 @@ DismountVolume(LPCWSTR MountPoint)
     }
 
     CloseHandle(Volume);
+
+    /* Finally delte the mount point */
+    DeleteVolumeMountPointW(MountPoint);
     return TRUE;
 
 Fail:
@@ -751,11 +847,16 @@ int wmain(int argc, WCHAR *argv[])
                     {
                         /* It could be a mount point without a volume name (ESP for example) */
                         DosPath[wcslen(DosPath) - 1] = UNICODE_NULL;
-                        if (!DefineDosDeviceW(DDD_REMOVE_DEFINITION, DosPath, NULL))
+                        Ret = !DefineDosDeviceW(DDD_REMOVE_DEFINITION, DosPath, NULL);
+                        if (Ret)
                         {
                             /* We report the original error code */
-                            SetLastError(ERROR_INVALID_PARAMETER);
+                            ConFormatMessage(StdOut, ERROR_INVALID_PARAMETER);
                         }
+                    }
+                    else if (Ret)
+                    {
+                        ConFormatMessage(StdOut, GetLastError());
                     }
 
                     goto Exit;
@@ -772,6 +873,7 @@ int wmain(int argc, WCHAR *argv[])
                     if (wcslen(argv[1]) > 3)
                     {
                         Ret = 1;
+                        ConFormatMessage(StdOut, ERROR_INVALID_PARAMETER);
                         goto Exit;
                     }
 
@@ -788,6 +890,8 @@ int wmain(int argc, WCHAR *argv[])
 
         /* Not a switch, pass it as a volume name then */
         Ret = !SetVolumeMountPointW(DosPath, argv[2]);
+        if (Ret)
+            ConFormatMessage(StdOut, GetLastError());
         goto Exit;
     }
 
@@ -825,8 +929,6 @@ int wmain(int argc, WCHAR *argv[])
 
 Exit:
     RtlFreeHeap(GetProcessHeap(), 0, DosPath);
-    if (Ret)
-        ConFormatMessage(StdOut, GetLastError());
     return Ret;
 }
 

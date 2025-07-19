@@ -1,0 +1,41 @@
+LANGUAGE LANG_POLISH, SUBLANG_DEFAULT
+
+STRINGTABLE
+{
+    STRING_MOUNTVOL_USAGE, "Tworzy, usuwa lub wyświetla listę punktów instalacji woluminów.\n\n\
+MOUNTVOL [dysk:]ścieżka NazwaWoluminu\n\
+MOUNTVOL [dysk:]ścieżka /D\n\
+MOUNTVOL [dysk:]ścieżka /L\n\
+MOUNTVOL [dysk:]ścieżka /P\n\
+MOUNTVOL /R\n\
+MOUNTVOL /N\n\
+MOUNTVOL /E\n"
+    STRING_MOUNTVOL_ESPMOUNTUSAGE, "\
+MOUNTVOL dysk: /S\n\n"
+    STRING_MOUNTVOL_HELP, "\
+    ścieżka        Określa istniejącą ścieżkę, gdzie będzie znajdować się punkt\n\
+                   instalacji (nieobsługiwane na systemie plików FAT)\n\
+    NazwaWoluminu  Określa nazwę woluminu, który jest celem punktu instalacji.\n\
+    /D             Usuwa punkt instalacji woluminu z określonej ścieżki.\n\
+    /L             Wyświetla nazwę zainstalowanego woluminu dla\n\
+                   określonej ścieżki.\n\
+    /P             Usuwa punkt instalacji woluminu z określonej ścieżki,\n\
+                   dezinstaluje wolumin i ustawia go jako niemożliwy\n\
+                   do instalacji. Można będzie ponownie zainstalować wolumin\n\
+                   poprzez utworzenie punktu instalacji woluminu.\n\
+    /R             Usuwa ścieżki instalacji woluminu (tylko na woluminach NTFS)\n\
+                   oraz konfigurację w rejestrze dla woluminów, które\n\
+                   nie są już w systemie.\n\
+    /N             Wyłącza automatyczną instalację nowych woluminów.\n\
+    /E             Ponownie wlącza automatyczną instalację nowych woluminów.\n"
+    STRING_MOUNTVOL_ESPMOUNTHELP, "\
+    /S             Instaluje partycję systemową EFI na określonym dysku.\n\n"
+    STRING_MOUNTVOL_LIST, "Możliwe wartości parametru NazwaWoluminu oraz bieżące punkty instalacji to:\n\n"
+    STRING_MOUNTVOL_NOPOINTS, "        *** BRAK PUNKTÓW INSTALACJI ***\n\n"
+    STRING_MOUNTVOL_NOTMOUNTABLE, "        *** NIEINSTALOWALNE DO CZASU UTWORZENIA PUNKTU INSTALACJI WOLUMINU ***\n\n"
+    STRING_MOUNTVOL_NOAUTOMOUNT, "Nowe woluminy nie są automatycznie instalowane podczas dodawania do systemu.\nAby zainstalować wolumin, należy utworzyć punkt instalacji woluminu.\n\n"
+    STRING_MOUNTVOL_UNSUPPORTEDOPERATION, "Ten wolumin nie obsługuje tej operacji.\nWoluminy dynamiczne i woluminy wymienne nie obsługują tej operacji.\n"
+    STRING_MOUNTVOL_VOLUMESTILLINUSE, "Wolumin jest wciąż w użyciu.\nPrzeprowadzono wymuszoną dezinstalację i bieżące dojścia do woluminu zostały unieważnione.\n"
+    STRING_MOUNTVOL_TOOMANYPOINTS, "Opcji /P można użyć tylko wtedy, gdy dany punkt instalacji\njest jedynym punktem instalacji woluminu.\n"
+    STRING_MOUNTVOL_ESPMOUNTPOINT, "    Partycja systemowa EFI jest zainstalowana na: %s\n\n"
+}
