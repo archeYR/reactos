@@ -35,7 +35,7 @@ if(ARCH STREQUAL "i386")
         ntldr/arch/i386/winldr.c
         ntldr/headless.c)
 
-    if(SARCH STREQUAL "pc98" OR SARCH STREQUAL "xbox")
+    if(SARCH STREQUAL "pc98" OR SARCH STREQUAL "xbox" OR SARCH STREQUAL "sfi")
         # These machine types require built-in bitmap font
         list(APPEND ROSLOAD_SOURCE
             arch/vgafont.c)
@@ -49,6 +49,12 @@ elseif(ARCH STREQUAL "amd64")
 
     list(APPEND ROSLOAD_SOURCE
         ntldr/arch/amd64/winldr.c)
+
+    if(SARCH STREQUAL "sfi")
+        # These machine types require built-in bitmap font
+        list(APPEND ROSLOAD_SOURCE
+            arch/vgafont.c)
+    endif()
 
     list(APPEND ROSLOAD_ASM_SOURCE
         arch/amd64/misc.S

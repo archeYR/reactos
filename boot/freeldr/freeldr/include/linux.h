@@ -124,6 +124,19 @@ typedef struct
     ULONG        CommandLinePointer;        // 32-bit pointer to the kernel command line
     ULONG        InitrdAddressMax;        // Highest legal initrd address
 
+    ULONG	KernelAlignment;
+    UCHAR	RelocatableKernel;
+    UCHAR	Pad2[3];
+    ULONG	CommandLineSize; // Size of kernel command line in bytes
+    ULONG	HardwareSubarch; // x86 hardware sub-architecture
+    ULONG64	HardwareSubarchData;
+    ULONG	PayloadOffset;
+    ULONG	PayloadLength;
+    ULONG64	SetupData;
+    ULONG64	PreferableAddress;
+    ULONG	InitialSize;
+    ULONG	HandoverOffset;
+    ULONG	KernelInformationOffset;
 
 } LINUX_SETUPSECTOR, *PLINUX_SETUPSECTOR;
 #include <poppack.h>

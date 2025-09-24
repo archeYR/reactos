@@ -2,10 +2,11 @@
 if(ARCH STREQUAL "i386")
     set(SARCH "pc" CACHE STRING
     "Sub-architecture to build for. Specify one of:
-     pc pc98 xbox")
+     pc pc98 xbox sfi")
 elseif(ARCH STREQUAL "amd64")
-    set(SARCH "" CACHE STRING
-    "Sub-architecture to build for.")
+    set(SARCH "pc" CACHE STRING
+    "Sub-architecture to build for. Specify one of:
+     pc sfi")
 elseif(ARCH STREQUAL "arm")
     set(SARCH "omap3-zoom2" CACHE STRING
     "Sub-architecture (board) to build for. Specify one of:

@@ -122,6 +122,6 @@ endif()
 
 include(pcat.cmake)
 include(rosload.cmake)
-if(NOT ARCH STREQUAL "i386" OR NOT (SARCH STREQUAL "pc98" OR SARCH STREQUAL "xbox"))
+if(NOT ARCH STREQUAL "i386" OR NOT (SARCH STREQUAL "pc98" OR SARCH STREQUAL "xbox" OR SARCH STREQUAL "sfi"))
     include(uefi.cmake)
 endif()

@@ -266,9 +266,18 @@ LoadAndBootLinux(
     }
 
     if (NewStyleLinuxKernel)
+    {
         LinuxSetupSector->TypeOfLoader = LINUX_LOADER_TYPE_FREELOADER;
+#if defined(SARCH_SFI)
+        LinuxSetupSector->HardwareSubarch = 3; /* Moorestown sub-architecture Linux identifier */
+#else
+        LinuxSetupSector->HardwareSubarch = 0; /* PC sub-architecture Linux identifier */
+#endif
+    }
     else
+    {
         LinuxSetupSector->LoadFlags = 0;
+    }
 
     RtlCopyMemory((PVOID)0x90000, LinuxBootSector, 512);
     RtlCopyMemory((PVOID)0x90200, LinuxSetupSector, SetupSectorSize);

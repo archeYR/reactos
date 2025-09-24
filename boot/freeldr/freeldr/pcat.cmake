@@ -58,7 +58,7 @@ if(ARCH STREQUAL "i386")
         # arch/i386/i386bug.c
         arch/i386/i386idt.c)
 
-    if(SARCH STREQUAL "pc98" OR SARCH STREQUAL "xbox")
+    if(SARCH STREQUAL "pc98" OR SARCH STREQUAL "xbox" OR SARCH STREQUAL "sfi")
         # These machine types require built-in bitmap font
         list(APPEND PCATLDR_ARC_SOURCE
             arch/vgafont.c)
@@ -86,6 +86,19 @@ if(ARCH STREQUAL "i386")
             set_source_files_properties(arch/i386/xbox/xboxmem.c PROPERTIES COMPILE_OPTIONS "-Wno-nonnull")
         endif()
 
+    elseif(SARCH STREQUAL "sfi")
+        list(APPEND PCATLDR_ARC_SOURCE
+            arch/drivers/genfb.c
+            arch/i386/pc/pcmem.c
+            arch/sfi/machsfi.c
+            arch/sfi/sfitable.c
+            arch/sfi/sficon.c
+            arch/sfi/sfidisk.c
+            arch/sfi/sfimem.c
+            arch/sfi/sfirtc.c
+            arch/sfi/sfivid.c
+            arch/sfi/delay.c)
+            #arch/drivers/MrstKeypad/MrstKeypad.c)
     elseif(SARCH STREQUAL "pc98")
         list(APPEND PCATLDR_ARC_SOURCE
             arch/i386/pc/pcmem.c
@@ -126,17 +139,40 @@ elseif(ARCH STREQUAL "amd64")
         arch/i386/hwacpi.c
         arch/i386/hwapm.c
         arch/i386/hwdisk.c
-        arch/i386/hwpci.c
-        # arch/i386/i386bug.c
-        arch/i386/pc/machpc.c
-        arch/i386/pc/pcbeep.c
-        arch/i386/pc/pccons.c
-        arch/i386/pc/pcdisk.c
-        arch/i386/pc/pchw.c
-        arch/i386/pc/pcmem.c
-        arch/i386/pc/pcrtc.c
-        arch/i386/pc/pcvesa.c
-        arch/i386/pc/pcvideo.c)
+        arch/i386/hwpci.c)
+        # arch/i386/i386bug.c)
+
+    if(SARCH STREQUAL "sfi")
+        # These machine types require built-in bitmap font
+        list(APPEND PCATLDR_ARC_SOURCE
+            arch/vgafont.c)
+    endif()
+
+    if(SARCH STREQUAL "sfi")
+        list(APPEND PCATLDR_ARC_SOURCE
+            arch/drivers/genfb.c
+            arch/i386/pc/pcmem.c
+            arch/i386/hwacpi.c
+            arch/i386/hwpci.c
+            arch/sfi/machsfi.c
+            arch/sfi/sfitable.c
+            arch/sfi/sficon.c
+            arch/sfi/sfirtc.c
+            arch/sfi/sfivid.c
+            arch/sfi/delay.c)
+            #arch/drivers/MrstKeypad/MrstKeypad.c)
+    else()
+        list(APPEND PCATLDR_ARC_SOURCE
+            arch/i386/pc/machpc.c
+            arch/i386/pc/pcbeep.c
+            arch/i386/pc/pccons.c
+            arch/i386/pc/pcdisk.c
+            arch/i386/pc/pchw.c
+            arch/i386/pc/pcmem.c
+            arch/i386/pc/pcrtc.c
+            arch/i386/pc/pcvesa.c
+            arch/i386/pc/pcvideo.c)
+    endif()
 
 elseif(ARCH STREQUAL "arm")
     list(APPEND PCATLDR_COMMON_ASM_SOURCE
@@ -241,6 +277,14 @@ if(SARCH STREQUAL "pc98")
     add_custom_target(pc98bootfdd
         COMMAND native-fatten ${REACTOS_BINARY_DIR}/PC98/ReactOS-98.IMG -format 2880 ROS98BOOT -boot ${CMAKE_BINARY_DIR}/boot/freeldr/bootsect/pc98/fat12fdd.bin -add ${CMAKE_CURRENT_BINARY_DIR}/freeldr.sys FREELDR.SYS -add ${CMAKE_SOURCE_DIR}/boot/bootdata/floppy_pc98.ini FREELDR.INI
         DEPENDS native-fatten fat12pc98 freeldr
+        VERBATIM)
+endif()
+
+if(SARCH STREQUAL "sfi")
+    file(MAKE_DIRECTORY ${REACTOS_BINARY_DIR}/SFI)
+    add_custom_target(sfiramdisk
+        COMMAND native-fatten ${REACTOS_BINARY_DIR}/SFI/ramdisk -format 16384 INITRD -add ${CMAKE_CURRENT_BINARY_DIR}/rosload.exe rosload.exe -add ${CMAKE_SOURCE_DIR}/boot/bootdata/bootimg_sfi.ini freeldr.ini
+        DEPENDS native-fatten rosload
         VERBATIM)
 endif()
 

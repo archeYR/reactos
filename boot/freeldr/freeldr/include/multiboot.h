@@ -111,6 +111,14 @@ typedef struct multiboot_info
   unsigned long drives_addr;
 } multiboot_info_t;
 
+/* The module structure.  */
+typedef struct multiboot_module {
+	unsigned long  mod_start;
+	unsigned long  mod_end;
+	unsigned long  string;
+	unsigned long  reserved;
+} multiboot_module_t;
+
 /* The memory map. Be careful that the offset 0 is base_addr_low
    but no size. */
 typedef struct memory_map

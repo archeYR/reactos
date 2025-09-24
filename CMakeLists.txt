@@ -258,6 +258,8 @@ Enable this if the module uses typeid or dynamic_cast. You will probably need to
             add_definitions(-DSARCH_XBOX)
         elseif(SARCH STREQUAL "pc98")
             add_definitions(-DSARCH_PC98)
+        elseif(SARCH STREQUAL "sfi")
+            add_definitions(-DSARCH_SFI)
         endif()
     elseif(ARCH STREQUAL "amd64")
         # clang-cl defines this one for itself
@@ -265,6 +267,9 @@ Enable this if the module uses typeid or dynamic_cast. You will probably need to
             add_compile_definitions(_M_AMD64 _M_X64)
         endif()
         add_definitions(-D_AMD64_ -D__x86_64__ -D_WIN64)
+        if(SARCH STREQUAL "sfi")
+            add_definitions(-DSARCH_SFI)
+        endif()
     elseif(ARCH STREQUAL "arm")
         # _M_ARM is already defined by toolchain
         add_definitions(-D_ARM_ -D__arm__ -DWIN32)
