@@ -20,16 +20,14 @@
  */
 
 #include <freeldr.h>
+#include <arch/sfi/sfitable.h>
 #include <debug.h>
 #include <genfb.h>
 
 DBG_DEFAULT_CHANNEL(MEMORY);
 
+extern PSFI_TABLE_SIMPLE SfiSystTable;
 extern multiboot_info_t * MultibootInfoPtr;
-
-#define TEST_SIZE     0x200
-#define TEST_PATTERN1 0xAA
-#define TEST_PATTERN2 0x55
 
 extern VOID
 SetMemory(
@@ -49,6 +47,82 @@ ReserveMemory(
 extern ULONG
 PcMemFinalizeMemoryMap(
     PFREELDR_MEMORY_DESCRIPTOR MemoryMap);
+
+static
+TYPE_OF_MEMORY
+SfiConvertToFreeldrDesc(SFI_MEM_TYPE SfiMemoryType)
+{
+    switch (SfiMemoryType)
+    {
+        case SFI_MEM_RESERVED:
+            return LoaderReserve;
+        case SFI_LOADER_CODE:
+            return LoaderLoadedProgram;
+        case SFI_LOADER_DATA:
+            return LoaderLoadedProgram;
+        case SFI_BOOT_SERVICE_CODE:
+            return LoaderFirmwareTemporary;
+        case SFI_BOOT_SERVICE_DATA:
+            return LoaderFirmwareTemporary;
+        case SFI_RUNTIME_SERVICE_CODE:
+            return LoaderFirmwarePermanent;
+        case SFI_RUNTIME_SERVICE_DATA:
+            return LoaderFirmwarePermanent;
+        case SFI_MEM_CONV:
+            return LoaderFree;
+        case SFI_MEM_UNUSABLE:
+            return LoaderBad;
+        case SFI_ACPI_RECLAIM:
+            return LoaderFirmwareTemporary;
+        case SFI_ACPI_NVS:
+            return LoaderReserve;
+        case SFI_MEM_MMIO:
+            return LoaderReserve;
+        case SFI_MEM_IOPORT:
+            return LoaderReserve;
+        case SFI_PAL_CODE:
+            return LoaderReserve;
+        default:
+            break;
+    }
+    return LoaderReserve;
+}
+
+BOOLEAN
+SfiGetFirmwareMemoryMap(PFREELDR_MEMORY_DESCRIPTOR MemMap)
+{
+    PSFI_TABLE_SIMPLE SfiTable;
+    PSFI_MEM_ENTRY MemEntry;
+    ULONG EntryNum, i;
+    SfiTable = SfiFindTable(SfiSystTable, SFI_SIG_MMAP);
+
+    if (SfiTable == NULL)
+    {
+        ERR("Couldn't get SFI MMAP table\n");
+        return FALSE;
+    }
+
+    if ((EntryNum = SfiTableEntryCount(SfiTable, sizeof(SFI_MEM_ENTRY))) < 1)
+    {
+        ERR("SFI MMAP table is not valid\n");
+        return FALSE;
+    }
+
+    MemEntry = (PSFI_MEM_ENTRY)SfiTable->Entry;
+
+    for (i = 0; i < EntryNum; i++, MemEntry++)
+    {
+        TRACE("i = %d, PhysicalMemStart = 0x%p, Size = 0x%llx", i, MemEntry->PhysicalMemStart, (MemEntry->Pages << PAGE_SHIFT));
+
+        SetMemory(MemMap,
+                MemEntry->PhysicalMemStart.QuadPart,
+                MemEntry->Pages << PAGE_SHIFT,
+                SfiConvertToFreeldrDesc(MemEntry->Type));
+    }
+
+    return TRUE;
+
+}
 
 memory_map_t *
 SfiGetMultibootMemoryMap(INT * Count)
@@ -113,7 +187,12 @@ SfiMemGetMemoryMap(ULONG *MemoryMapSize)
 
     TRACE("SfiMemGetMemoryMap()\n");
 
-    /* TODO: Implement gathering memory map directly from SFI and use Multiboot values as a fallback */
+    /* First try SFI MMAP table */
+    if (SfiGetFirmwareMemoryMap(SfiMemoryMap))
+        goto finalize;
+
+    ERR("Could not get memory map from SFI. Falling back to Multiboot map!\n");
+
     MbMap = SfiGetMultibootMemoryMap(&Count);
     if (MbMap)
     {
@@ -135,39 +214,17 @@ SfiMemGetMemoryMap(ULONG *MemoryMapSize)
                       MbMap->length_low,
                       SfiMultibootMemoryType(MbMap->type));
         }
-
-        RamDiskInfo = (multiboot_module_t *)(MultibootInfoPtr->mods_addr + sizeof(multiboot_module_t));
-        TRACE("Reserving memory for RAM disk: Base = 0x%x, Size = 0x%x\n", RamDiskInfo->mod_start, (RamDiskInfo->mod_end - RamDiskInfo->mod_start));
-        /* Initial RAM disk */
-        ReserveMemory(SfiMemoryMap,
-                    RamDiskInfo->mod_start,
-                    (RamDiskInfo->mod_end - RamDiskInfo->mod_start),
-                    LoaderFirmwarePermanent,
-                    "Initial RAM disk");
-    }
-    else
-    {
-        /* Synthesize memory map */
-
-        /* Available RAM block */
-        SetMemory(SfiMemoryMap,
-                  0,
-                  128 * 1024 * 1024, /* Hardcoding 128 MB */
-                  LoaderFree);
-
-        RtlZeroMemory(&FramebufferData, sizeof(FramebufferData));
-        GenFbGetFramebufferData(&FramebufferData);
-        if (FramebufferData.BufferSize != 0)
-        {
-            /* Video memory */
-            ReserveMemory(SfiMemoryMap,
-                          FramebufferData.BaseAddress,
-                          FramebufferData.BufferSize,
-                          LoaderFirmwarePermanent,
-                          "Video memory");
-        }
     }
 
+finalize:
+    RamDiskInfo = (multiboot_module_t *)(MultibootInfoPtr->mods_addr + sizeof(multiboot_module_t));
+    TRACE("Reserving memory for RAM disk: Base = 0x%x, Size = 0x%x\n", RamDiskInfo->mod_start, (RamDiskInfo->mod_end - RamDiskInfo->mod_start));
+    /* Initial RAM disk */
+    ReserveMemory(SfiMemoryMap,
+                RamDiskInfo->mod_start,
+                (RamDiskInfo->mod_end - RamDiskInfo->mod_start),
+                LoaderFirmwareTemporary,
+                "Initial RAM disk");
     *MemoryMapSize = PcMemFinalizeMemoryMap(SfiMemoryMap);
     return SfiMemoryMap;
 }

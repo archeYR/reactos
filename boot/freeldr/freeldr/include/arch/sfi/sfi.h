@@ -46,10 +46,24 @@
 #define SFI_SYST_SEARCH_BEGIN		0x000E0000
 #define SFI_SYST_SEARCH_END		0x000FFFFF
 
-#define SFI_GET_NUM_ENTRIES(ptable, entry_type) \
-	((ptable->header.length - sizeof(struct sfi_table_header)) / \
-	(sizeof(entry_type)))
-
+/* Memory type definitions */
+typedef enum SFI_MEM_TYPE {
+	SFI_MEM_RESERVED,
+	SFI_LOADER_CODE,
+	SFI_LOADER_DATA,
+	SFI_BOOT_SERVICE_CODE,
+	SFI_BOOT_SERVICE_DATA,
+	SFI_RUNTIME_SERVICE_CODE,
+	SFI_RUNTIME_SERVICE_DATA,
+	SFI_MEM_CONV,
+	SFI_MEM_UNUSABLE,
+	SFI_ACPI_RECLAIM,
+	SFI_ACPI_NVS,
+	SFI_MEM_MMIO,
+	SFI_MEM_IOPORT,
+	SFI_PAL_CODE,
+	SFI_MEM_TYPEMAX,
+} SFI_MEM_TYPE, *PSFI_MEM_TYPE;
 
 /*
  * Table structures must be byte-packed to match the SFI specification,
@@ -71,7 +85,7 @@ typedef struct _SFI_TABLE_SIMPLE {
 } SFI_TABLE_SIMPLE, *PSFI_TABLE_SIMPLE;
 
 typedef struct _SFI_MEM_ENTRY {
-    ULONG Type;
+    SFI_MEM_TYPE Type;
     PHYSICAL_ADDRESS PhysicalMemStart;
     ULONG64	VirtualMemStart;
     ULONG64	Pages;
