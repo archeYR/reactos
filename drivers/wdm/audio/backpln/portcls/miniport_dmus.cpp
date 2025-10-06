@@ -3,11 +3,14 @@
  *****************************************************************************
  * Copyright (c) 1997-2000 Microsoft Corporation.  All Rights Reserved.
  *
- *      Feb 98    MartinP   --  based on UART, began deltas for DirectMusic.
- *
  */
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4127)
+#endif
+
 #include "private.hpp"
+#include <ntstrsafe.h>
 
 #define NDEBUG
 #include <debug.h>
@@ -118,6 +121,13 @@ public:
     ,   OUT     PULONG          ResultantFormatLength
     )
     {
+        UNREFERENCED_PARAMETER(PinId);
+        UNREFERENCED_PARAMETER(DataRange);
+        UNREFERENCED_PARAMETER(MatchingDataRange);
+        UNREFERENCED_PARAMETER(OutputBufferLength);
+        UNREFERENCED_PARAMETER(ResultantFormat);
+        UNREFERENCED_PARAMETER(ResultantFormatLength);
+
         return STATUS_NOT_IMPLEMENTED;
     }
 
@@ -135,6 +145,9 @@ public:
     (
         OUT     PMXF                  * Stream,
         IN      PUNKNOWN                OuterUnknown    OPTIONAL,
+        _When_((PoolType & NonPagedPoolMustSucceed) != 0,
+           __drv_reportError("Must succeed pool allocations are forbidden. "
+                             "Allocation failures cause a system crash"))
         IN      POOL_TYPE               PoolType,
         IN      ULONG                   PinID,
         IN      DMUS_STREAM_TYPE        StreamType,
@@ -166,8 +179,7 @@ public:
         DMusMPUInterruptServiceRoutine(PINTERRUPTSYNC InterruptSync,PVOID DynamicContext);
     friend NTSTATUS NTAPI
         SynchronizedDMusMPUWrite(PINTERRUPTSYNC InterruptSync,PVOID syncWriteContext);
-    friend VOID NTAPI
-        DMusUARTTimerDPC(PKDPC Dpc,PVOID DeferredContext,PVOID SystemArgument1,PVOID SystemArgument2);
+    friend KDEFERRED_ROUTINE DMusUARTTimerDPC;
     friend NTSTATUS NTAPI PropertyHandler_Synth(IN PPCPROPERTY_REQUEST PropertyRequest);
     friend STDMETHODIMP_(NTSTATUS) SnapTimeStamp(PINTERRUPTSYNC InterruptSync,PVOID pStream);
 };
@@ -662,6 +674,8 @@ InitMPU
     IN      PVOID           DynamicContext
 )
 {
+    UNREFERENCED_PARAMETER(InterruptSync);
+
     DPRINT("InitMPU");
     if (!DynamicContext)
     {
@@ -982,6 +996,8 @@ WriteMPU
 STDMETHODIMP_(NTSTATUS)
 SnapTimeStamp(PINTERRUPTSYNC InterruptSync,PVOID pStream)
 {
+    UNREFERENCED_PARAMETER(InterruptSync);
+
     CMiniportDMusUARTStream *pMPStream = (CMiniportDMusUARTStream *)pStream;
 
     //  cache the timestamp
@@ -1104,6 +1120,8 @@ DMusMPUInterruptServiceRoutine
     IN      PVOID           DynamicContext
 )
 {
+    UNREFERENCED_PARAMETER(InterruptSync);
+
     DPRINT("DMusMPUInterruptServiceRoutine");
     ULONGLONG   startTime;
 
@@ -1320,8 +1338,8 @@ ProcessResources
 STDMETHODIMP_(NTSTATUS)
 CMiniportDMusUART::QueryInterface
 (
-    REFIID  Interface,
-    PVOID * Object
+    _In_           REFIID  Interface,
+    _COM_Outptr_   PVOID * Object
 )
 {
     PAGED_CODE();
@@ -1629,6 +1647,9 @@ NewStream
 (
     OUT     PMXF                  * MXF,
     IN      PUNKNOWN                OuterUnknown    OPTIONAL,
+    _When_((PoolType & NonPagedPoolMustSucceed) != 0,
+       __drv_reportError("Must succeed pool allocations are forbidden. "
+                         "Allocation failures cause a system crash"))
     IN      POOL_TYPE               PoolType,
     IN      ULONG                   PinID,
     IN      DMUS_STREAM_TYPE        StreamType,
@@ -1640,6 +1661,9 @@ NewStream
 )
 {
     PAGED_CODE();
+
+    UNREFERENCED_PARAMETER(DataFormat);
+    UNREFERENCED_PARAMETER(PinID);
 
     DPRINT("NewStream");
     NTSTATUS ntStatus = STATUS_SUCCESS;
@@ -1732,7 +1756,7 @@ STDMETHODIMP_(NTSTATUS)
 CMiniportDMusUART::
 SetTechnology
 (
-    IN      const GUID *            Technology
+    _In_    const GUID *            Technology
 )
 {
     PAGED_CODE();
@@ -1763,7 +1787,7 @@ STDMETHODIMP_(void)
 CMiniportDMusUART::
 PowerChangeNotify
 (
-    IN      POWER_STATE             PowerState
+    _In_    POWER_STATE             PowerState
 )
 {
     PAGED_CODE();
@@ -1803,8 +1827,8 @@ PowerChangeNotify
 STDMETHODIMP_(NTSTATUS)
 CMiniportDMusUARTStream::QueryInterface
 (
-    REFIID  Interface,
-    PVOID * Object
+    _In_           REFIID  Interface,
+    _COM_Outptr_   PVOID * Object
 )
 {
     PAGED_CODE();
@@ -1964,7 +1988,7 @@ STDMETHODIMP_(NTSTATUS)
 CMiniportDMusUARTStream::
 SetState
 (
-    IN      KSSTATE     NewState
+    _In_    KSSTATE     NewState
 )
 {
     PAGED_CODE();
@@ -2035,7 +2059,7 @@ Service
  */
 NTSTATUS
 CMiniportDMusUARTStream::
-ConnectOutput(PMXF sinkMXF)
+ConnectOutput(_In_  PMXF sinkMXF)
 {
     PAGED_CODE();
 
@@ -2070,7 +2094,7 @@ ConnectOutput(PMXF sinkMXF)
  */
 NTSTATUS
 CMiniportDMusUARTStream::
-DisconnectOutput(PMXF sinkMXF)
+DisconnectOutput(_In_   PMXF sinkMXF)
 {
     PAGED_CODE();
 
@@ -2172,7 +2196,7 @@ NTSTATUS CMiniportDMusUARTStream::PutMessageLocked(PDMUS_KERNEL_EVENT pDMKEvt)
  * This is fine, since the sequencer feeds us sequenced data.
  * Timestamps will ascend by design.
  */
-NTSTATUS CMiniportDMusUARTStream::PutMessage(PDMUS_KERNEL_EVENT pDMKEvt)
+NTSTATUS CMiniportDMusUARTStream::PutMessage(_In_   PDMUS_KERNEL_EVENT pDMKEvt)
 {
     NTSTATUS            ntStatus = STATUS_SUCCESS;
     PDMUS_KERNEL_EVENT  aDMKEvt;
@@ -2314,7 +2338,7 @@ NTSTATUS CMiniportDMusUARTStream::ConsumeEvents(void)
             aMillisecIn100ns.QuadPart = -(kOneMillisec);    //  set timer, come back later
             m_TimerQueued = TRUE;
             m_NumberOfRetries++;
-            ntStatus = KeSetTimer( &m_TimerEvent, aMillisecIn100ns, &m_Dpc );
+            KeSetTimer( &m_TimerEvent, aMillisecIn100ns, &m_Dpc );
             break;
         }   //  we didn't write it all
     }       //  go back, Jack, do it again (while m_DMKEvtQueue)
@@ -2323,7 +2347,7 @@ NTSTATUS CMiniportDMusUARTStream::ConsumeEvents(void)
 }
 
 #ifdef _MSC_VER
-#pragma code_seg()
+#pragma code_seg("PAGE")
 #endif
 
 /*****************************************************************************
@@ -2396,6 +2420,10 @@ DMusUARTTimerDPC
 )
 {
     ASSERT(DeferredContext);
+
+    UNREFERENCED_PARAMETER(Dpc);
+    UNREFERENCED_PARAMETER(SystemArgument1);
+    UNREFERENCED_PARAMETER(SystemArgument2);
 
     CMiniportDMusUARTStream *aStream;
     aStream = (CMiniportDMusUARTStream *) DeferredContext;
@@ -2522,14 +2550,18 @@ PropertyHandler_Synth
                         ASSERT(pRequest->MajorTarget);
                         aMiniport = (CMiniportDMusUART *)(PMINIPORTDMUS)(pRequest->MajorTarget);
                         WCHAR wszDesc2[16];
-                        int cLen;
-                        cLen = swprintf(wszDesc2,L"[%03x]\0",PtrToUlong(aMiniport->m_pPortBase));
-
-                        cLen *= sizeof(WCHAR);
-                        RtlCopyMemory((WCHAR *)((DWORD_PTR)(caps->Description) + increment),
-                                       wszDesc2,
-                                       cLen);
-
+                        size_t cLen;
+                        RtlStringCchPrintfW (wszDesc2, sizeof(wszDesc2)/sizeof(wszDesc2[0]), L"[%03X]\0", PtrToUlong(aMiniport->m_pPortBase));
+                        ntStatus = RtlStringCchLengthW (wszDesc2, sizeof(wszDesc2)/sizeof(wszDesc2[0]), &cLen);
+                        if (NT_SUCCESS(ntStatus))
+                        {
+#if _PREFAST_
+                            __assume(cLen <= sizeof(wszDesc2));
+#endif
+                            RtlCopyMemory((WCHAR *)((DWORD_PTR)(caps->Description) + increment),
+                                           wszDesc2,
+                                           cLen);
+                        }
 
                         pRequest->ValueSize = sizeof(SYNTHCAPS);
                     }
@@ -2620,6 +2652,8 @@ NTSTATUS ValidatePropertyRequest
     IN      BOOLEAN                 fValueRequired
 )
 {
+    PAGED_CODE();
+
     NTSTATUS    ntStatus;
 
     if (pRequest->ValueSize >= ulValueSize)
@@ -2657,5 +2691,3 @@ NTSTATUS ValidatePropertyRequest
 #ifdef _MSC_VER
 #pragma code_seg()
 #endif
-
-
