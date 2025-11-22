@@ -203,6 +203,8 @@ rmode_idtptr:
 #include "relocator.inc"
 #if defined(SARCH_PC98)
 #include "helpers_pc98.inc"
+#elif defined(SARCH_SFI)
+#include "helpers_sfi.inc"
 #else
 #include "helpers.inc"
 #endif
