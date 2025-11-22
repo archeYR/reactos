@@ -53,6 +53,10 @@
 #define MB_INFO_FLAG_BOOT_LOADER_NAME    HEX(00000200)
 #define MB_INFO_FLAG_APM_TABLE            HEX(00000400)
 #define MB_INFO_FLAG_GRAPHICS_TABLE        HEX(00000800)
+#define MB_INFO_FLAG_FRAMEBUFFER_TABLE        HEX(00001000)
+
+#define MB_FRAMEBUFFER_INDEXED 0
+#define MB_FRAMEBUFFER_RGB 1
 
 #ifndef __ASM__
 /* Do not include here in boot.S. */
@@ -90,6 +94,24 @@ typedef struct elf_section_header_table
   unsigned long shndx;
 } elf_section_header_table_t;
 
+/* Color info for indexed type framebuffer. */
+typedef struct color_indexed_mode
+{
+  unsigned long framebuffer_palette_addr;
+  unsigned short framebuffer_palette_num_colors;
+} color_indexed_mode_t;
+
+/* Color info for RGB type framebuffer. */
+typedef struct color_rgb_mode
+{
+  unsigned char framebuffer_red_field_position;
+  unsigned char framebuffer_red_mask_size;
+  unsigned char framebuffer_green_field_position;
+  unsigned char framebuffer_green_mask_size;
+  unsigned char framebuffer_blue_field_position;
+  unsigned char framebuffer_blue_mask_size;
+} color_rgb_mode_t;
+
 /* The Multiboot information. */
 typedef struct multiboot_info
 {
@@ -109,6 +131,26 @@ typedef struct multiboot_info
   unsigned long mmap_addr;
   unsigned long drives_length;
   unsigned long drives_addr;
+  unsigned long config_table;
+  unsigned long boot_loader_name;
+  unsigned long apm_table;
+  unsigned long vbe_control_info;
+  unsigned long vbe_mode_info;
+  unsigned short vbe_mode;
+  unsigned short vbe_interface_seg;
+  unsigned short vbe_interface_off;
+  unsigned short vbe_interface_len;
+  unsigned long long framebuffer_addr;
+  unsigned long framebuffer_pitch;
+  unsigned long framebuffer_width;
+  unsigned long framebuffer_height;
+  unsigned char framebuffer_bpp;
+  unsigned char framebuffer_type;
+  union
+  {
+    color_indexed_mode_t color_indexed;
+    color_rgb_mode_t color_rgb;
+  } color_info;
 } multiboot_info_t;
 
 /* The module structure.  */

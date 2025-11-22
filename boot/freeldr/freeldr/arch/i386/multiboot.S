@@ -18,7 +18,7 @@
  * the header signature and uses the header to load it.
  */
 
-#define MB_INFO_SIZE                60   /* sizeof(multiboot_info_t) */
+#define MB_INFO_SIZE                116  /* sizeof(multiboot_info_t) */
 #define MB_INFO_FLAGS_OFFSET        0
 #define MB_INFO_BOOT_DEVICE_OFFSET  12
 #define MB_INFO_COMMAND_LINE_OFFSET 16
