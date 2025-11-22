@@ -180,7 +180,6 @@ FREELDR_MEMORY_DESCRIPTOR SfiMemoryMap[128];
 PFREELDR_MEMORY_DESCRIPTOR
 SfiMemGetMemoryMap(ULONG *MemoryMapSize)
 {
-    GENERIC_FRAMEBUFFER_CONTEXT FramebufferData;
     memory_map_t * MbMap;
     INT Count, i;
     multiboot_module_t *RamDiskInfo;

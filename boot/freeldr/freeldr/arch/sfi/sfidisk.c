@@ -83,6 +83,14 @@ SfiInitializeBootDevices(VOID)
 	return TRUE;
 }
 
+CONFIGURATION_TYPE
+DiskGetConfigType(
+    _In_ UCHAR DriveNumber)
+{
+    /* No physical disk devices on SFI currently. */
+    return -1;
+}
+
 BOOLEAN
 SfiDiskReadLogicalSectors(UCHAR DriveNumber, ULONGLONG SectorNumber, ULONG SectorCount, PVOID Buffer)
 {

@@ -62,6 +62,10 @@ BOOLEAN PcFindPciBios(PPCI_REGISTRY_INFO BusData);
 extern UCHAR FrldrBootDrive;
 extern ULONG FrldrBootPartition;
 
+CONFIGURATION_TYPE
+DiskGetConfigType(
+    _In_ UCHAR DriveNumber);
+
 LONG DiskReportError(BOOLEAN bShowError);
 
 /* EOF */
