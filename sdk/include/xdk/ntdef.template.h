@@ -38,6 +38,16 @@ $endif()
 extern "C" {
 #endif
 
+#ifdef __cplusplus
+    #define EXTERN_C       extern "C"
+    #define EXTERN_C_START extern "C" {
+    #define EXTERN_C_END   }
+#else
+    #define EXTERN_C       extern
+    #define EXTERN_C_START
+    #define EXTERN_C_END
+#endif
+
 #ifndef DECLSPEC_NOINITALL
 #if defined(_MSC_VER) && (!defined(__clang__) || (__clang_major__ >= 22)) && \
     (_MSC_VER >= 1915) && !defined(MIDL_PASS) && !defined(SORTPP_PASS) && !defined(RC_INVOKED)

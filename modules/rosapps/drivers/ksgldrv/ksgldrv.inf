@@ -1,0 +1,63 @@
+;/*++
+;
+;Copyright (c) 2017-2021 Red Hat Inc.
+;Copyright (c) 2023 dmaivel
+;
+;Module Name:
+;    KSGLDRV.inf
+;
+;--*/
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=System
+ClassGuid={4d36e97d-e325-11ce-bfc1-08002be10318}
+Provider=%VENDOR%
+CatalogFile=KSGLDRV.cat
+DriverVer = 09/04/2023,100.10.100.10001
+PnpLockDown=1
+
+[DestinationDirs]
+Drivers_Dir = 12
+
+[Manufacturer]
+%VENDOR%=Standard
+
+[Standard]
+%KSGLDRV.DeviceDesc%=KSGLDRV_Device, PCI\VEN_1AF4&DEV_1110&SUBSYS_11001AF4&REV_01, PCI\VEN_1AF4&DEV_1110
+
+[KSGLDRV_Device.NT]
+CopyFiles=Drivers_Dir
+
+[KSGLDRV_Device.NT.Interfaces]
+AddInterface={df576976-569d-4672-95a0-f57e4ea0b210},%KSGLDRV.DeviceDesc%
+
+[KSGLDRV_Device.NT.HW]
+AddReg = KSGLDRV_AddReg
+
+[KSGLDRV_AddReg]
+HKR,Interrupt Management,,0x00000010
+HKR,Interrupt Management\MessageSignaledInterruptProperties,,0x00000010
+HKR,Interrupt Management\MessageSignaledInterruptProperties,MSISupported,0x00010001,1
+
+[Drivers_Dir]
+KSGLDRV.sys
+
+;-------------- Service installation
+[KSGLDRV_Device.NT.Services]
+AddService = KSGLDRV,%SPSVCINST_ASSOCSERVICE%, KSGLDRV_Service_Inst
+
+; -------------- KSGLDRV driver install sections
+[KSGLDRV_Service_Inst]
+DisplayName    = %KSGLDRV.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\ksgldrv.sys
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+VENDOR = "dmaivel"
+DiskName = "SharedGL Installation Disk"
+KSGLDRV.DeviceDesc = "SharedGL Device"
+KSGLDRV.SVCDESC = "SharedGL Service"

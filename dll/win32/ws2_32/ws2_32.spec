@@ -183,5 +183,5 @@
 @ stdcall freeaddrinfo(ptr)
 @ stdcall getaddrinfo(str str ptr ptr)
 @ stdcall getnameinfo(ptr long ptr long ptr long long)
-@ stdcall -version=0x600+ inet_ntop(long ptr ptr long)
-@ stdcall -version=0x600+ inet_pton(long str ptr)
+@ stdcall inet_ntop(long ptr ptr long)
+@ stdcall  inet_pton(long str ptr)

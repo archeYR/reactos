@@ -1726,6 +1726,14 @@ Language=English
 A fatal error occurred in the USB driver stack.
 .
 
+MessageId=0x109
+Severity=Success
+Facility=System
+SymbolicName=CRITICAL_STRUCTURE_CORRUPTION
+Language=English
+CRITICAL_STRUCTURE_CORRUPTION
+.
+
 MessageId=0x139
 Severity=Success
 Facility=System
