@@ -10,6 +10,7 @@ list(APPEND SOURCE
     versionlie.c
     vmhorizon.c
     main.c
+    verreportmax.c
     layer.spec)
 
 add_library(aclayers MODULE

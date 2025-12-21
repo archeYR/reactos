@@ -258,6 +258,9 @@
             <SHIM NAME="VMHorizonSetup">
                 <DLLFILE>aclayers.dll</DLLFILE>
             </SHIM>
+            <SHIM NAME="VerReportMax">
+                <DLLFILE>aclayers.dll</DLLFILE>
+            </SHIM>
 
             <!--<SHIM NAME="HideShimEnv">
                 <DLLFILE>aclayers.dll</DLLFILE>
@@ -436,6 +439,9 @@
         <LAYER NAME="VMHorizonSetup">
             <!-- ProductId: {7051C96D-AA61-4D83-AF37-646E82D616ED} -->
             <SHIM_REF NAME="VMHorizonSetup" />
+        </LAYER>
+        <LAYER NAME="VerReportMax">
+            <SHIM_REF NAME="VerReportMax" />
         </LAYER>
 
         <!-- 'Flag' layers -->
