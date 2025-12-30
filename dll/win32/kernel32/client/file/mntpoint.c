@@ -615,7 +615,7 @@ NotifyMountMgr(_In_ LPCWSTR lpszMountPoint,
     DWORD BytesReturned;
     HANDLE MountMgrHandle;
     BOOL Ret;
-__debugbreak();
+
     /* Get the NT path for mount point */
     if (!RtlDosPathNameToNtPathName_U(lpszMountPoint, &NtPathName, NULL, NULL))
     {
@@ -635,9 +635,6 @@ __debugbreak();
     NtPathName.Length -= sizeof(WCHAR);
     NtPathVolumeName.Buffer[(NtPathVolumeName.Length / sizeof(WCHAR)) - 1] = UNICODE_NULL;
     NtPathVolumeName.Length -= sizeof(WCHAR);
-    /* FIXME */
-    /* Uppercase the DOS drive letter */
-    NtPathName.Buffer[(NtPathName.Length / sizeof(WCHAR)) - 2] = towupper(NtPathName.Buffer[(NtPathName.Length / sizeof(WCHAR)) - 2]);
 
     /* Allocate the structure for querying the mount mgr */
     MountPoint = RtlAllocateHeap(RtlGetProcessHeap(), HEAP_ZERO_MEMORY,
