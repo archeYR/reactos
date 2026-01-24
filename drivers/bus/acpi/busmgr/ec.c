@@ -104,11 +104,26 @@ BOOLEAN
 EcReadByte(_In_ PACPI_EC_DEVICE Ec, _In_ UCHAR Address, _Out_ UCHAR *Value)
 {
     KIRQL OldIrql;
+    KIRQL CurrentIrql;
+    BOOLEAN AtDpcLevel;
 
     if (!Value)
         return FALSE;
 
-    KeAcquireSpinLock(&Ec->Lock, &OldIrql);
+    /* Check if we're already at DISPATCH_LEVEL or higher */
+    CurrentIrql = KeGetCurrentIrql();
+    AtDpcLevel = (CurrentIrql >= DISPATCH_LEVEL);
+
+    if (AtDpcLevel)
+    {
+        /* Already at DISPATCH_LEVEL, use DPC-level spinlock functions */
+        KeAcquireSpinLockAtDpcLevel(&Ec->Lock);
+    }
+    else
+    {
+        /* Below DISPATCH_LEVEL, raise IRQL to DISPATCH_LEVEL */
+        KeAcquireSpinLock(&Ec->Lock, &OldIrql);
+    }
 
     if (!EcWaitFor(Ec, EC_STATUS_IBF, FALSE))
         goto Fail;
@@ -125,11 +140,25 @@ EcReadByte(_In_ PACPI_EC_DEVICE Ec, _In_ UCHAR Address, _Out_ UCHAR *Value)
 
     *Value = EcReadData(Ec);
 
-    KeReleaseSpinLock(&Ec->Lock, OldIrql);
+    if (AtDpcLevel)
+    {
+        KeReleaseSpinLockFromDpcLevel(&Ec->Lock);
+    }
+    else
+    {
+        KeReleaseSpinLock(&Ec->Lock, OldIrql);
+    }
     return TRUE;
 
 Fail:
-    KeReleaseSpinLock(&Ec->Lock, OldIrql);
+    if (AtDpcLevel)
+    {
+        KeReleaseSpinLockFromDpcLevel(&Ec->Lock);
+    }
+    else
+    {
+        KeReleaseSpinLock(&Ec->Lock, OldIrql);
+    }
     return FALSE;
 }
 
@@ -138,8 +167,23 @@ BOOLEAN
 EcWriteByte(_In_ PACPI_EC_DEVICE Ec, _In_ UCHAR Address, _In_ UCHAR Value)
 {
     KIRQL OldIrql;
+    KIRQL CurrentIrql;
+    BOOLEAN AtDpcLevel;
 
-    KeAcquireSpinLock(&Ec->Lock, &OldIrql);
+    /* Check if we're already at DISPATCH_LEVEL or higher */
+    CurrentIrql = KeGetCurrentIrql();
+    AtDpcLevel = (CurrentIrql >= DISPATCH_LEVEL);
+
+    if (AtDpcLevel)
+    {
+        /* Already at DISPATCH_LEVEL, use DPC-level spinlock functions */
+        KeAcquireSpinLockAtDpcLevel(&Ec->Lock);
+    }
+    else
+    {
+        /* Below DISPATCH_LEVEL, raise IRQL to DISPATCH_LEVEL */
+        KeAcquireSpinLock(&Ec->Lock, &OldIrql);
+    }
 
     if (!EcWaitFor(Ec, EC_STATUS_IBF, FALSE))
         goto Fail;
@@ -159,11 +203,25 @@ EcWriteByte(_In_ PACPI_EC_DEVICE Ec, _In_ UCHAR Address, _In_ UCHAR Value)
     if (!EcWaitFor(Ec, EC_STATUS_IBF, FALSE))
         goto Fail;
 
-    KeReleaseSpinLock(&Ec->Lock, OldIrql);
+    if (AtDpcLevel)
+    {
+        KeReleaseSpinLockFromDpcLevel(&Ec->Lock);
+    }
+    else
+    {
+        KeReleaseSpinLock(&Ec->Lock, OldIrql);
+    }
     return TRUE;
 
 Fail:
-    KeReleaseSpinLock(&Ec->Lock, OldIrql);
+    if (AtDpcLevel)
+    {
+        KeReleaseSpinLockFromDpcLevel(&Ec->Lock);
+    }
+    else
+    {
+        KeReleaseSpinLock(&Ec->Lock, OldIrql);
+    }
     return FALSE;
 }
 
@@ -172,11 +230,26 @@ BOOLEAN
 EcQuery(_In_ PACPI_EC_DEVICE Ec, _Out_ UCHAR *Value)
 {
     KIRQL OldIrql;
+    KIRQL CurrentIrql;
+    BOOLEAN AtDpcLevel;
 
     if (!Value)
         return FALSE;
 
-    KeAcquireSpinLock(&Ec->Lock, &OldIrql);
+    /* Check if we're already at DISPATCH_LEVEL or higher */
+    CurrentIrql = KeGetCurrentIrql();
+    AtDpcLevel = (CurrentIrql >= DISPATCH_LEVEL);
+
+    if (AtDpcLevel)
+    {
+        /* Already at DISPATCH_LEVEL, use DPC-level spinlock functions */
+        KeAcquireSpinLockAtDpcLevel(&Ec->Lock);
+    }
+    else
+    {
+        /* Below DISPATCH_LEVEL, raise IRQL to DISPATCH_LEVEL */
+        KeAcquireSpinLock(&Ec->Lock, &OldIrql);
+    }
 
     if (!EcWaitFor(Ec, EC_STATUS_IBF, FALSE))
         goto Fail;
@@ -188,11 +261,25 @@ EcQuery(_In_ PACPI_EC_DEVICE Ec, _Out_ UCHAR *Value)
 
     *Value = EcReadData(Ec);
 
-    KeReleaseSpinLock(&Ec->Lock, OldIrql);
+    if (AtDpcLevel)
+    {
+        KeReleaseSpinLockFromDpcLevel(&Ec->Lock);
+    }
+    else
+    {
+        KeReleaseSpinLock(&Ec->Lock, OldIrql);
+    }
     return TRUE;
 
 Fail:
-    KeReleaseSpinLock(&Ec->Lock, OldIrql);
+    if (AtDpcLevel)
+    {
+        KeReleaseSpinLockFromDpcLevel(&Ec->Lock);
+    }
+    else
+    {
+        KeReleaseSpinLock(&Ec->Lock, OldIrql);
+    }
     return FALSE;
 }
 
