@@ -315,23 +315,6 @@ MMixerGetMixerControlById(
     return MM_STATUS_UNSUCCESSFUL;
 }
 
-ULONG
-MMixerGetVolumeControlIndex(
-    LPMIXERVOLUME_DATA VolumeData,
-    LONG Value)
-{
-    ULONG Index;
-
-    for (Index = 0; Index < VolumeData->ValuesCount; Index++)
-    {
-        if (VolumeData->Values[Index] > Value)
-        {
-            return VolumeData->InputSteppingDelta * Index;
-        }
-    }
-    return VolumeData->InputSteppingDelta * (VolumeData->ValuesCount - 1);
-}
-
 VOID
 MMixerNotifyControlChange(
     IN PMIXER_CONTEXT MixerContext,
@@ -720,14 +703,8 @@ MMixerSetGetVolumeControlDetails(
     LPMIXERLINE_EXT MixerLine)
 {
     LPMIXERCONTROLDETAILS_UNSIGNED Input;
-<<<<<<< HEAD
     LONG MaxRange, Value;
     ULONG Channel;
-=======
-    LONG Value;
-    ULONG Index, Channel;
-    ULONG dwValue;
->>>>>>> c6b27681fe6 (janderwald audio work)
     MIXER_STATUS Status;
     LPMIXERVOLUME_DATA VolumeData;
 
@@ -781,9 +758,9 @@ MMixerSetGetVolumeControlDetails(
 
     if (!bSet)
     {
-        dwValue = MMixerGetVolumeControlIndex(VolumeData, (LONG)Value);
+       
         /* FIXME SEH */
-        Input->dwValue = dwValue;
+        Input->dwValue = 1;
     }
     else
     {

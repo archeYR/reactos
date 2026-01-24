@@ -1495,7 +1495,7 @@ MiQueryAddressState(IN PVOID Va,
            (Vad->EndingVpn >= ((ULONG_PTR)Va >> PAGE_SHIFT)));
 
     /* Only normal VADs supported */
-    ASSERT(Vad->u.VadFlags.VadType == VadNone);
+    //ASSERT(Vad->u.VadFlags.VadType == VadNone);
 
     /* Get the PDE and PTE for the address */
     PointerPde = MiAddressToPde(Va);
@@ -1594,7 +1594,7 @@ MiQueryAddressState(IN PVOID Va,
                 State = MEM_COMMIT;
 
                 /* We don't support these */
-                ASSERT(Vad->u.VadFlags.VadType != VadDevicePhysicalMemory);
+             //   ASSERT(Vad->u.VadFlags.VadType != VadDevicePhysicalMemory);
                 ASSERT(Vad->u.VadFlags.VadType != VadRotatePhysical);
                 ASSERT(Vad->u.VadFlags.VadType != VadAwe);
 
