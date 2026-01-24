@@ -15,6 +15,12 @@ ACPI_MODULE_NAME("acpi_ec")
  * using the standard ACPI EC I/O protocol.
  */
 
+typedef struct _ACPI_EC_QUERY_WORK
+{
+    ACPI_HANDLE Handle;
+    UCHAR Query;
+} ACPI_EC_QUERY_WORK, *PACPI_EC_QUERY_WORK;
+
 typedef struct _ACPI_EC_DEVICE
 {
     BOOLEAN Present;
@@ -27,6 +33,11 @@ typedef struct _ACPI_EC_DEVICE
     ACPI_HANDLE Handle;
     struct acpi_device *Device;
     KSPIN_LOCK Lock;
+    PKTHREAD LockOwner;
+    ULONG LockCount;
+    KDPC QueryDpc;
+    WORK_QUEUE_ITEM QueryWorkItem;
+    ACPI_EC_QUERY_WORK QueryWork;
 } ACPI_EC_DEVICE, *PACPI_EC_DEVICE;
 
 static ACPI_EC_DEVICE g_EcEarly;
@@ -106,23 +117,36 @@ EcReadByte(_In_ PACPI_EC_DEVICE Ec, _In_ UCHAR Address, _Out_ UCHAR *Value)
     KIRQL OldIrql;
     KIRQL CurrentIrql;
     BOOLEAN AtDpcLevel;
+    PKTHREAD CurrentThread;
+    BOOLEAN AlreadyOwned = FALSE;
 
     if (!Value)
         return FALSE;
 
-    /* Check if we're already at DISPATCH_LEVEL or higher */
+    CurrentThread = KeGetCurrentThread();
     CurrentIrql = KeGetCurrentIrql();
     AtDpcLevel = (CurrentIrql >= DISPATCH_LEVEL);
 
-    if (AtDpcLevel)
+    /* Check if we already own the lock (nested call) */
+    if (Ec->LockOwner == CurrentThread && Ec->LockCount > 0)
     {
-        /* Already at DISPATCH_LEVEL, use DPC-level spinlock functions */
-        KeAcquireSpinLockAtDpcLevel(&Ec->Lock);
+        AlreadyOwned = TRUE;
+        Ec->LockCount++;
     }
     else
     {
-        /* Below DISPATCH_LEVEL, raise IRQL to DISPATCH_LEVEL */
-        KeAcquireSpinLock(&Ec->Lock, &OldIrql);
+        if (AtDpcLevel)
+        {
+            /* Already at DISPATCH_LEVEL, use DPC-level spinlock functions */
+            KeAcquireSpinLockAtDpcLevel(&Ec->Lock);
+        }
+        else
+        {
+            /* Below DISPATCH_LEVEL, raise IRQL to DISPATCH_LEVEL */
+            KeAcquireSpinLock(&Ec->Lock, &OldIrql);
+        }
+        Ec->LockOwner = CurrentThread;
+        Ec->LockCount = 1;
     }
 
     if (!EcWaitFor(Ec, EC_STATUS_IBF, FALSE))
@@ -140,24 +164,42 @@ EcReadByte(_In_ PACPI_EC_DEVICE Ec, _In_ UCHAR Address, _Out_ UCHAR *Value)
 
     *Value = EcReadData(Ec);
 
-    if (AtDpcLevel)
+    if (!AlreadyOwned)
     {
-        KeReleaseSpinLockFromDpcLevel(&Ec->Lock);
+        if (AtDpcLevel)
+        {
+            KeReleaseSpinLockFromDpcLevel(&Ec->Lock);
+        }
+        else
+        {
+            KeReleaseSpinLock(&Ec->Lock, OldIrql);
+        }
+        Ec->LockOwner = NULL;
+        Ec->LockCount = 0;
     }
     else
     {
-        KeReleaseSpinLock(&Ec->Lock, OldIrql);
+        Ec->LockCount--;
     }
     return TRUE;
 
 Fail:
-    if (AtDpcLevel)
+    if (!AlreadyOwned)
     {
-        KeReleaseSpinLockFromDpcLevel(&Ec->Lock);
+        if (AtDpcLevel)
+        {
+            KeReleaseSpinLockFromDpcLevel(&Ec->Lock);
+        }
+        else
+        {
+            KeReleaseSpinLock(&Ec->Lock, OldIrql);
+        }
+        Ec->LockOwner = NULL;
+        Ec->LockCount = 0;
     }
     else
     {
-        KeReleaseSpinLock(&Ec->Lock, OldIrql);
+        Ec->LockCount--;
     }
     return FALSE;
 }
@@ -169,20 +211,33 @@ EcWriteByte(_In_ PACPI_EC_DEVICE Ec, _In_ UCHAR Address, _In_ UCHAR Value)
     KIRQL OldIrql;
     KIRQL CurrentIrql;
     BOOLEAN AtDpcLevel;
+    PKTHREAD CurrentThread;
+    BOOLEAN AlreadyOwned = FALSE;
 
-    /* Check if we're already at DISPATCH_LEVEL or higher */
+    CurrentThread = KeGetCurrentThread();
     CurrentIrql = KeGetCurrentIrql();
     AtDpcLevel = (CurrentIrql >= DISPATCH_LEVEL);
 
-    if (AtDpcLevel)
+    /* Check if we already own the lock (nested call) */
+    if (Ec->LockOwner == CurrentThread && Ec->LockCount > 0)
     {
-        /* Already at DISPATCH_LEVEL, use DPC-level spinlock functions */
-        KeAcquireSpinLockAtDpcLevel(&Ec->Lock);
+        AlreadyOwned = TRUE;
+        Ec->LockCount++;
     }
     else
     {
-        /* Below DISPATCH_LEVEL, raise IRQL to DISPATCH_LEVEL */
-        KeAcquireSpinLock(&Ec->Lock, &OldIrql);
+        if (AtDpcLevel)
+        {
+            /* Already at DISPATCH_LEVEL, use DPC-level spinlock functions */
+            KeAcquireSpinLockAtDpcLevel(&Ec->Lock);
+        }
+        else
+        {
+            /* Below DISPATCH_LEVEL, raise IRQL to DISPATCH_LEVEL */
+            KeAcquireSpinLock(&Ec->Lock, &OldIrql);
+        }
+        Ec->LockOwner = CurrentThread;
+        Ec->LockCount = 1;
     }
 
     if (!EcWaitFor(Ec, EC_STATUS_IBF, FALSE))
@@ -203,24 +258,42 @@ EcWriteByte(_In_ PACPI_EC_DEVICE Ec, _In_ UCHAR Address, _In_ UCHAR Value)
     if (!EcWaitFor(Ec, EC_STATUS_IBF, FALSE))
         goto Fail;
 
-    if (AtDpcLevel)
+    if (!AlreadyOwned)
     {
-        KeReleaseSpinLockFromDpcLevel(&Ec->Lock);
+        if (AtDpcLevel)
+        {
+            KeReleaseSpinLockFromDpcLevel(&Ec->Lock);
+        }
+        else
+        {
+            KeReleaseSpinLock(&Ec->Lock, OldIrql);
+        }
+        Ec->LockOwner = NULL;
+        Ec->LockCount = 0;
     }
     else
     {
-        KeReleaseSpinLock(&Ec->Lock, OldIrql);
+        Ec->LockCount--;
     }
     return TRUE;
 
 Fail:
-    if (AtDpcLevel)
+    if (!AlreadyOwned)
     {
-        KeReleaseSpinLockFromDpcLevel(&Ec->Lock);
+        if (AtDpcLevel)
+        {
+            KeReleaseSpinLockFromDpcLevel(&Ec->Lock);
+        }
+        else
+        {
+            KeReleaseSpinLock(&Ec->Lock, OldIrql);
+        }
+        Ec->LockOwner = NULL;
+        Ec->LockCount = 0;
     }
     else
     {
-        KeReleaseSpinLock(&Ec->Lock, OldIrql);
+        Ec->LockCount--;
     }
     return FALSE;
 }
@@ -232,23 +305,36 @@ EcQuery(_In_ PACPI_EC_DEVICE Ec, _Out_ UCHAR *Value)
     KIRQL OldIrql;
     KIRQL CurrentIrql;
     BOOLEAN AtDpcLevel;
+    PKTHREAD CurrentThread;
+    BOOLEAN AlreadyOwned = FALSE;
 
     if (!Value)
         return FALSE;
 
-    /* Check if we're already at DISPATCH_LEVEL or higher */
+    CurrentThread = KeGetCurrentThread();
     CurrentIrql = KeGetCurrentIrql();
     AtDpcLevel = (CurrentIrql >= DISPATCH_LEVEL);
 
-    if (AtDpcLevel)
+    /* Check if we already own the lock (nested call) */
+    if (Ec->LockOwner == CurrentThread && Ec->LockCount > 0)
     {
-        /* Already at DISPATCH_LEVEL, use DPC-level spinlock functions */
-        KeAcquireSpinLockAtDpcLevel(&Ec->Lock);
+        AlreadyOwned = TRUE;
+        Ec->LockCount++;
     }
     else
     {
-        /* Below DISPATCH_LEVEL, raise IRQL to DISPATCH_LEVEL */
-        KeAcquireSpinLock(&Ec->Lock, &OldIrql);
+        if (AtDpcLevel)
+        {
+            /* Already at DISPATCH_LEVEL, use DPC-level spinlock functions */
+            KeAcquireSpinLockAtDpcLevel(&Ec->Lock);
+        }
+        else
+        {
+            /* Below DISPATCH_LEVEL, raise IRQL to DISPATCH_LEVEL */
+            KeAcquireSpinLock(&Ec->Lock, &OldIrql);
+        }
+        Ec->LockOwner = CurrentThread;
+        Ec->LockCount = 1;
     }
 
     if (!EcWaitFor(Ec, EC_STATUS_IBF, FALSE))
@@ -261,24 +347,42 @@ EcQuery(_In_ PACPI_EC_DEVICE Ec, _Out_ UCHAR *Value)
 
     *Value = EcReadData(Ec);
 
-    if (AtDpcLevel)
+    if (!AlreadyOwned)
     {
-        KeReleaseSpinLockFromDpcLevel(&Ec->Lock);
+        if (AtDpcLevel)
+        {
+            KeReleaseSpinLockFromDpcLevel(&Ec->Lock);
+        }
+        else
+        {
+            KeReleaseSpinLock(&Ec->Lock, OldIrql);
+        }
+        Ec->LockOwner = NULL;
+        Ec->LockCount = 0;
     }
     else
     {
-        KeReleaseSpinLock(&Ec->Lock, OldIrql);
+        Ec->LockCount--;
     }
     return TRUE;
 
 Fail:
-    if (AtDpcLevel)
+    if (!AlreadyOwned)
     {
-        KeReleaseSpinLockFromDpcLevel(&Ec->Lock);
+        if (AtDpcLevel)
+        {
+            KeReleaseSpinLockFromDpcLevel(&Ec->Lock);
+        }
+        else
+        {
+            KeReleaseSpinLock(&Ec->Lock, OldIrql);
+        }
+        Ec->LockOwner = NULL;
+        Ec->LockCount = 0;
     }
     else
     {
-        KeReleaseSpinLock(&Ec->Lock, OldIrql);
+        Ec->LockCount--;
     }
     return FALSE;
 }
@@ -460,6 +564,44 @@ AcpiFindEcDeviceCallback(
 }
 
 static
+VOID
+NTAPI
+AcpiEcQueryDpc(
+    _In_ PKDPC Dpc,
+    _In_opt_ PVOID DeferredContext,
+    _In_opt_ PVOID SystemArgument1,
+    _In_opt_ PVOID SystemArgument2)
+{
+    PACPI_EC_DEVICE Ec = (PACPI_EC_DEVICE)DeferredContext;
+
+    UNREFERENCED_PARAMETER(Dpc);
+    UNREFERENCED_PARAMETER(SystemArgument1);
+    UNREFERENCED_PARAMETER(SystemArgument2);
+
+    /* Queue the work item from DPC level (DISPATCH_LEVEL) */
+    if (Ec && Ec->QueryWork.Handle)
+    {
+        ExQueueWorkItem(&Ec->QueryWorkItem, DelayedWorkQueue);
+    }
+}
+
+static
+VOID
+NTAPI
+AcpiEcQueryWorker(
+    _In_ PVOID Parameter)
+{
+    PACPI_EC_DEVICE Ec = (PACPI_EC_DEVICE)Parameter;
+    char Method[5];
+
+    if (!Ec || !Ec->QueryWork.Handle)
+        return;
+
+    sprintf(Method, "_Q%02X", (unsigned int)Ec->QueryWork.Query);
+    (void)AcpiEvaluateObject(Ec->QueryWork.Handle, Method, NULL, NULL);
+}
+
+static
 UINT32
 AcpiEcGpeHandler(
     _In_ ACPI_HANDLE GpeDevice,
@@ -468,7 +610,6 @@ AcpiEcGpeHandler(
 {
     PACPI_EC_DEVICE Ec = (PACPI_EC_DEVICE)Context;
     UCHAR Query;
-    char Method[5];
 
     UNREFERENCED_PARAMETER(GpeDevice);
     UNREFERENCED_PARAMETER(GpeNumber);
@@ -478,8 +619,12 @@ AcpiEcGpeHandler(
 
     if (EcQuery(Ec, &Query) && Query)
     {
-        sprintf(Method, "_Q%02X", (unsigned int)Query);
-        (void)AcpiEvaluateObject(Ec->Handle, Method, NULL, NULL);
+        /* Defer AML execution: Interrupt -> DPC -> Work Item
+         * DPC can be queued from any IRQL and runs at DISPATCH_LEVEL
+         * Work Item can only be queued at <= DISPATCH_LEVEL and runs at PASSIVE_LEVEL */
+        Ec->QueryWork.Handle = Ec->Handle;
+        Ec->QueryWork.Query = Query;
+        KeInsertQueueDpc(&Ec->QueryDpc, Ec, NULL);
     }
 
     return ACPI_INTERRUPT_HANDLED | ACPI_REENABLE_GPE;
@@ -568,6 +713,8 @@ acpi_ec_add(
 
     RtlZeroMemory(Ec, sizeof(*Ec));
     KeInitializeSpinLock(&Ec->Lock);
+    KeInitializeDpc(&Ec->QueryDpc, AcpiEcQueryDpc, Ec);
+    ExInitializeWorkItem(&Ec->QueryWorkItem, AcpiEcQueryWorker, Ec);
     Ec->Handle = device->handle;
     Ec->Device = device;
 

@@ -626,7 +626,14 @@ EngpUpdateMonitorDevices(
     {
         /* Erase everything */
         for (i = 0; i < pGraphicsDevice->dwMonCnt; i++)
-            ObDereferenceObject(pGraphicsDevice->pvMonDev[i].pdo);
+        {
+            /* Only dereference valid PDO pointers to avoid access violations
+             * if the array contains stale or corrupted data */
+            if (pGraphicsDevice->pvMonDev[i].pdo != NULL)
+            {
+                ObDereferenceObject(pGraphicsDevice->pvMonDev[i].pdo);
+            }
+        }
         ExFreePoolWithTag(pGraphicsDevice->pvMonDev, GDITAG_GDEVICE);
         pGraphicsDevice->pvMonDev = NULL;
         pGraphicsDevice->dwMonCnt = 0;
