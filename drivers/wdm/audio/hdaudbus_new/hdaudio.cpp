@@ -977,10 +977,12 @@ HDA_FreeContiguousDmaBuffer(
 	stream_write32(stream, SD_BDLPU, 0);
 	stream_write32(stream, SD_CTL, 0);
 
+	PVOID dmaBuf = stream->dmaBuf;
+	stream->dmaBuf = NULL;
+
 	WdfInterruptReleaseLock(devData->FdoContext->Interrupt);
 
-	MmFreeContiguousMemory(stream->dmaBuf);
-	stream->dmaBuf = NULL;
+	MmFreeContiguousMemory(dmaBuf);
 
 	return STATUS_SUCCESS;
 }
@@ -1023,11 +1025,12 @@ HDA_AllocateContiguousDmaBuffer(
     PHYSICAL_ADDRESS maxAddr;
     maxAddr.QuadPart = devData->FdoContext->is64BitOK ? MAXULONG64 : MAXULONG32;
 
-    stream->dmaBuf = MmAllocateContiguousMemory(RequestedBufferSize, maxAddr);
-    if (!stream->dmaBuf) {
+    PVOID dmaBuf = MmAllocateContiguousMemory(RequestedBufferSize, maxAddr);
+    if (!dmaBuf) {
         return STATUS_INSUFFICIENT_RESOURCES;
     }
-    RtlZeroMemory(stream->dmaBuf, RequestedBufferSize);
+    RtlZeroMemory(dmaBuf, RequestedBufferSize);
+    stream->dmaBuf = dmaBuf;
 
 	WdfInterruptAcquireLock(devData->FdoContext->Interrupt);
 
