@@ -152,11 +152,17 @@ EngCreateWnd(
     EWNDOBJ *Clip = NULL;
     WNDOBJ *WndObjUser = NULL;
     PWND Window;
+    BOOLEAN bAcquiredLock = FALSE;
 
     TRACE("EngCreateWnd: pso = 0x%p, hwnd = 0x%p, pfn = 0x%p, fl = 0x%lx, pixfmt = %d\n",
             pso, hWnd, pfn, fl, iPixelFormat);
 
-    UserEnterExclusive();
+    if (!UserIsEntered())
+    {
+        WARN("EngCreateWnd called without UserLock held - this is a bug in the caller!\n");
+        UserEnterExclusive();
+        bAcquiredLock = TRUE;
+    }
 
     if (fl & (WO_RGN_WINDOW | WO_RGN_DESKTOP_COORD | WO_RGN_UPDATE_ALL))
     {
@@ -209,7 +215,11 @@ EngCreateWnd(
     TRACE("EngCreateWnd: SUCCESS: %p!\n", WndObjUser);
 
 Exit:
-    UserLeave();
+    /* Only release UserLock if we acquired it */
+    if (bAcquiredLock)
+    {
+        UserLeave();
+    }
     return WndObjUser;
 }
 
@@ -224,10 +234,17 @@ EngDeleteWnd(
 {
     EWNDOBJ* Clip = (EWNDOBJ *)pwo;//CONTAINING_RECORD(pwo, XCLIPOBJ, WndObj);
     PWND Window;
+    BOOLEAN bAcquiredLock = FALSE;
 
     TRACE("EngDeleteWnd: pwo = 0x%p\n", pwo);
 
-    UserEnterExclusive();
+    /* Check if UserLock is already held, and only acquire if not */
+    if (!UserIsEntered())
+    {
+        WARN("EngDeleteWnd called without UserLock held - this is a bug in the caller!\n");
+        UserEnterExclusive();
+        bAcquiredLock = TRUE;
+    }
 
     /* Get window object */
     Window = UserGetWindowObject(Clip->Hwnd);
@@ -242,7 +259,11 @@ EngDeleteWnd(
     }
     --gcountPWO;
 
-    UserLeave();
+    /* Only release UserLock if we acquired it */
+    if (bAcquiredLock)
+    {
+        UserLeave();
+    }
 
     /* Free resources */
     IntEngFreeClipResources((XCLIPOBJ*)Clip);

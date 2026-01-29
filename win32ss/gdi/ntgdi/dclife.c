@@ -1062,14 +1062,47 @@ IntGdiCreateDC(
 HDC FASTCALL
 IntGdiCreateDisplayDC(HDEV hDev, ULONG DcType, BOOL EmptyDC)
 {
-    HDC hDC;
-    UNIMPLEMENTED;
+    HDC NewDeviceContext;
+    PPDEVOBJ DeviceObject;
+    PDC DeviceContextObj;
+    GDILOOBJTYPE ObjectType;
 
-    if (DcType == DCTYPE_MEMORY)
-        hDC = NtGdiCreateCompatibleDC(NULL); // OH~ Yuck! I think I taste vomit in my mouth!
-    else
-        hDC = IntGdiCreateDC(NULL, NULL, NULL, NULL, (DcType == DCTYPE_INFO));
+    if (!hDev)
+    {
+        return NULL;
+    }
 
-    return hDC;
+    /* Convert handle to device object pointer */
+    DeviceObject = (PPDEVOBJ)hDev;
+    PDEVOBJ_vReference(DeviceObject);
+
+    /* Determine DC object type based on empty flag */
+    ObjectType = EmptyDC ? GDILoObjType_LO_ALTDC_TYPE : GDILoObjType_LO_DC_TYPE;
+    DeviceContextObj = DC_AllocDcWithHandle(ObjectType);
+    if (!DeviceContextObj)
+    {
+        DPRINT1("IntGdiCreateDisplayDC: Could not allocate DC\n");
+        PDEVOBJ_vRelease(DeviceObject);
+        return NULL;
+    }
+    NewDeviceContext = DeviceContextObj->BaseObject.hHmgr;
+
+    /* Setup DC with device and type */
+    DC_vInitDc(DeviceContextObj, DcType, DeviceObject);
+    DC_InitHack(DeviceContextObj);
+
+    /* Allocate DC attribute storage */
+    if (!DC_bAllocDcAttr(DeviceContextObj))
+    {
+        DPRINT1("IntGdiCreateDisplayDC: Could not allocate DC attributes\n");
+        DC_UnlockDc(DeviceContextObj);
+        /* FIXME: Need proper DC cleanup here */
+        PDEVOBJ_vRelease(DeviceObject);
+        return NULL;
+    }
+
+    DC_UnlockDc(DeviceContextObj);
+
+    return NewDeviceContext;
 }
 
