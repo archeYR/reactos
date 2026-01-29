@@ -1781,25 +1781,6 @@ MiBuildPagedPool(VOID)
     MI_WRITE_VALID_PTE(PointerPte, TempPte);
 #endif
 
-#ifdef _M_IX86
-    //
-    // Let's get back to paged pool work: size it up.
-    // By default, it should be twice as big as nonpaged pool.
-    //
-    MmSizeOfPagedPoolInBytes = 2 * MmMaximumNonPagedPoolInBytes;
-    if (MmSizeOfPagedPoolInBytes > ((ULONG_PTR)MmNonPagedSystemStart -
-                                    (ULONG_PTR)MmPagedPoolStart))
-    {
-        //
-        // On the other hand, we have limited VA space, so make sure that the VA
-        // for paged pool doesn't overflow into nonpaged pool VA. Otherwise, set
-        // whatever maximum is possible.
-        //
-        MmSizeOfPagedPoolInBytes = (ULONG_PTR)MmNonPagedSystemStart -
-                                   (ULONG_PTR)MmPagedPoolStart;
-    }
-#endif // _M_IX86
-
     //
     // Get the size in pages and make sure paged pool is at least 32MB.
     //
