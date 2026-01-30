@@ -1355,6 +1355,24 @@ KeTerminateThread(IN KPRIORITY Increment)
     PKPROCESS Process = Thread->ApcState.Process;
     ASSERT_IRQL_LESS_OR_EQUAL(DISPATCH_LEVEL);
 
+#if defined(_M_IX86) && !defined(CONFIG_SMP)
+    if (KeI386NpxPresent)
+    {
+        ULONG i;
+        PKTHREAD NpxKThread = Thread;
+
+        for (i = 0; i < KeNumberProcessors; i++)
+        {
+            PKPRCB Prcb = KiProcessorBlock[i];
+            if (!Prcb) continue;
+            (VOID)InterlockedCompareExchangePointer((PVOID*)&Prcb->NpxThread,
+                                                    NULL,
+                                                    NpxKThread);
+        }
+        Thread->NpxState = NPX_STATE_NOT_LOADED;
+    }
+#endif
+
     /* Lock the process */
     KiAcquireProcessLockRaiseToSynch(Process, &LockHandle);
 
