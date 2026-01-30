@@ -245,7 +245,6 @@ MiInitMachineDependent(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
     PMMPTE StartPde, EndPde, PointerPte, LastPte;
     MMPTE TempPde, TempPte;
     PVOID NonPagedPoolExpansionVa;
-    SIZE_T NonPagedSystemSize;
     KIRQL OldIrql;
     PMMPFN Pfn1;
     ULONG Flags;
@@ -301,32 +300,18 @@ MiInitMachineDependent(IN PLOADER_PARAMETER_BLOCK LoaderBlock)
            MmSizeOfNonPagedPoolInBytes, MmMaximumNonPagedPoolInBytes);
 
     //
-    // Now calculate the nonpaged system VA region, which includes the
-    // nonpaged pool expansion (above) and the system PTEs. Note that it is
-    // then aligned to a PDE boundary (4MB).
+    // Now calculate the nonpaged system VA region, which includes the system
+    // PTEs (below) and the nonpaged pool expansion (above).
     //
-    NonPagedSystemSize = (MmNumberOfSystemPtes + 1) * PAGE_SIZE;
-    MmNonPagedSystemStart = (PVOID)((ULONG_PTR)MmNonPagedPoolStart -
-                                    NonPagedSystemSize);
-    MmNonPagedSystemStart = (PVOID)((ULONG_PTR)MmNonPagedSystemStart &
-                                    ~(PDE_MAPPED_VA - 1));
-
     PVOID PagedPoolEnd = Add2Ptr(MmPagedPoolStart, MmSizeOfPagedPoolInBytes);
-    if (MmNonPagedSystemStart < PagedPoolEnd)
-    {
-        //
-        // Calculate the maximum system PTE area start that fits between
-        // paged pool end and nonpaged pool start.
-        //
-        MmNonPagedSystemStart = ALIGN_UP_POINTER_BY(PagedPoolEnd, PDE_MAPPED_VA);
+    MmNonPagedSystemStart = ALIGN_UP_POINTER_BY(PagedPoolEnd, PDE_MAPPED_VA);
 
-        //
-        // Ensure we still have space for system PTEs
-        //
-        if ((ULONG_PTR)MmNonPagedSystemStart >= (ULONG_PTR)MmNonPagedPoolStart)
-        {
-            KeBugCheckEx(NO_MORE_SYSTEM_PTES, 0, MmNumberOfSystemPtes, 0, 0);
-        }
+    //
+    // Ensure we still have space for system PTEs / expansion nonpaged pool.
+    //
+    if ((ULONG_PTR)MmNonPagedSystemStart >= (ULONG_PTR)MmNonPagedPoolStart)
+    {
+        KeBugCheckEx(NO_MORE_SYSTEM_PTES, 0, MmNumberOfSystemPtes, 0, 0);
     }
     //
     // Check if we are in a situation where the size of the paged pool
