@@ -361,6 +361,15 @@ ULONG WINAPI CStdStubBuffer2_Release(IRpcStubBuffer *This) \
     CSTDSTUBBUFFER2RELEASE(&gPFactory) \
     DLLREGISTRY_ROUTINES(pfl, factory_clsid)
 
+#define DLLDATA_ROUTINESRPC(pfl, factory_clsid) \
+    CLSID_PSFACTORYBUFFER \
+    CStdPSFactoryBuffer gPFactory = { NULL, 0, NULL, 0 }; \
+    DLLDATA_GETPROXYDLLINFO(pfl, factory_clsid) \
+    DLLGETCLASSOBJECTROUTINE(pfl, factory_clsid, &gPFactory) \
+    CSTDSTUBBUFFERRELEASE(&gPFactory) \
+    CSTDSTUBBUFFER2RELEASE(&gPFactory) \
+    DLLREGISTRY_ROUTINES(pfl, factory_clsid)
+
 #if 0
 
 RPCRTAPI HRESULT RPC_ENTRY

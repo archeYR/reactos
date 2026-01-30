@@ -502,7 +502,7 @@ WdmAudSetWaveDeviceFormatByMMixer(
             Instance->Handle,
             PAGE_SIZE * 8,
             2,
-            &Instance->RTStreamingBuffer,
+            (PVOID)&Instance->RTStreamingBuffer,
             &Instance->RTStreamingBufferLength);
         if (MixerStatus == MM_STATUS_SUCCESS)
         {
