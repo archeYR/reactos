@@ -29,7 +29,7 @@ NTSTATUS ResetHDAController(PFDO_CONTEXT fdoCtx, BOOLEAN wakeup) {
 		if (!(gctl & HDA_GCTL_RESET)) {
 			break;
 		}
-	//	udelay(10);
+	udelay(10);
 	}
 
 	if (gctl & HDA_GCTL_RESET) {
@@ -41,7 +41,7 @@ NTSTATUS ResetHDAController(PFDO_CONTEXT fdoCtx, BOOLEAN wakeup) {
 	if (!wakeup)
 		return STATUS_SUCCESS;
 
-//	udelay(100);
+    udelay(100);
 	gctl = hda_read32(fdoCtx, GCTL);
 	hda_write32(fdoCtx, GCTL, gctl | HDA_GCTL_RESET);
 
@@ -50,7 +50,7 @@ NTSTATUS ResetHDAController(PFDO_CONTEXT fdoCtx, BOOLEAN wakeup) {
 		if (gctl & HDA_GCTL_RESET) {
 			break;
 		}
-	//	udelay(10);
+	udelay(10);
 	}
 	if (!(gctl & HDA_GCTL_RESET)) {
 		DbgPrint("Error: controller stuck in reset\n");
@@ -58,7 +58,7 @@ NTSTATUS ResetHDAController(PFDO_CONTEXT fdoCtx, BOOLEAN wakeup) {
 	}
 
 	//Wait for codecs to finish their own reset sequence. Delay from VoodooHDA so it resets properly
-	//udelay(1000);
+	udelay(1000);
 
 	if (!fdoCtx->codecMask) {
 		fdoCtx->codecMask = hda_read16(fdoCtx, STATESTS);
@@ -74,7 +74,7 @@ NTSTATUS GetHDACapabilities(PFDO_CONTEXT fdoCtx) {
 	SklHdAudBusPrint(DEBUG_LEVEL_INFO, DBG_INIT,
 		"chipset global capabilities = 0x%x\n", gcap);
 
-	fdoCtx->is64BitOK = !!(gcap & 0x1);
+	fdoCtx->is64BitOK = FALSE; //!!(gcap & 0x1);
 	SklHdAudBusPrint(DEBUG_LEVEL_INFO, DBG_INIT,
 		"64 bit OK? %d\n", fdoCtx->is64BitOK);
 
