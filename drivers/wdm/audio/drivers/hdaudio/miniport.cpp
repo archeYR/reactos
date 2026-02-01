@@ -33,12 +33,12 @@ class CMiniportWaveRT : public CUnknownImpl<IMiniportWaveRT>
 
   private:
     ULONG m_AssociatedPinCount;
-    PULONG m_AssociatedPins;
-    CAdapterCommon *m_Adapter;
     CFunctionGroupNode *m_Node;
-    PIN_CONFIGURATION_DEFAULT m_PinConfiguration;
+    PULONG m_AssociatedPins;
     PPCFILTER_DESCRIPTOR m_FilterDescription;
     PPORTWAVERT m_Port;
+    CAdapterCommon *m_Adapter;
+    PIN_CONFIGURATION_DEFAULT m_PinConfiguration;
     HDAUDIO_BUS_INTERFACE_V2 m_Interface;
 };
 

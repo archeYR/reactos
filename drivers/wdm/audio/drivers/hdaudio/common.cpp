@@ -758,7 +758,8 @@ CAdapterCommon::BuildFilter(
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
-    reinterpret_cast<PKSDATARANGE>(Pins[0].KsPinDescriptor.DataRanges[0]) = (PKSDATARANGE)AudioFormat;
+    PKSDATARANGE *DataRanges = (PKSDATARANGE*)Pins[0].KsPinDescriptor.DataRanges;
+    DataRanges[0] = (PKSDATARANGE)AudioFormat;
 
     for(AudioFormatIndex = 0; AudioFormatIndex < FormatsSupported; AudioFormatIndex++)
     {
@@ -835,7 +836,9 @@ CAdapterCommon::BuildFilter(
         ExFreePool(Description);
         return STATUS_INSUFFICIENT_RESOURCES;
     }
-    reinterpret_cast<PKSDATARANGE>(Pins[1].KsPinDescriptor.DataRanges[0]) = BridgeAudioFormat;
+
+    DataRanges = (PKSDATARANGE*)Pins[1].KsPinDescriptor.DataRanges;
+    DataRanges[0] = BridgeAudioFormat;
 
     BridgeAudioFormat->FormatSize = sizeof(KSDATARANGE);
     BridgeAudioFormat->Flags = 0;
