@@ -122,6 +122,7 @@ HDA_TransferCodecVerbs(
 		WdfWorkItemEnqueue(workItem);
 	}
 	else {
+        KeStallExecutionProcessor(250);
 		status = HDA_WaitForTransfer(fdoCtx, devData->CodecIds.CodecAddress, Count, CodecTransfer);
 		if (!NT_SUCCESS(status)) {
 			goto out;
