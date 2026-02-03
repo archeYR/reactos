@@ -505,6 +505,9 @@ HGLRC WINAPI wglCreateLayerContext(HDC hdc, int iLayerPlane)
     context->pixelformat = dc_data->pixelformat;
     context->thread_id = 0;
 
+    /* Insert into the list */
+    InsertTailList(&ContextListHead, &context->ListEntry);
+
     context->magic = 'GLRC';
 
     release_dc_data(dc_data);
